@@ -2,8 +2,7 @@ import Link from "next/link";
 import { templates, tools } from "@/lib/templates";
 import TemplateCard from "./TemplateCard";
 
-const CREATOR =
-  "https://images.squarespace-cdn.com/content/v1/636715889825f2344a236e6c/c4309277-d930-475a-8611-ea157764fcd4/creator.png";
+const CREATOR = "/images/creator.webp";
 
 export default function Home() {
   const featured = templates.filter((t) => t.featured);

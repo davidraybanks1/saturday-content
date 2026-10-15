@@ -3,17 +3,12 @@ import type { Template } from "@/lib/templates";
 
 // Product images are ~2160px wide but cards show them at ~330px. One-step browser
 // downscaling that steep blurs the line art, so ask for pre-sized versions instead.
+// Each image in /public/images has -500, -750 and -1000 siblings.
 function thumbProps(src: string) {
-  if (src.includes("squarespace-cdn.com")) {
-    return {
-      src: `${src}?format=750w`,
-      srcSet: [500, 750, 1000].map((w) => `${src}?format=${w}w ${w}w`).join(", "),
-    };
-  }
-  const base = src.replace(/\.jpg$/, "");
+  const [, base, ext] = src.match(/^(.*)(\.[a-z]+)$/)!;
   return {
-    src: `${base}-750.jpg`,
-    srcSet: [500, 750, 1000].map((w) => `${base}-${w}.jpg ${w}w`).join(", "),
+    src: `${base}-750${ext}`,
+    srcSet: [500, 750, 1000].map((w) => `${base}-${w}${ext} ${w}w`).join(", "),
   };
 }
 

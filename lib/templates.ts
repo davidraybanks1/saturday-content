@@ -18,15 +18,13 @@ export type Template = {
   featured?: boolean;
 };
 
-const CDN = "https://images.squarespace-cdn.com/content/v1/636715889825f2344a236e6c";
-
 export const templates: Template[] = [
   {
     slug: "thought-leadership-hub-airtable",
     name: "Thought leadership hub",
     tool: "Airtable",
     legacySlug: "b2b-content-style-guide-xrsyd-4f53w-nlcl6",
-    image: `${CDN}/1693223723598-H7NPUMEJOT1IIVHLAJUD/Thought+leadership+development+hub.png`,
+    image: "/images/thought-leadership-hub-airtable.png",
     hook: "Needle-moving thought leadership programs uncover the hottest topics and get the right experts to deliver the message.",
     summary:
       "This template creates a central hub to help any marketing team manage, build, and activate their subject matter expert network.",
@@ -41,7 +39,7 @@ export const templates: Template[] = [
     name: "Narrative ID: Thought leadership",
     tool: "Notion",
     legacySlug: "b2b-content-style-guide-xrsyd-4f53w-3y9k3-dst6g-yzg3f",
-    image: `${CDN}/1694177553421-B0YLCGB8WXZVRB8QD8XF/Narrative+ID_product+image.png`,
+    image: "/images/narrative-id-notion.png",
     hook: "Thought leadership is more than slapping an expert’s name on a blog. But there’s usually not enough direction to do more than that.",
     summary:
       "The Narrative ID is a granular messaging and positioning framework that helps make each thought leader multidimensional and quality content easier to create.",
@@ -77,7 +75,7 @@ export const templates: Template[] = [
     name: "B2B content library",
     tool: "ClickUp",
     legacySlug: "b2b-content-style-guide-xrsyd",
-    image: `${CDN}/1694193167459-BQUDH07J0LY309EJ1UK9/B2B+content+database+-+ClickUp.png`,
+    image: "/images/b2b-content-library-clickup.png",
     hook: "Good content turns into bad content when it’s not used, connected, or up-to-date.",
     summary:
       "The B2B content library organizes assets into core marketing categories with scannable views so everyone knows what’s available and how to use it.",
@@ -103,7 +101,7 @@ export const templates: Template[] = [
     name: "Audience profile builder",
     tool: "Notion",
     legacySlug: "b2b-content-style-guide-xrsyd-4f53w-3y9k3-dst6g",
-    image: `${CDN}/1694030942901-SQ6IAGLB5OT5AGUBBQ02/Audience+profile+builder+-+Notion.png`,
+    image: "/images/audience-profile-builder-notion.png",
     hook: "People are complex. Audiences are messy. The profile builder helps marketers make sense of it all.",
     summary:
       "With guiding prompts and building block structure, this template helps uncover what makes your audience tick and then organizes it so it can be applied consistently.",
@@ -117,7 +115,7 @@ export const templates: Template[] = [
     name: "Everything content brief",
     tool: "Notion",
     legacySlug: "b2b-content-style-guide-xrsyd-4f53w-3y9k3",
-    image: `${CDN}/1694030647227-0YL5FBIPB84FRVKYRLKY/Content-brief+-+Notion.png`,
+    image: "/images/everything-content-brief-notion.png",
     hook: "Know what you’re creating, why you’re creating it, and who needs to be involved – always.",
     summary:
       "The Everything content brief consolidates the messy world of content creation into a single document that gets everyone on the same page before any work begins.",
@@ -131,7 +129,7 @@ export const templates: Template[] = [
     name: "Content style guide",
     tool: "Notion",
     legacySlug: "b2b-content-style-guide-xrsyd-4f53w-2f8nr",
-    image: `${CDN}/1694192729526-0CISD5N7D0PWOD7I3HPA/Group+22.png`,
+    image: "/images/content-style-guide-notion.png",
     hook: "As soon as you have more than one person writing, creating, or editing content, you need a style guide.",
     summary:
       "This guide includes everything from basic grammar mechanics to accessibility standards to best practices for common content types. You can use as-is or totally customize to fit your brand’s needs.",
