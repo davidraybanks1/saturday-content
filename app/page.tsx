@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { templates } from "@/lib/templates";
 import Hero from "./Hero";
 import TemplateGrid from "./TemplateGrid";
+import Arrow from "./Arrow";
 
 export default function Home() {
   const featured = templates.filter((t) => t.featured);
@@ -36,7 +37,7 @@ export default function Home() {
         </Suspense>
         <div className="col see-all">
           <Link href="/templates" className="mono-label underline" style={{ color: "var(--ink)" }}>
-            See all templates →
+            See all templates<Arrow />
           </Link>
         </div>
       </section>

@@ -29,8 +29,8 @@ if args:
 e = html.escape
 
 # Neither Host Grotesk nor Geist Mono has arrow glyphs, so draw them.
-NE = ('<svg viewBox="0 0 10 10" width=".8em" height=".8em" style="vertical-align:-.05em;margin-left:.35em" '
-      'fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 7.5 7.5 2.5M3.5 2.5h4v4"/></svg>')
+NE = ('<svg viewBox="0 0 12 12" width=".95em" height=".95em" style="vertical-align:-.12em;margin-left:.4em" '
+      'fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"><path d="M3 9 9 3M4 3h5v5"/></svg>')
 
 
 def font_faces():

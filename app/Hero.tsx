@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import Arrow from "./Arrow";
 
 type Seg = string | { box: string } | { hl: string };
 
@@ -43,7 +44,7 @@ export default function Hero() {
         </h1>
         <div className="cta-row">
           <Link href="/templates" className="pill">
-            Get a free template →
+            Get a free template<Arrow />
           </Link>
           <span className="note">Duplicate it into your workspace. Use it today.</span>
         </div>

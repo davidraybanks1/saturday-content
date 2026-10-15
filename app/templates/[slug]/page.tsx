@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTemplate, setupSteps, templates } from "@/lib/templates";
 import { fileName } from "../../TemplateCard";
+import Arrow from "../../Arrow";
 
 export function generateStaticParams() {
   return templates.map((t) => ({ slug: t.slug }));
@@ -49,7 +50,7 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
           <p className="summary">{t.summary}</p>
           <div className="detail-actions">
             <a href={t.templateUrl} className="pill" target="_blank" rel="noopener">
-              Open in {t.tool} ↗
+              Open in {t.tool}<Arrow dir="out" />
             </a>
             <a href={t.packet} className="pill ghost" download>
               Setup guide (PDF)
@@ -59,13 +60,13 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
             <p className="fineprint">
               Prefer to read the instructions online?{" "}
               <a href={t.guideUrl} target="_blank" rel="noopener">
-                Open the setup guide ↗
+                Open the setup guide<Arrow dir="out" />
               </a>
             </p>
           )}
           {t.credit && <p className="fineprint credit">{t.credit}</p>}
           <Link href="/templates" className="mono-label underline" style={{ color: "var(--ink)", justifySelf: "start" }}>
-            ← All templates
+            <Arrow dir="left" />All templates
           </Link>
         </div>
       </section>
