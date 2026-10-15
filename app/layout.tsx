@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Countdown from "./Countdown";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,28 +21,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>
       <body>
         <header className="site-header">
-          <div className="wrap">
-            <Link href="/" className="wordmark">
-              saturday content
+          <div className="col">
+            <Link href="/" className="logo">
+              saturday <span>content</span>
             </Link>
-            <nav className="nav">
-              <Link href="/templates">Templates</Link>
-              <Link href="/#about">About</Link>
-            </nav>
+            <Countdown />
           </div>
         </header>
-        <main>{children}</main>
-        <footer className="site-footer">
-          <div className="wrap">
-            <span>saturday content</span>
-            <span>Free templates for content teams.</span>
+        <nav className="site-nav">
+          <div className="col">
+            <Link href="/#templates">Templates</Link>
+            <Link href="/#how">How it works</Link>
+            <Link href="/#about">About</Link>
           </div>
+        </nav>
+        <main id="top">{children}</main>
+        <footer className="site-footer">
+          <div className="col mono-label">saturday content — tools for content teams</div>
         </footer>
       </body>
     </html>

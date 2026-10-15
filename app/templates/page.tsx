@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import TemplateLibrary from "./TemplateLibrary";
+import { templates } from "@/lib/templates";
+import TemplateGrid from "../TemplateGrid";
 
 export const metadata: Metadata = {
   title: "Templates",
@@ -10,13 +11,10 @@ export const metadata: Metadata = {
 
 export default function TemplatesPage() {
   return (
-    <section className="section">
-      <div className="wrap">
-        <span className="label">Templates and frameworks</span>
-        <Suspense>
-          <TemplateLibrary />
-        </Suspense>
-      </div>
+    <section style={{ paddingBottom: 80 }}>
+      <Suspense>
+        <TemplateGrid templates={templates} title="All templates" as="h1" />
+      </Suspense>
     </section>
   );
 }
