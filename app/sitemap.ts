@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { templates } from "@/lib/templates";
 
-const base = "https://www.saturdaycontent.co";
+const base = "https://saturdaycontent.co";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
