@@ -8,6 +8,8 @@ Needs: node >= 22 (to read the TS data), Python Playwright with Chromium,
 and node_modules installed (fonts come from @fontsource).
 """
 import html, json, pathlib, subprocess, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from guide_diagrams import DIAGRAMS
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FS = ROOT / "node_modules/@fontsource"
@@ -73,7 +75,9 @@ h1 { font-size: 40pt; line-height: 1.02; letter-spacing: -.04em; margin: 34px 0 
 h2 { font-size: 24pt; letter-spacing: -.04em; margin: 0; font-weight: 700; line-height: 1.05; }
 .section { padding: 26px 0; border-bottom: 1px solid #d3d0c8; }
 .section:last-of-type { border-bottom: 0; }
-.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 18px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; margin-top: 24px; }
+.col { display: flex; flex-direction: column; }
+.diagram { margin: 4px 6px 20px 0; }
 .cols h3 { font-size: 13pt; letter-spacing: -.02em; font-weight: 600; margin: 0 0 12px; }
 ol { list-style: none; margin: 0; padding: 0; counter-reset: s; display: grid; gap: 10px; }
 li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 9px; font-size: 10.5pt; line-height: 1.45; color: #2b2a27; }
@@ -101,7 +105,7 @@ def guide_html(t, n):
     if t.get("features"):
         feats = '<div class="section"><span class="mono">What’s inside</span><div class="feats">' + "".join(
             f'<div class="feat"><span class="chip">{i + 1:02d}</span><h3>{e(f["title"])}</h3><p>{e(f["body"])}</p></div>'
-            for i, f in enumerate(t["features"][:4])) + "</div></div>"
+            for i, f in enumerate(t["features"])) + "</div></div>"
     guide = ""
     if t.get("guideUrl"):
         guide = f'<div class="tip"><span class="chip">Setup notes</span><p>Prefer to read instructions online? <a href="{e(t["guideUrl"])}">Open the full setup guide{NE}</a></p></div>'
@@ -110,6 +114,17 @@ def guide_html(t, n):
                  f'Rename sections, cut what you don’t need, and add what your team does differently.</p></div>')
     credit = f'<p class="credit">{e(t["credit"])}</p>' if t.get("credit") else ""
     lis = lambda xs: "".join(f"<li>{e(x)}</li>" for x in xs)
+    have_svg, new_svg = DIAGRAMS[tool]
+    top2 = f'<div class="top"><span class="logo">saturday <span>content</span></span><span class="mono">{e(t["name"])} · {e(tool)}</span></div>'
+    foot = f'<div class="foot"><span class="mono">saturday content — tools for content teams</span><a class="mono" href="https://saturdaycontent.co/templates/{e(t["slug"])}">saturdaycontent.co</a></div>'
+    know = f'''<div class="section">
+    <span class="mono">Good to know</span>
+    <div class="tips">
+      <div class="tip"><span class="chip">Pro tip</span><p>Get familiar with the template on desktop before you use it in the {e(tool)} mobile app.</p></div>
+      {guide}
+    </div>
+    {credit}
+  </div>'''
     return f"""
 <section class="page">
   <div class="top"><span class="logo">saturday <span>content</span></span><span class="mono">Setup guide · {n} / {e(tool)}</span></div>
@@ -124,25 +139,18 @@ def guide_html(t, n):
   </div>
 </section>
 <section class="page">
-  <div class="top"><span class="logo">saturday <span>content</span></span><span class="mono">{e(t["name"])} · {e(tool)}</span></div>
-  <div class="section">
+  {top2}
+  <div class="section" style="border-bottom:0">
     <h2>Get started in <span class="hl">a few clicks</span>.</h2>
     <div class="cols">
-      <div><h3>Have a {e(tool)} account</h3><ol>{lis(s["have"])}</ol></div>
-      <div><h3>New to {e(tool)}</h3><ol>{lis(s["dont"])}</ol></div>
+      <div class="col"><div class="diagram">{have_svg()}</div><h3>Have a {e(tool)} account</h3><ol>{lis(s["have"])}</ol></div>
+      <div class="col"><div class="diagram">{new_svg()}</div><h3>New to {e(tool)}</h3><ol>{lis(s["dont"])}</ol></div>
     </div>
   </div>
-  {feats}
-  <div class="section">
-    <span class="mono">Good to know</span>
-    <div class="tips">
-      <div class="tip"><span class="chip">Pro tip</span><p>Get familiar with the template on desktop before you use it in the {e(tool)} mobile app.</p></div>
-      {guide}
-    </div>
-    {credit}
-  </div>
-  <div class="foot"><span class="mono">saturday content — tools for content teams</span><a class="mono" href="https://saturdaycontent.co/templates/{e(t["slug"])}">saturdaycontent.co</a></div>
-</section>"""
+  {know}
+  {foot}
+</section>
+{f'''<section class="page">{top2}{feats}{foot}</section>''' if feats else ""}"""
 
 
 from playwright.sync_api import sync_playwright
