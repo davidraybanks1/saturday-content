@@ -691,6 +691,94 @@ export const templates: Template[] = [
     tip: "Keep speaker names at the start of each turn in your transcripts, so every quote in the pack is attributed to the person who said it.",
     packet: "/packets/repurposing-engine-claude.pdf",
   },
+  {
+    slug: "content-audit-claude",
+    name: "Content audit",
+    tool: "Claude",
+    image: "/images/content-audit-claude.png",
+    hook: "Know which pages to keep, refresh, merge or retire, and why, before you touch a single URL.",
+    summary:
+      "Scores every page in your content inventory as Keep, Refresh, Merge or Retire with transparent rules, suggests a redirect target for each page that goes, and has Claude write the prioritized plan and refresh briefs.",
+    features: [
+      {
+        title: "A verdict for every page",
+        body: "Keep, Refresh, Merge or Retire, each with the reason in plain words. No black-box score to argue about.",
+      },
+      {
+        title: "Scores in your browser",
+        body: "Upload a CSV, map the columns, and get the full table without Claude. Your data stays on your machine until you choose to generate.",
+      },
+      {
+        title: "Finds near-duplicates",
+        body: "Pages with overlapping titles on the same topic get matched, and the weaker one is set to merge into the stronger URL.",
+      },
+      {
+        title: "Redirect targets included",
+        body: "Every merged or retired page gets a suggested target that is still live. Copy the whole redirect map in one click.",
+      },
+      {
+        title: "Rules you can tune",
+        body: "Thresholds for old, low traffic, declining and duplicate live in one commented block. Change them and the audit reruns.",
+      },
+      {
+        title: "A plan and briefs from Claude",
+        body: "Claude reviews the scored table cluster by cluster, writes a prioritized plan, and drafts a refresh brief for each top candidate.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/content-audit.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/content-audit-skill.zip" },
+    walkthroughLabel: "Build it on your own inventory",
+    walkthroughLead: "From demo to your own audit in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the page with the sample inventory of 62 invented Fieldbook pages. Click a verdict tile, sort the table, and look at the clusters.",
+      },
+      {
+        title: "Add the skill",
+        body: "Download the content-audit skill and add it in Claude under your skills settings.",
+      },
+      {
+        title: "Export your inventory",
+        body: "Pull the page list from your CMS and sessions and conversions from analytics, then join them into one CSV. The guide in the skill has the steps.",
+      },
+      {
+        title: "Run the audit",
+        body: "Attach the CSV and ask Claude to audit it. Check the verdicts, tune any rule that feels off, and ask for the plan or refresh briefs.",
+      },
+      {
+        title: "Share the audit page",
+        body: "Ask Claude to publish the audit page for your team. Anyone can upload next quarter's export and get the same scoring.",
+      },
+    ],
+    steps: {
+      have: [
+        "Download the skill and add it in Claude",
+        "Attach your inventory CSV in a new chat",
+        "Ask Claude to audit it with the content-audit skill",
+      ],
+      dont: [
+        "Create a free Claude account at claude.ai",
+        "Upgrade to a plan that supports skills",
+        "Add the skill, then attach your inventory and ask for an audit",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/content-audit-claude-screen-1.png",
+        alt: "The content audit page with the sample inventory loaded, showing the three source options and the column mapping step",
+        caption: "Load a CSV and match its columns",
+      },
+      {
+        src: "/images/content-audit-claude-screen-2.png",
+        alt: "The every-page table listing each URL with its verdict, sessions, change, conversions, backlinks and the reason for the verdict",
+        caption: "Every page, with its verdict and reason",
+      },
+    ],
+    tip: "Use at least 12 months of data and include last period's sessions, so seasonal pages aren't retired and slipping pages get caught.",
+    packet: "/packets/content-audit-claude.pdf",
+  },
 ];
 
 export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];

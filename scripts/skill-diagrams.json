@@ -70,5 +70,24 @@
       ],
       "button": "Generate the pack"
     }
+  },
+  "content-audit-claude": {
+    "skill": "content-audit",
+    "diagram": {
+      "title": "Content audit",
+      "modes": [
+        "Keep",
+        "Refresh",
+        "Merge",
+        "Retire"
+      ],
+      "picks": [
+        "Sessions",
+        "Conversions",
+        "Updated",
+        "Backlinks"
+      ],
+      "button": "Score my inventory"
+    }
   }
 }
