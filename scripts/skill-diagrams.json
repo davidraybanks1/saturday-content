@@ -1,0 +1,146 @@
+{
+  "thought-leader-profiler-claude": {
+    "skill": "thought-leader-profiler",
+    "diagram": {
+      "title": "Thought leader profiler",
+      "modes": [
+        "Profile",
+        "Pitch",
+        "Byline",
+        "Interview"
+      ],
+      "picks": [
+        "Expert",
+        "Pillar",
+        "Format",
+        "Hook"
+      ],
+      "button": "Build my prompt"
+    }
+  },
+  "content-brief-writer-claude": {
+    "skill": "content-brief-writer",
+    "diagram": {
+      "title": "Content brief writer",
+      "modes": [
+        "Write a brief",
+        "Check a brief"
+      ],
+      "picks": [
+        "Blog post",
+        "Content lead",
+        "MOFU",
+        "Dec 3"
+      ],
+      "button": "Build my prompt"
+    }
+  },
+  "style-guide-checker-claude": {
+    "skill": "style-guide-checker",
+    "diagram": {
+      "title": "Style guide checker",
+      "modes": [
+        "Check a draft",
+        "Rewrite to style",
+        "Explain a rule"
+      ],
+      "picks": [
+        "V3 passive",
+        "G1 headings",
+        "A1 link text",
+        "Must fix"
+      ],
+      "button": "Check with Claude"
+    }
+  },
+  "repurposing-engine-claude": {
+    "skill": "repurposing-engine",
+    "diagram": {
+      "title": "One source, every asset",
+      "modes": [
+        "Source",
+        "Atoms",
+        "Pack"
+      ],
+      "picks": [
+        "LinkedIn \u00d73",
+        "Sales email",
+        "Pull quotes",
+        "FAQ"
+      ],
+      "button": "Generate the pack"
+    }
+  },
+  "content-audit-claude": {
+    "skill": "content-audit",
+    "diagram": {
+      "title": "Content audit",
+      "modes": [
+        "Keep",
+        "Refresh",
+        "Merge",
+        "Retire"
+      ],
+      "picks": [
+        "Sessions",
+        "Conversions",
+        "Updated",
+        "Backlinks"
+      ],
+      "button": "Score my inventory"
+    }
+  },
+  "audience-profile-builder-claude": {
+    "skill": "audience-profile-builder",
+    "diagram": {
+      "title": "Audience profile builder",
+      "modes": [
+        "Build a profile",
+        "Compare segments",
+        "Find the gaps"
+      ],
+      "picks": [
+        "Sales calls",
+        "Reviews",
+        "Surveys",
+        "Tickets"
+      ],
+      "button": "Build my prompt"
+    }
+  },
+  "competitive-content-gap-claude": {
+    "skill": "competitive-content-gap",
+    "diagram": {
+      "title": "Competitive content gap",
+      "modes": [
+        "Cluster and prioritize",
+        "Brief the top gaps"
+      ],
+      "picks": [
+        "Gaps",
+        "Strengths",
+        "Shared",
+        "Whitespace"
+      ],
+      "button": "Build my prompt"
+    }
+  },
+  "editorial-calendar-planner-claude": {
+    "skill": "editorial-calendar-planner",
+    "diagram": {
+      "title": "Q1 content calendar",
+      "modes": [
+        "Grid",
+        "List",
+        "Counts"
+      ],
+      "picks": [
+        "Pipeline",
+        "Adoption",
+        "6 / week",
+        "2 launches"
+      ],
+      "button": "Fill with Claude"
+    }
+  }
+}

@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Live demo of the Editorial calendar planner, a free Claude skill from saturday content. Invented data for a fictional company.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Editorial calendar planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paper page, one working column; each step is a numbered rail; picks scroll sideways as card rows; output sits in an outlined "window". */
+:root{
+  --bg:#efede8; --surface:#f5f4f0; --surface-2:#e6e3dc; --ink:#141413; --muted:#55534d; --faint:#8d8a82; --line:#d3d0c8; --dot:#b9b5ab;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#fbe6ad; --bad:#b4442c; --bad-soft:#f3dcd3; --good:#2f7a4d;
+  --shadow-c:#141413;
+  --f-body:"Host Grotesk","Helvetica Neue",Arial,sans-serif; --f-mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(30px,4.4vw,44px);letter-spacing:-.04em;line-height:1.05}
+h2{font-size:22px;letter-spacing:-.03em}
+h3{font-size:16px;letter-spacing:-.02em;font-weight:600}
+.hl{background:var(--hl);color:var(--hl-ink);padding:0 .12em;border-radius:3px}
+.mono-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.brandbar{border-bottom:1px solid var(--line)}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-block:12px}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.03em;text-decoration:none}
+.logo span{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--hl)}
+
+header.head .wrap{padding-block:36px 8px;display:grid;gap:12px}
+.head-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.lede{font-size:18px;line-height:1.4;letter-spacing:-.01em;color:var(--muted);max-width:60ch;margin:0}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:6px;padding:5px 10px;font-family:var(--f-mono);font-size:12px;background:var(--bg)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.chip.live .dot{background:var(--hl);box-shadow:0 0 0 1.5px var(--ink)}
+nav.views{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px}
+nav.views button{border:0;background:none;padding:12px 0 9px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+nav.views button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+nav.views button:hover{color:var(--ink)}
+
+main{padding-block:28px 64px}
+.q{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.04em;font-weight:700;margin:0 0 18px}
+.modes{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.mode{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 14px 16px;display:grid;gap:8px;align-content:start}
+.mode:hover{border-color:var(--ink)}
+.mode[aria-pressed=true]{border:1.5px solid var(--ink);background:var(--hl);color:var(--hl-ink);box-shadow:4px 4px 0 var(--shadow-c)}
+.mode[aria-pressed=true] .mdesc{color:var(--hl-ink)}
+.mode .ic{width:26px;height:26px}
+.mode .mname{font-weight:700;font-size:19px;letter-spacing:-.03em}
+.mode .mdesc{font-size:13px;color:var(--muted);line-height:1.4}
+.mode .tick{position:absolute;right:12px;top:12px;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--faint)}
+.mode[aria-pressed=true] .tick{border-color:var(--hl-ink);background:var(--hl-ink);box-shadow:inset 0 0 0 3px var(--hl)}
+
+.steps{list-style:none;margin:30px 0 0;padding:0;display:grid}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:30px}
+.step::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:1.5px;background:var(--line)}
+.step:last-child::before{display:none}
+.num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;background:var(--bg);position:relative}
+.step.done .num{background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.step-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;min-height:34px;padding-top:4px}
+.step-h h3{font-size:19px;letter-spacing:-.03em;font-weight:700}
+.step-h .sub{display:block;margin-top:2px}
+.opt-note{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.step-b{grid-column:2;margin-top:12px;min-width:0}
+.rowwrap{position:relative}
+.cards{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);padding-right:40px!important;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 6px 10px 2px;scrollbar-width:thin}
+.opt{scroll-snap-align:start;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-height:132px;position:relative}
+.opt:hover{border-color:var(--ink)}
+.opt .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.opt .ib svg{width:20px;height:20px}
+.opt .on{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.opt .od{font-size:13px;color:var(--muted);line-height:1.35}
+.opt[aria-pressed=true]{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.opt[aria-pressed=true] .ib{background:var(--hl);color:var(--hl-ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt[aria-pressed=true]::after{content:"Selected";position:absolute;right:10px;top:10px;font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:2px 5px;border-radius:3px}
+.funnel .opt{min-height:0}
+textarea.box{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;line-height:1.5}
+textarea.box:focus{outline:none;border-color:var(--ink)}
+.hint{font-size:12px;color:var(--faint);margin-top:6px}
+.hint.req{color:var(--bad)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;padding:12px 20px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+.pill:hover:not(:disabled){background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.pill.ghost{background:transparent;color:var(--ink)}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.gen-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.gen-note{font-size:13px;color:var(--muted);max-width:60ch}
+.summary-line{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:10px}
+.summary-line b{font-weight:500;color:var(--ink);background:var(--hl-soft);padding:0 3px}
+
+.window{background:var(--bg);border:1.5px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--shadow-c);overflow:hidden;margin-right:6px}
+.window-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1.5px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap}
+.window-bar i{flex:none;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}
+.window-bar .wt{margin-left:4px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.otabs{display:flex;gap:4px}
+.otabs button{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.otabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out-body{padding:20px 22px;max-height:640px;overflow:auto}
+.out-empty{color:var(--muted);text-align:center;padding:28px}
+.out-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.out-actions .pill{padding:8px 14px;font-size:11px}
+.prose{max-width:70ch}
+.prose h1,.prose h2,.prose h3,.prose h4{margin:18px 0 6px;letter-spacing:-.02em}
+.prose h1{font-size:24px}.prose h2{font-size:20px}.prose h3{font-size:17px}.prose h4{font-size:15px}
+.prose > :first-child{margin-top:0}
+.prose p{margin:0 0 10px}
+.prose ul,.prose ol{margin:0 0 12px;padding-left:22px}
+.prose li{margin:3px 0}
+.prose blockquote{margin:0 0 12px;padding:4px 12px;border-left:3px solid var(--hl);color:var(--muted)}
+.prose code{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+.prose hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+pre.prompt{font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;margin:0;line-height:1.55}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.thinking i{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--hl);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation-duration:3s}}
+.msg{font-size:13px}
+.msg.err{color:var(--bad)}
+.ex-note{border-left:3px solid var(--hl);background:var(--surface);padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* library */
+.lib-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.lib-tools input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-width:min(100%,260px)}
+.seg{display:flex;gap:16px}
+.seg button{border:0;background:none;padding:4px 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+.seg button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.lib{display:grid;gap:10px}
+details.aud{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.aud[open]{border-color:var(--ink);background:var(--bg)}
+details.aud summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+details.aud summary::-webkit-details-marker{display:none}
+details.aud .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+details.aud .ib svg{width:20px;height:20px}
+.dim{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px}
+.aud-body{padding:0 14px 16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.fld h4{margin:0 0 4px;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld p,.fld li{margin:0;font-size:14px;line-height:1.45}
+.fld ul{margin:0;padding-left:18px}
+.fld.wide{grid-column:1 / -1}
+.lib-note{margin-top:18px;font-size:13px;color:var(--muted);max-width:70ch}
+
+.cta{margin-top:36px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:18px;background-color:var(--surface-2);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px}
+.cta > div{background:var(--bg);padding:8px 12px;border-radius:6px}
+footer.site{border-top:1px solid var(--line)}
+footer.site .wrap{padding-block:22px}
+
+/* planner: pillar colors (one per pillar, up to five) */
+:root{ --p1:#ffb800; --p2:#f5573a; --p3:#4a7bd6; --p4:#2f9d6a; --p5:#9a6fd6; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --p2:#f47a5e; --p3:#7aa2ec; --p4:#5cc08f; --p5:#b896ee; } }
+:root[data-theme="dark"]{ --p2:#f47a5e; --p3:#7aa2ec; --p4:#5cc08f; --p5:#b896ee; }
+/* planner: inputs */
+.goal-hint{font-size:13px;color:var(--muted);margin-top:6px;min-height:20px}
+.goal-hint.req{color:var(--bad)}
+.in{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-width:0;max-width:100%;width:100%}
+.in:focus{outline:none;border-color:var(--ink)}
+.kv .in{width:auto}
+.kv input.in[type=number]{width:90px}
+.rows{display:grid;gap:8px}
+.row{display:grid;gap:8px;align-items:center;grid-template-columns:150px minmax(0,1fr) 120px 190px 34px}
+.row.pillar{grid-template-columns:16px minmax(0,1fr) 34px}
+.row.chan{grid-template-columns:38px minmax(0,130px) 76px 130px minmax(0,1fr)}
+.rm{width:34px;height:34px;border:1px solid var(--line);background:var(--surface);border-radius:6px;font-size:16px;line-height:1;color:var(--muted)}
+.rm:hover:not(:disabled){border-color:var(--ink);color:var(--ink)}
+.rm:disabled{opacity:.4;cursor:not-allowed}
+.add{margin-top:10px;border:1px dashed var(--faint);background:none;border-radius:6px;padding:7px 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.add:hover:not(:disabled){border-color:var(--ink);color:var(--ink)}
+.add:disabled{opacity:.4;cursor:not-allowed}
+.swatch{display:inline-block;flex:none;width:14px;height:14px;border-radius:4px;background:var(--pc);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.chan .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.chan .ib svg{width:20px;height:20px}
+.chan .cn{font-weight:600;letter-spacing:-.01em}
+.chan .ce{font-size:12px;color:var(--faint)}
+.kv{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:end}
+.kv label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.row-head{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+@media (max-width:720px){
+  .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 34px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .row .ev-name{grid-column:1 / -1;order:-1}
+  .row.ev-head,.row.chan-head{display:none}
+  .row.pillar{grid-template-columns:16px minmax(0,1fr) 34px;padding-bottom:0;border:0}
+  .row.chan{grid-template-columns:38px minmax(0,1fr) 64px minmax(0,110px);padding-bottom:0;border:0}
+  .row.chan .ce{display:none}
+}
+/* planner: calendar */
+.cal-wrap{overflow-x:auto}
+table.cal{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.cal th{font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+table.cal td{vertical-align:top;padding:8px;border-bottom:1px solid var(--line)}
+table.cal tr.over td{background:var(--bad-soft)}
+table.cal td.wk{width:110px}
+.wk b{font-family:var(--f-mono);font-size:12px;font-weight:500;display:block;white-space:nowrap}
+.wk > span{font-size:12px;color:var(--muted)}
+.evm{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10px;letter-spacing:.02em;background:var(--ink);color:var(--bg)!important;border-radius:3px;padding:2px 5px;line-height:1.3}
+.slot{border:1px solid var(--line);border-left:4px solid var(--pc);background:var(--surface);border-radius:5px;padding:4px 6px;margin-bottom:5px;display:grid;gap:1px;line-height:1.3}
+.slot.camp{border-color:var(--ink);border-left-color:var(--pc);box-shadow:2px 2px 0 var(--shadow-c)}
+.slot .sd{font-family:var(--f-mono);font-size:10px;color:var(--faint);letter-spacing:.02em}
+.slot .sp{font-size:11px;color:var(--muted)}
+.slot .st{font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+.slot .stt{font-size:13px;color:var(--ink);line-height:1.25;margin:1px 0}
+.slot .sid{font-family:var(--f-mono);font-size:10px;color:var(--faint)}
+.slot .sr{font-size:11px;color:var(--muted)}
+.slot .sx{font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:var(--hl);color:var(--hl-ink);border-radius:3px;padding:0 4px;width:max-content}
+.load{font-family:var(--f-mono);font-size:12px;white-space:nowrap}
+.load .bar{display:block;height:6px;border-radius:3px;background:var(--surface-2);margin-top:4px;width:64px;overflow:hidden}
+.load .bar i{display:block;height:100%;background:var(--good)}
+.over .load .bar i{background:var(--bad)}
+.over .load{color:var(--bad)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lw{display:grid;gap:16px}
+.lw h4{margin:0 0 6px;font-size:14px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.lw h4 .mono-label{font-size:10px}
+.lw h4 .flag{font-family:var(--f-mono);font-size:10px;color:var(--bad);letter-spacing:.06em;text-transform:uppercase}
+.lw ul{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.lw li{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;font-size:13px;border-left:4px solid var(--pc);padding-left:8px}
+.lw li .d{font-family:var(--f-mono);font-size:11px;color:var(--muted);padding-top:1px}
+.lw li .t{color:var(--muted)}
+@media (max-width:520px){.lw li{grid-template-columns:minmax(0,1fr);gap:0}}
+.counts{display:grid;gap:22px}
+table.ct{border-collapse:collapse;font-size:12px;min-width:640px;width:100%}
+table.ct th,table.ct td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+table.ct th{font-family:var(--f-mono);font-size:10px;font-weight:400;color:var(--muted)}
+table.ct td:first-child,table.ct th:first-child{text-align:left}
+table.ct td.z{color:var(--faint)}
+table.ct tr.tot td{font-weight:600;border-top:1.5px solid var(--ink)}
+table.ct td.bad{color:var(--bad);font-weight:600}
+.flags{margin:0;padding-left:18px;font-size:13px}
+.flags li{margin:4px 0}
+.flag-list{color:var(--bad)}
+.flag-list li span{color:var(--ink)}
+.ok-line{font-size:13px;color:var(--good)}
+.applied{font-size:13px;color:var(--good)}
+.modes.small .mode .mname{font-size:17px}
+.tl{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:70px 150px minmax(0,1fr);gap:8px;font-size:13px}
+.tl li .o{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+@media (max-width:560px){.tl li{grid-template-columns:56px minmax(0,1fr)}.tl li > span:last-child{grid-column:2}}
+</style>
+
+<div class="brandbar" id="brandbar"><div class="wrap"><a class="logo" id="brandLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">saturday <span>content</span></a><span class="tag" id="brandTag">Editorial calendar planner · demo</span></div></div>
+
+<header class="head">
+  <div class="wrap">
+    <div class="head-row">
+      <div style="display:grid;gap:10px;min-width:0">
+        <span class="mono-label" id="eyebrow"></span>
+        <h1 id="title">Editorial <span class="hl">calendar planner</span></h1>
+      </div>
+      <span class="chip" id="modeChip"><span class="dot"></span><span id="modeChipText">Checking for Claude…</span></span>
+    </div>
+    <p class="lede" id="lede"></p>
+    <nav class="views" role="tablist">
+      <button type="button" role="tab" id="v-planner" aria-selected="true" data-view="planner">Planner</button>
+      <button type="button" role="tab" id="v-method" aria-selected="false" data-view="method">How it plans</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="planner" role="tabpanel" aria-labelledby="v-planner">
+    <h2 class="q">Plan the quarter</h2>
+    <ol class="steps" id="steps"></ol>
+  </section>
+  <section id="method" role="tabpanel" aria-labelledby="v-method" hidden>
+    <div class="lib" id="methodList"></div>
+    <p class="lib-note" id="methodNote"></p>
+  </section>
+  <div class="cta" id="cta">
+    <div><strong>Get the editorial calendar planner skill</strong><div class="muted" style="font-size:14px">Claude builds this planner around your goals, launches and team, then fills and rebalances the calendar with you.</div></div>
+    <a class="pill" id="ctaLink" href="https://saturdaycontent.co/templates/editorial-calendar-planner-claude" target="_blank" rel="noopener">Get the free skill →</a>
+  </div>
+</main>
+<footer class="site" id="siteFooter"><div class="wrap mono-label" id="footerText"></div></footer>
+
+<script>
+/* =====================================================================
+   CONFIG — who the planner plans for. See CUSTOMIZE.md.
+   ===================================================================== */
+const CONFIG = {
+  title: "Editorial calendar planner",
+  company: "Fieldbook",
+  about: "Fieldbook is a content operations platform for B2B marketing teams. It puts briefs, the editorial calendar, reviews and approvals, a searchable content library, and content performance in one workspace.",
+  voice: "Plainspoken, specific and a little wry. Short sentences. Concrete examples over abstractions. Never hypey; no exclamation points; no 'revolutionize', 'unlock' or 'game-changer'.",
+  demoNote: "Fieldbook is a fictional company. Its quarter, launches and team are invented so you can see how the planner works.",
+  brand: { name: "saturday content", url: "https://saturdaycontent.co", tag: "Editorial calendar planner · demo" },
+  footer: "saturday content — tools for content teams",
+  ctaUrl: "https://saturdaycontent.co/templates/editorial-calendar-planner-claude"
+};
+
+/* =====================================================================
+   GOALS — pick up to three per quarter. `fit` scores how well each
+   channel serves the goal (0–3); the planner uses it to tag evergreen
+   slots. `play` is what Claude is told about the goal.
+   ===================================================================== */
+const GOALS = [
+  { id: "awareness", name: "Awareness", icon: "megaphone", blurb: "Reach people who don't know you yet",
+    fit: { blog: 2, linkedin: 3, newsletter: 0, webinar: 1, video: 3 },
+    play: "Reach new people in the audience. Lead with the problem and a useful idea, not the product. Measured by reach, new followers and new subscribers." },
+  { id: "pipeline", name: "Pipeline", icon: "chart", blurb: "Content that comes before the demo",
+    fit: { blog: 2, linkedin: 1, newsletter: 2, webinar: 3, video: 1 },
+    play: "Move evaluators toward a demo or trial. Teach a method, show where the product fits, end with a specific next step. Measured by demo requests, trials and content-influenced pipeline." },
+  { id: "adoption", name: "Product adoption", icon: "cube", blurb: "Get customers using what shipped",
+    fit: { blog: 2, linkedin: 1, newsletter: 3, webinar: 2, video: 3 },
+    play: "Help existing customers find and use features. How-tos, walkthroughs, use cases. Measured by feature usage after publishing." },
+  { id: "retention", name: "Retention", icon: "target", blurb: "Keep customers getting value",
+    fit: { blog: 1, linkedin: 0, newsletter: 3, webinar: 3, video: 2 },
+    play: "Deepen value for current customers: best practices, office hours, community stories. Measured by engagement from customer accounts and renewal signals." },
+  { id: "thought", name: "Thought leadership", icon: "bulb", blurb: "A point of view people repeat",
+    fit: { blog: 3, linkedin: 3, newsletter: 2, webinar: 2, video: 1 },
+    play: "Stake out a clear point of view on how content teams should work. Opinionated, specific, bylined. Measured by shares, citations and inbound invitations." }
+];
+
+/* =====================================================================
+   CHANNELS — the formats the team publishes. `effort` is how many
+   "pieces" one item costs against weekly capacity (a blog post = 1).
+   `days` are the default publish days, in order. `code` is used in slot IDs.
+   ===================================================================== */
+const CHANNELS = [
+  { id: "blog", name: "Blog", code: "BLOG", icon: "doc", effort: 1, days: [2, 4] },
+  { id: "linkedin", name: "LinkedIn", code: "LI", icon: "chat", effort: 0.5, days: [1, 3, 5, 2, 4] },
+  { id: "newsletter", name: "Newsletter", code: "NL", icon: "mail", effort: 1, days: [4, 2] },
+  { id: "webinar", name: "Webinar", code: "WEB", icon: "video", effort: 3, days: [3] },
+  { id: "video", name: "Video", code: "VID", icon: "play", effort: 2, days: [5, 3] }
+];
+
+/* =====================================================================
+   LAUNCH KITS — what the planner schedules around each launch or event.
+   week: offset from the event's week (negative = before). flex: how many
+   weeks either side it may take over an existing recurring slot of that
+   channel instead of adding a new piece. core: always placed, even if the
+   channel has no recurring cadence. See references/launch-timeline.md.
+   ===================================================================== */
+const KITS = {
+  launch: { name: "Launch", pieces: [
+    { week: -2, ch: "linkedin", phase: "Teaser", what: "Name the problem the launch solves, without the product" },
+    { week: -1, ch: "blog", phase: "Teaser", what: "The problem post: why the old way breaks" },
+    { week: -1, ch: "newsletter", phase: "Teaser", flex: 1, what: "Heads-up to subscribers: something is coming" },
+    { week: 0, ch: "blog", phase: "Launch", sameDay: true, what: "The announcement: what it is, who it's for, how to try it" },
+    { week: 0, ch: "linkedin", phase: "Launch", sameDay: true, what: "Launch post from the company page or a leader" },
+    { week: 0, ch: "video", phase: "Launch", flex: 1, what: "Two-minute walkthrough" },
+    { week: 0, ch: "newsletter", phase: "Launch", flex: 1, what: "Launch issue for customers" },
+    { week: 1, ch: "blog", phase: "Follow-up", what: "How-to or use case for the new feature" },
+    { week: 1, ch: "linkedin", phase: "Follow-up", what: "What early users did first" },
+    { week: 2, ch: "linkedin", phase: "Follow-up", what: "One detail people missed" },
+    { week: 3, ch: "blog", phase: "Follow-up", what: "Deeper use case or customer story" }
+  ] },
+  webinar: { name: "Webinar", pieces: [
+    { week: -3, ch: "linkedin", phase: "Promo", what: "Announce the session and the one thing attendees will leave with" },
+    { week: -2, ch: "newsletter", phase: "Promo", flex: 1, what: "Invitation to subscribers" },
+    { week: -2, ch: "blog", phase: "Promo", what: "Problem post that ends with the registration link" },
+    { week: -1, ch: "linkedin", phase: "Promo", what: "Speaker post: a question the session answers" },
+    { week: 0, ch: "webinar", phase: "Event", core: true, sameDay: true, what: "The live session" },
+    { week: 0, ch: "linkedin", phase: "Event", sameDay: true, what: "Last call on the day" },
+    { week: 1, ch: "blog", phase: "Follow-up", what: "Recap with the three strongest answers" },
+    { week: 1, ch: "video", phase: "Follow-up", flex: 1, what: "Clips from the session" },
+    { week: 2, ch: "newsletter", phase: "Follow-up", flex: 1, what: "Recording and recap for everyone who missed it" }
+  ] },
+  event: { name: "Event", pieces: [
+    { week: -2, ch: "linkedin", phase: "Promo", what: "Where to find us and what we'll talk about" },
+    { week: 0, ch: "linkedin", phase: "Event", sameDay: true, what: "From the floor: one idea worth sharing" },
+    { week: 1, ch: "blog", phase: "Follow-up", what: "What we heard: takeaways for people who weren't there" },
+    { week: 1, ch: "newsletter", phase: "Follow-up", flex: 1, what: "Event takeaways for subscribers" }
+  ] }
+};
+
+/* =====================================================================
+   SAMPLE — the Fieldbook quarter the page loads with. Invented.
+   ===================================================================== */
+const SAMPLE_PLAN = {
+  start: "2027-01-04",
+  capacity: 6,
+  goals: ["pipeline", "adoption", "thought"],
+  events: [
+    { date: "2027-02-02", name: "Briefs 2.0 launch", type: "launch", pillar: 0 },
+    { date: "2027-02-24", name: "Webinar: Reviews in two rounds", type: "webinar", pillar: 1 },
+    { date: "2027-03-16", name: "Performance dashboard launch", type: "launch", pillar: 2 }
+  ],
+  pillars: ["Briefs that work", "Reviews without the wait", "Proving content's value", "Running a content team"],
+  cadence: { blog: { n: 2, per: "week" }, linkedin: { n: 3, per: "week" }, newsletter: { n: 2, per: "month" }, webinar: { n: 0, per: "month" }, video: { n: 2, per: "month" } },
+  assets: "Ebook: The brief that saves a review round\nChecklist: Review-cycle cleanup\nWebinar recording: Calendar cleanup (Q4)\nNotes from three customer interviews on approvals"
+};
+
+/* ---------------- worked examples (shown when Claude isn't available) ---------------- */
+const EXAMPLES = {
+  fill: { note: "Fill for the Fieldbook sample, weeks 1–4. Live, Claude writes a title and angle for every slot and they appear in the calendar.", text:
+`| ID | Working title | Angle |
+|---|---|---|
+| W01-LI-1 | The brief is where reviews are won or lost | Most review rounds are a brief that arrived late. Name the pattern and ask which brief field teams skip. |
+| W01-BLOG-1 | Two review rounds, not four | A practical guide to cutting review rounds: one owner per round, comments sorted before they're sent, a clear "done". |
+| W01-LI-2 | Your content report leads with the wrong number | Output tells leadership the team is busy. Suggest three numbers that tie to budget instead. |
+| W01-BLOG-2 | The 15-minute content standup | An agenda that replaces two status meetings, with what to cut and what to keep. Ends with a template to try this week. |
+| W01-NL-1 | Issue 1: start the quarter with better briefs | Lead with the brief template, show where it lives in Fieldbook, one reader question. |
+| W01-LI-3 | The second reviewer problem | One more approver can add a week. Ask readers how many approvers their pieces really need. |
+| W02-LI-1 | The Monday question we ask every writer | One question that surfaces blocked work early. Invite replies with theirs. |
+| W02-BLOG-1 | Measuring what a piece did, not what it got | Separate views from outcomes with one worked example and a simple per-asset scorecard. |
+| W02-LI-2 | Where review comments go to die | Feedback split across email, docs and chat. Show how one review thread changes the second round. |
+| W02-BLOG-2 | Five fields every content brief needs | Audience by role, the one belief, the objection, the proof, the next step. With a copyable template. |
+| W02-LI-3 | How to say no to a content request | An intake rule that protects the calendar without making enemies. |
+| W02-VID-1 | Repurpose: the brief that saves a review round | A three-minute walkthrough of the ebook's main idea, showing a brief before and after. |
+| W03-LI-1 | Teaser: the brief that wrote itself into review | Problem only. A brief missing its audience becomes four review rounds. No product. |
+| W03-BLOG-1 | A content team's first 90 days of reporting | What to set up in month one, two and three so the quarterly review has answers. |
+| W03-LI-2 | Approvals, from three customer calls | Paraphrased themes from the interview notes on approvals. No names, no quotes until approved. |
+| W03-BLOG-2 | Content cost per asset, honestly counted | Include review and design time, not just writing. A worksheet with [placeholder: example cost figures]. |
+| W03-NL-1 | Teaser issue: the brief is getting an upgrade | Heads-up to subscribers with the problem, a date to watch for, and no feature list yet. |
+| W03-LI-3 | One editor, twelve writers | What changes when a team grows past the point where the editor can read everything. |
+| W04-LI-1 | The calendar isn't the plan | A calendar shows dates. A plan shows why each piece exists. Ask readers which one their team has. |
+| W04-BLOG-1 | Teaser: why briefs break at handoff | The problem post for the Briefs 2.0 launch. Where context gets lost between strategist, writer and reviewer. |
+| W04-LI-2 | Review checklists that people actually use | Five checks that catch most rework, drawn from the review-cycle cleanup checklist. |
+| W04-BLOG-2 | Which content comes before the demo? | Reading the path to a demo request without a data team. Where Fieldbook's per-asset view helps. |
+| W04-LI-3 | Hiring your second content person | What to hand off first, and what to keep, when the team doubles. |
+| W04-VID-1 | Clearing the review queue in five minutes | A short screen walkthrough of sorting a review queue by due date and owner. |
+
+- Week 3 has two LinkedIn posts on team operations. Consider swapping W03-LI-3 for a briefs-pillar post to warm up the launch.
+- The customer interview themes in W03-LI-2 need approval before they're published.` },
+  rebalance: { note: "Rebalance for the Fieldbook sample.", text:
+`**Verdict:** The plan serves pipeline and adoption well, but week 8 runs over capacity and thought leadership has no anchor piece.
+
+## What's working
+- Both launches get a teaser two weeks out and follow-up for three weeks.
+- The webinar has three weeks of promotion and a recap that feeds the newsletter.
+- Pillars come out even across the quarter, 20 slots each.
+
+## Proposed changes
+
+| Change | Weeks | Why | Capacity effect |
+|---|---|---|---|
+| Move the webinar clips video (W08-VID-1) to week 9 | 8 → 9 | Week 8 is 6.5 of 6 with the webinar itself in it | Week 8 −2, week 9 +2, then drop one evergreen LinkedIn post in week 9 |
+| Drop one evergreen LinkedIn post in week 6 | 6 | Launch follow-up and webinar promo stack up | −0.5 |
+| Make W03-BLOG-1 and W09 evergreen blog posts a bylined point-of-view pair | 3, 9 | Thought leadership is tagged on many slots but has no flagship | None |
+| Swap W03-LI-3 to the briefs pillar | 3 | Warms up the Briefs 2.0 launch the following week | None |
+| Turn the webinar recording into the week 10 newsletter | 10 | Adoption needs a customer piece between launches | Reuse, half effort |
+| Add a "what we learned this quarter" post | 13 | Week 13 is light at 3.5 and the quarter needs a close | +1 |
+
+## Revised load
+- Week 8 drops to 4.5. Week 9 rises to [placeholder: recount after the swap], within 6.
+- No week exceeds capacity after these changes.
+
+## Risks
+- If the webinar date moves, move its whole kit, not single pieces.
+- Customer interview themes need approval before they're published.` }
+};
+
+/* ---------------- icons ---------------- */
+const ICON = {
+  pen: '<path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/><path d="M14 7l3 3"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
+  play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/>',
+  megaphone: '<path d="M3 10v4h3l8 5V5L6 10z"/><path d="M18 9a4 4 0 0 1 0 6"/>',
+  chart: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  cube: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8"/>',
+  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  scale: '<path d="M12 4v16M5 20h14M4 8h16M7 8l-3 6h6zM17 8l-3 6h6z"/>',
+  rocket: '<path d="M12 2c4 3 5 8 3 13H9C7 10 8 5 12 2z"/><path d="M9 15l-3 4M15 15l3 4"/><circle cx="12" cy="9" r="1.5"/>',
+  gear: '<circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  recycle: '<path d="M7 19H4l3-5M17 19h3l-3-5M9 5l3-2 3 2M7 14l-2-3 3-5h8l3 5-2 3"/>'
+};
+const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.doc}</svg>`;
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("ecp:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("ecp:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const byId = (list, id) => list.find(x => x.id === id);
+const clone = o => JSON.parse(JSON.stringify(o));
+const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEKS = 13;
+const MS_DAY = 864e5;
+const parseDate = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN; };
+const fmt = t => { const d = new Date(t); return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+const iso = t => new Date(t).toISOString().slice(0, 10);
+const num = n => String(Math.round(n * 100) / 100);
+
+const S = Object.assign({ view: "planner", calTab: (window.innerWidth || 1000) < 640 ? "list" : "grid", mode: "fill" }, clone(SAMPLE_PLAN), store.get("state", {}));
+let SAMPLE = null, CTL = null, OUT = { tab: "example", text: "", status: "idle", msg: "", truncated: false };
+let FILL = store.get("fill", null); // { sig, rows: {id: {title, angle}} }
+let PLAN = null;
+
+/* ---------------- markdown-lite ---------------- */
+function md(src) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const lines = String(src).replace(/\r/g, "").split("\n"); let html = "", list = null, para = [], table = null;
+  const flushP = () => { if (para.length) { html += `<p>${inline(para.join(" "))}</p>`; para = []; } };
+  const flushL = () => { if (list) { html += `</${list}>`; list = null; } };
+  const flushT = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()); html += `<div style="overflow-x:auto"><table style="border-collapse:collapse;margin:0 0 12px">${[h, ...rows].map((r, i) => `<tr>${cells(r).map(c => `<${i ? "td" : "th"} style="border-bottom:1px solid var(--line);padding:4px 12px 4px 0;text-align:left;vertical-align:top">${inline(c)}</${i ? "td" : "th"}>`).join("")}</tr>`).join("")}</table></div>`; table = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^\s*\|.*\|\s*$/.test(l)) { flushP(); flushL(); (table = table || []).push(l.trim()); continue; } else flushT();
+    let m;
+    if (!l.trim()) { flushP(); flushL(); continue; }
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { flushP(); flushL(); html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(l.trim())) { flushP(); flushL(); html += "<hr>"; continue; }
+    if ((m = l.match(/^>\s?(.*)/))) { flushP(); flushL(); html += `<blockquote>${inline(m[1])}</blockquote>`; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (list !== "ul") { flushL(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (list !== "ol") { flushL(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    flushL(); para.push(l.trim());
+  }
+  flushP(); flushL(); flushT();
+  return html;
+}
+
+/* =====================================================================
+   THE PLANNER — deterministic. Same inputs, same calendar.
+   1. Recurring slots per channel (per-month items go to the lightest week in their stretch)
+   2. Launch and event kits (take over a nearby recurring slot, or add a piece)
+   3. Reuse assets attached to evergreen slots (half effort)
+   4. Capacity: move evergreen slots out of over-capacity weeks to the nearest week with room
+   5. IDs, then pillars rotated evenly, then goals by channel fit
+   6. Flags
+   ===================================================================== */
+function buildPlan(s) {
+  const notes = [], flags = [];
+  let start = parseDate(s.start);
+  if (isNaN(start)) start = parseDate(SAMPLE_PLAN.start);
+  const dow = new Date(start).getUTCDay();
+  const monday = start - ((dow + 6) % 7) * MS_DAY;
+  const weekStart = w => monday + w * 7 * MS_DAY; // w is 0-based
+  const dayDate = (w, d) => weekStart(w) + (d - 1) * MS_DAY; // d: 1=Mon..7=Sun
+  const cap = Math.max(0.5, +s.capacity || 0);
+  const pillars = (s.pillars || []).map(p => p.trim()).filter(Boolean);
+  const effort = (ch, reuse) => (byId(CHANNELS, ch)?.effort ?? 1) * (reuse ? 0.5 : 1);
+  const slots = [];
+  const load = () => { const L = Array(WEEKS).fill(0); slots.forEach(x => L[x.w] += effort(x.ch, x.reuse)); return L; };
+
+  // 1. recurring
+  CHANNELS.forEach(c => {
+    const cad = s.cadence[c.id] || { n: 0, per: "week" }; const n = Math.max(0, Math.floor(+cad.n || 0));
+    if (!n) return;
+    if (cad.per === "week") {
+      for (let w = 0; w < WEEKS; w++) for (let k = 0; k < n; k++) slots.push({ w, ch: c.id, day: c.days[k % c.days.length], kind: "evergreen" });
+    }
+  });
+  CHANNELS.forEach(c => {
+    const cad = s.cadence[c.id] || { n: 0, per: "week" }; const n = Math.max(0, Math.floor(+cad.n || 0));
+    if (!n || cad.per !== "month") return;
+    const total = Math.min(n * 3, WEEKS * 2);
+    for (let i = 0; i < total; i++) {
+      const a = Math.floor(i * WEEKS / total), b = Math.max(a + 1, Math.floor((i + 1) * WEEKS / total));
+      const L = load(); let best = a;
+      for (let w = a; w < b; w++) if (L[w] < L[best]) best = w;
+      const k = slots.filter(x => x.w === best && x.ch === c.id).length;
+      slots.push({ w: best, ch: c.id, day: c.days[k % c.days.length], kind: "evergreen" });
+    }
+  });
+
+  // 2. kits
+  const evs = (s.events || []).map((e, i) => ({ ...e, i, t: parseDate(e.date) })).filter(e => e.name && e.name.trim() && !isNaN(e.t)).sort((a, b) => a.t - b.t);
+  const qEnd = weekStart(WEEKS);
+  evs.forEach(e => {
+    if (e.t < monday || e.t >= qEnd) { flags.push(`“${e.name}” (${fmt(e.t)}) is outside this quarter, so it has no content scheduled.`); e.out = true; return; }
+    e.w = Math.floor((e.t - monday) / (7 * MS_DAY));
+    e.dow = ((new Date(e.t).getUTCDay() + 6) % 7) + 1;
+    const kit = KITS[e.type] || KITS.launch;
+    const pi = Math.min(Math.max(0, +e.pillar || 0), Math.max(0, pillars.length - 1));
+    kit.pieces.forEach(p => {
+      const cad = s.cadence[p.ch]; const active = cad && +cad.n > 0;
+      if (!active && !p.core) return;
+      const w = e.w + p.week;
+      if (w < 0 || w >= WEEKS) { notes.push(`${p.phase} ${byId(CHANNELS, p.ch).name} piece for “${e.name}” falls ${w < 0 ? "before" : "after"} the quarter and was left out.`); return; }
+      const tag = { kind: "campaign", event: e.name, etype: e.type, phase: p.phase, what: p.what, pillarIdx: pi };
+      const flex = p.flex || 0; let found = null;
+      // teasers and promo only look earlier, follow-ups only later, so a piece never crosses its event week
+      for (let d = 0; d <= flex && !found; d++) for (const ww of d ? (p.week < 0 ? [w - d] : p.week > 0 ? [w + d] : [w + d, w - d]) : [w]) {
+        if (ww < 0 || ww >= WEEKS || found) continue;
+        found = slots.find(x => x.w === ww && x.ch === p.ch && x.kind === "evergreen");
+      }
+      if (found) Object.assign(found, tag, p.sameDay && found.w === e.w ? { day: e.dow } : {});
+      else slots.push({ w, ch: p.ch, day: p.sameDay ? e.dow : byId(CHANNELS, p.ch).days[0], ...tag, added: true });
+    });
+  });
+  for (let i = 1; i < evs.length; i++) if (!evs[i].out && !evs[i - 1].out && evs[i].w - evs[i - 1].w < 2)
+    flags.push(`“${evs[i - 1].name}” and “${evs[i].name}” are less than two weeks apart. Their teasers and follow-ups overlap.`);
+
+  // 3. reuse
+  const assets = String(s.assets || "").split("\n").map(x => x.trim()).filter(Boolean);
+  if (assets.length) {
+    const pool = slots.filter(x => x.kind === "evergreen" && ["linkedin", "blog", "video", "newsletter"].includes(x.ch)).sort((a, b) => a.w - b.w || a.day - b.day);
+    const pref = ch => ({ video: 0, linkedin: 1, blog: 2, newsletter: 3 })[ch];
+    assets.forEach((a, i) => {
+      if (!pool.length) return;
+      const target = Math.floor((i + 0.5) * WEEKS / assets.length);
+      const cand = pool.filter(x => !x.reuse).sort((x, y) => Math.abs(x.w - target) - Math.abs(y.w - target) || pref(x.ch) - pref(y.ch) || x.day - y.day)[0];
+      if (cand) cand.reuse = a;
+    });
+  }
+
+  // 4. capacity
+  let L = load();
+  for (let w = 0; w < WEEKS; w++) {
+    let guard = 0;
+    while (L[w] > cap + 1e-9 && guard++ < 40) {
+      const movable = slots.filter(x => x.w === w && x.kind === "evergreen").sort((a, b) => effort(b.ch, b.reuse) - effort(a.ch, a.reuse));
+      let moved = false;
+      for (const m of movable) {
+        const e = effort(m.ch, m.reuse);
+        for (const d of [1, -1, 2, -2]) {
+          const t = w + d; if (t < 0 || t >= WEEKS) continue;
+          if (L[t] + e <= cap + 1e-9 && L[w] - e >= 0) { m.w = t; m.movedFrom = w; L = load(); moved = true; notes.push(`Moved a ${byId(CHANNELS, m.ch).name} slot from week ${w + 1} to week ${t + 1} to stay within capacity.`); break; }
+        }
+        if (moved) break;
+      }
+      if (!moved) break;
+    }
+  }
+  L = load();
+
+  // 5. ids, pillars, goals
+  const chOrder = id => CHANNELS.findIndex(c => c.id === id);
+  slots.sort((a, b) => a.w - b.w || a.day - b.day || chOrder(a.ch) - chOrder(b.ch));
+  const seen = {};
+  slots.forEach(x => {
+    const key = `${x.w}-${x.ch}`; seen[key] = (seen[key] || 0) + 1;
+    x.id = `W${String(x.w + 1).padStart(2, "0")}-${byId(CHANNELS, x.ch).code}-${seen[key]}`;
+    if (x.movedFrom != null) {
+      const d = [x.day, ...byId(CHANNELS, x.ch).days];
+      x.day = d.find(dd => !slots.some(o => o !== x && o.w === x.w && o.ch === x.ch && o.day === dd)) || x.day;
+    }
+    x.date = dayDate(x.w, x.day);
+  });
+  const P = pillars.length ? pillars : ["General"];
+  const pTot = Array(P.length).fill(0), pCh = {};
+  // one pass in date order: campaign slots keep their launch's pillar; each evergreen slot takes the pillar
+  // with the lowest score (used so far, plus campaign pieces still to come weighted by how far into the quarter
+  // we are, plus a penalty for repeating a pillar in the same week or channel)
+  const futureCamp = Array(P.length).fill(0);
+  slots.forEach(x => { if (x.kind === "campaign") { x.pillar = Math.min(x.pillarIdx, P.length - 1); futureCamp[x.pillar]++; } });
+  slots.forEach(x => {
+    if (x.kind === "campaign") { futureCamp[x.pillar]--; }
+    else {
+      const wkP = slots.filter(o => o.w === x.w && o.pillar != null && o !== x);
+      let best = 0, bestScore = Infinity;
+      P.forEach((_, i) => {
+        const sc = pTot[i] + futureCamp[i] * (x.w / (WEEKS - 1)) + wkP.filter(o => o.pillar === i).length * 0.9 + wkP.filter(o => o.pillar === i && o.ch === x.ch).length * 0.6 + (pCh[x.ch + i] || 0) * 0.05 + i * 0.001;
+        if (sc < bestScore) { bestScore = sc; best = i; }
+      });
+      x.pillar = best;
+    }
+    pTot[x.pillar]++; pCh[x.ch + x.pillar] = (pCh[x.ch + x.pillar] || 0) + 1;
+  });
+  const G = (s.goals || []).filter(g => byId(GOALS, g));
+  const gUse = {};
+  const campGoal = t => {
+    const pref = { launch: ["adoption", "pipeline", "awareness", "thought", "retention"], webinar: ["pipeline", "thought", "retention", "adoption", "awareness"], event: ["awareness", "thought", "pipeline", "adoption", "retention"] }[t] || [];
+    return pref.find(g => G.includes(g)) || G[0] || "";
+  };
+  slots.forEach(x => {
+    if (!G.length) { x.goal = ""; return; }
+    if (x.kind === "campaign") x.goal = campGoal(x.etype);
+    else {
+      let best = G[0], bs = -Infinity;
+      // channel fit, minus how far ahead of an even share this goal already is
+      const avg = G.reduce((a, g) => a + (gUse[g] || 0), 0) / G.length;
+      G.forEach(g => { const f = byId(GOALS, g).fit[x.ch] ?? 1; const sc = f - 0.6 * ((gUse[g] || 0) - avg); if (sc > bs) { bs = sc; best = g; } });
+      x.goal = best;
+    }
+    gUse[x.goal] = (gUse[x.goal] || 0) + 1;
+  });
+
+  // 6. flags
+  const weeks = Array.from({ length: WEEKS }, (_, w) => ({ w, start: weekStart(w), load: L[w], over: L[w] > cap + 1e-9, events: evs.filter(e => !e.out && e.w === w) }));
+  weeks.filter(x => x.over).forEach(x => flags.push(`Week ${x.w + 1} (${fmt(x.start)}) is over capacity: ${num(x.load)} of ${num(cap)}. Campaign pieces don't move, so drop or shorten something, or add help.`));
+  if (!G.length) flags.push("No goals picked. Pick up to three so slots can be tagged.");
+  if (pillars.length < 3) flags.push("Fewer than three pillars. The rotation works best with three to five.");
+  if (pillars.length > 5) flags.push("More than five pillars. Each one will appear only a few times this quarter.");
+  if (slots.length && P.length > 1) { const mx = Math.max(...pTot), mn = Math.min(...pTot); if (mx - mn > Math.max(3, slots.length * 0.12)) flags.push(`Pillars are uneven: ${P.map((p, i) => `${p} ${pTot[i]}`).join(", ")}. Launch content pulls toward its own pillar.`); }
+  if (!slots.length) flags.push("No slots yet. Set a cadence for at least one channel.");
+  const total = slots.reduce((a, x) => a + effort(x.ch, x.reuse), 0);
+  return { slots, weeks, cap, pillars: P, goals: G, flags, notes, total, start: monday, evs, sig: sigOf(s), activeCh: CHANNELS.filter(c => slots.some(x => x.ch === c.id)) };
+}
+function sigOf(s) { return JSON.stringify([s.start, s.capacity, s.goals, s.events, s.pillars, s.cadence, s.assets]); }
+
+/* ---------------- render: inputs ---------------- */
+function stepHtml(n, done, title, sub, note, body) {
+  return `<li class="step${done ? " done" : ""}"><span class="num">${n}</span><div class="step-h"><div><h3>${esc(title)}</h3>${sub ? `<span class="mono-label sub">${esc(sub)}</span>` : ""}</div>${note ? `<span class="opt-note">${note}</span>` : ""}</div><div class="step-b">${body}</div></li>`;
+}
+const pillarSel = (i, val) => `<select class="in" data-ev="${i}" data-f="pillar" aria-label="Pillar">${S.pillars.map((p, j) => `<option value="${j}"${+val === j ? " selected" : ""}>${esc(p || `Pillar ${j + 1}`)}</option>`).join("")}</select>`;
+function renderSteps() {
+  const out = []; let n = 0;
+  out.push(stepHtml(++n, !!S.start, "The quarter", "Start date and team capacity", `<button type="button" class="add" style="margin:0" id="loadSample">Load the ${esc(CONFIG.company)} sample</button>`,
+    `<div class="kv"><label>Quarter starts<input class="in" type="date" id="qStart" value="${esc(S.start)}"></label><label>Team capacity, pieces per week<input class="in" type="number" id="qCap" min="0.5" step="0.5" value="${esc(S.capacity)}"></label></div><div class="hint" id="qHint"></div>`));
+  out.push(stepHtml(++n, S.goals.length > 0, "Goals", "What the quarter is for", "Pick up to three",
+    `<div class="cards">${GOALS.map(g => `<button type="button" class="opt" aria-pressed="${S.goals.includes(g.id)}" data-goal="${g.id}"><span class="ib">${svg(g.icon)}</span><span class="on">${esc(g.name)}</span><span class="od">${esc(g.blurb)}</span></button>`).join("")}</div><div class="goal-hint" id="goalHint" role="status"></div>`));
+  out.push(stepHtml(++n, S.events.length > 0, "Launches and events", "Date, name, type, pillar", "Optional",
+    `<div class="rows"><div class="row ev-head row-head"><span>Date</span><span>Name</span><span>Type</span><span>Pillar</span><span></span></div>${S.events.map((e, i) => `<div class="row"><input class="in" type="date" data-ev="${i}" data-f="date" value="${esc(e.date)}" aria-label="Date"><input class="in ev-name" data-ev="${i}" data-f="name" value="${esc(e.name)}" placeholder="What's happening" aria-label="Name"><select class="in" data-ev="${i}" data-f="type" aria-label="Type">${Object.entries(KITS).map(([k, v]) => `<option value="${k}"${e.type === k ? " selected" : ""}>${v.name}</option>`).join("")}</select>${pillarSel(i, e.pillar)}<button type="button" class="rm" data-rmev="${i}" aria-label="Remove">×</button></div>`).join("")}</div><button type="button" class="add" id="addEv">+ Add a launch or event</button>`));
+  out.push(stepHtml(++n, S.pillars.filter(p => p.trim()).length >= 3, "Content pillars", "The themes you rotate through", "Three to five",
+    `<div class="rows">${S.pillars.map((p, i) => `<div class="row pillar"><span class="swatch" style="--pc:var(--p${i + 1})"></span><input class="in" data-pillar="${i}" value="${esc(p)}" placeholder="Pillar ${i + 1}" aria-label="Pillar ${i + 1}"><button type="button" class="rm" data-rmpillar="${i}" aria-label="Remove"${S.pillars.length <= 1 ? " disabled" : ""}>×</button></div>`).join("")}</div><button type="button" class="add" id="addPillar"${S.pillars.length >= 5 ? " disabled" : ""}>+ Add a pillar</button>`));
+  out.push(stepHtml(++n, CHANNELS.some(c => +S.cadence[c.id]?.n > 0), "Channels and cadence", "How often each channel publishes", "0 turns a channel off",
+    `<div class="rows"><div class="row chan chan-head row-head"><span></span><span>Channel</span><span>Count</span><span>Per</span><span>Effort</span></div>${CHANNELS.map(c => { const cd = S.cadence[c.id] || { n: 0, per: "week" }; return `<div class="row chan"><span class="ib">${svg(c.icon)}</span><span class="cn">${esc(c.name)}</span><input class="in" type="number" min="0" max="7" step="1" data-cad="${c.id}" data-f="n" value="${esc(cd.n)}" aria-label="${esc(c.name)} count"><select class="in" data-cad="${c.id}" data-f="per" aria-label="${esc(c.name)} per"><option value="week"${cd.per === "week" ? " selected" : ""}>per week</option><option value="month"${cd.per === "month" ? " selected" : ""}>per month</option></select><span class="ce">Counts as ${num(c.effort)} piece${c.effort === 1 ? "" : "s"}</span></div>`; }).join("")}</div>`));
+  out.push(stepHtml(++n, !!S.assets.trim(), "Assets to reuse", "One per line", "Optional",
+    `<textarea class="box" id="assets" style="min-height:110px" placeholder="Ebooks, webinar recordings, research, customer interviews, old posts worth a second life…">${esc(S.assets)}</textarea><div class="hint">Each asset is attached to an evergreen slot as a repurpose. Reused pieces count as half effort.</div>`));
+  out.push(stepHtml(++n, true, "Your calendar", "13 weeks, built in your browser", "", `<div id="calWrap"></div>`));
+  out.push(stepHtml(++n, OUT.status === "done", "Work it with Claude", "", "", `<div class="modes small" id="modes" role="group" aria-label="Claude task"></div><div class="gen-row" style="margin-top:16px"><button class="pill" id="genBtn" type="button"></button><span class="gen-note" id="genNote"></span></div><div style="margin-top:18px" id="outWrap"></div>`));
+  $("#steps").innerHTML = out.join("");
+  renderModes(); recompute();
+}
+const MODES = [
+  { id: "fill", name: "Fill the calendar", icon: "pen", blurb: "A working title and angle for every slot, matched to its pillar, channel and goal." },
+  { id: "rebalance", name: "Rebalance", icon: "scale", blurb: "A review of the plan and proposed changes to hit your goals within capacity." }
+];
+function renderModes() {
+  $("#modes").innerHTML = MODES.map(m => `<button type="button" class="mode" aria-pressed="${m.id === S.mode}" data-mode="${m.id}"><span class="tick"></span><span class="ic">${svg(m.icon)}</span><span class="mname">${m.name}</span><span class="mdesc">${esc(m.blurb)}</span></button>`).join("");
+  $("#genBtn").textContent = SAMPLE ? (S.mode === "fill" ? "Fill with Claude" : "Rebalance with Claude") : "Build my prompt";
+  $("#genNote").textContent = SAMPLE ? "Uses your Claude account. You'll be asked to allow it the first time." : "Claude isn't connected here, so the planner writes the full prompt, with your calendar in it, for you to paste into Claude. There's a worked example too.";
+}
+
+/* ---------------- render: calendar ---------------- */
+const pc = i => `--pc:var(--p${(i % 5) + 1})`;
+const chName = id => byId(CHANNELS, id)?.name || id;
+const goalName = id => byId(GOALS, id)?.name || "";
+function fillFor(id) { return FILL && FILL.sig === PLAN.sig ? FILL.rows[id] : null; }
+function slotTag(x) { return x.kind === "campaign" ? `${x.event} · ${x.phase}` : (x.reuse ? "Reuse" : "Evergreen"); }
+function slotCard(x) {
+  const f = fillFor(x.id);
+  return `<div class="slot${x.kind === "campaign" ? " camp" : ""}" style="${pc(x.pillar)}"><span class="sd">${DAY[new Date(x.date).getUTCDay()]} ${fmt(x.date)}</span><span class="sp">${esc(PLAN.pillars[x.pillar])}</span>${x.kind === "campaign" ? `<span class="st">${esc(x.event)} · ${esc(x.phase)}</span>` : ""}${x.reuse ? `<span class="sx">Reuse</span><span class="sr">${esc(x.reuse)}</span>` : ""}${f ? `<span class="stt"><strong>${esc(f.title)}</strong></span>` : ""}<span class="sr">${x.goal ? esc(goalName(x.goal)) + " · " : ""}<span class="sid">${esc(x.id)}</span></span></div>`;
+}
+function recompute() {
+  PLAN = buildPlan(S);
+  const qh = $("#qHint"); if (qh) { const end = PLAN.start + (WEEKS * 7 - 3) * MS_DAY; qh.textContent = `13 weeks, ${fmt(PLAN.start)} to ${fmt(end)}${parseDate(S.start) !== PLAN.start ? ". Weeks start on the Monday of your start date" : ""}. ${num(PLAN.total)} pieces of effort planned against ${num(PLAN.cap * WEEKS)} available.`; }
+  renderCal(); renderMethodNote();
+  if (OUT.tab === "prompt") renderOutput();
+}
+function renderCal() {
+  const w = $("#calWrap"); if (!w) return;
+  const tabs = [["grid", "Grid"], ["list", "List"], ["counts", "Counts"]];
+  const over = PLAN.weeks.filter(x => x.over).length;
+  const camp = PLAN.slots.filter(x => x.kind === "campaign").length, reuse = PLAN.slots.filter(x => x.reuse).length;
+  const legend = `<div class="legend">${PLAN.pillars.map((p, i) => `<span><i class="swatch" style="${pc(i)}"></i>${esc(p)}</span>`).join("")}<span><i class="swatch" style="--pc:var(--surface);box-shadow:inset 0 0 0 1.5px var(--ink),2px 2px 0 var(--shadow-c)"></i>Campaign piece</span></div>`;
+  let body = "";
+  if (S.calTab === "grid") {
+    body = legend + `<div class="cal-wrap"><table class="cal"><thead><tr><th>Week</th><th>Load</th>${PLAN.activeCh.map(c => `<th>${esc(c.name)}</th>`).join("")}</tr></thead><tbody>${PLAN.weeks.map(wk => `<tr class="${wk.over ? "over" : ""}"><td class="wk"><b>Week ${wk.w + 1}</b><span>${fmt(wk.start)}</span>${wk.events.map(e => `<span class="evm">${esc(e.name)} · ${fmt(e.t)}</span>`).join("")}</td><td><span class="load">${num(wk.load)} / ${num(PLAN.cap)}<span class="bar"><i style="width:${Math.min(100, wk.load / PLAN.cap * 100)}%"></i></span></span></td>${PLAN.activeCh.map(c => `<td>${PLAN.slots.filter(x => x.w === wk.w && x.ch === c.id).map(slotCard).join("")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  } else if (S.calTab === "list") {
+    body = legend + `<div class="lw">${PLAN.weeks.map(wk => `<div><h4>Week ${wk.w + 1} <span class="mono-label">${fmt(wk.start)} · ${num(wk.load)} / ${num(PLAN.cap)}</span>${wk.over ? `<span class="flag">Over capacity</span>` : ""}${wk.events.map(e => `<span class="mono-label">· ${esc(e.name)}</span>`).join("")}</h4><ul>${PLAN.slots.filter(x => x.w === wk.w).map(x => { const f = fillFor(x.id); return `<li style="${pc(x.pillar)}"><span class="d">${DAY[new Date(x.date).getUTCDay()]} ${fmt(x.date)}</span><span><strong>${esc(chName(x.ch))}</strong> · ${esc(PLAN.pillars[x.pillar])}${x.goal ? ` · ${esc(goalName(x.goal))}` : ""} <span class="t">· ${esc(slotTag(x))}${x.reuse ? `: ${esc(x.reuse)}` : ""}</span>${f ? `<br><strong>${esc(f.title)}</strong> <span class="t">${esc(f.angle)}</span>` : ""}</span></li>`; }).join("") || `<li style="--pc:var(--line)"><span class="d"></span><span class="t">Nothing planned</span></li>`}</ul></div>`).join("")}</div>`;
+  } else {
+    const ptab = `<div class="cal-wrap"><table class="ct"><thead><tr><th>By pillar</th>${PLAN.weeks.map(wk => `<th>W${wk.w + 1}</th>`).join("")}<th>Total</th></tr></thead><tbody>${PLAN.pillars.map((p, i) => { const r = PLAN.weeks.map(wk => PLAN.slots.filter(x => x.w === wk.w && x.pillar === i).length); return `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><i class="swatch" style="${pc(i)}"></i>${esc(p)}</span></td>${r.map(v => `<td class="${v ? "" : "z"}">${v}</td>`).join("")}<td><strong>${r.reduce((a, b) => a + b, 0)}</strong></td></tr>`; }).join("")}</tbody></table></div>`;
+    const ctab = `<div class="cal-wrap"><table class="ct"><thead><tr><th>By channel</th>${PLAN.weeks.map(wk => `<th>W${wk.w + 1}</th>`).join("")}<th>Total</th></tr></thead><tbody>${PLAN.activeCh.map(c => { const r = PLAN.weeks.map(wk => PLAN.slots.filter(x => x.w === wk.w && x.ch === c.id).length); return `<tr><td>${esc(c.name)}</td>${r.map(v => `<td class="${v ? "" : "z"}">${v}</td>`).join("")}<td><strong>${r.reduce((a, b) => a + b, 0)}</strong></td></tr>`; }).join("")}<tr class="tot"><td>Effort / capacity</td>${PLAN.weeks.map(wk => `<td class="${wk.over ? "bad" : ""}">${num(wk.load)}</td>`).join("")}<td>${num(PLAN.total)}</td></tr></tbody></table></div>`;
+    const gtab = PLAN.goals.length ? `<div class="cal-wrap"><table class="ct" style="min-width:0;width:auto"><thead><tr><th>By goal</th><th>Pieces</th></tr></thead><tbody>${PLAN.goals.map(g => `<tr><td>${esc(goalName(g))}</td><td>${PLAN.slots.filter(x => x.goal === g).length}</td></tr>`).join("")}</tbody></table></div>` : "";
+    body = `<div class="counts">${ptab}${ctab}${gtab}</div>`;
+  }
+  const filled = FILL && FILL.sig === PLAN.sig ? Object.keys(FILL.rows).length : 0;
+  const stale = FILL && FILL.sig !== PLAN.sig;
+  const flagHtml = PLAN.flags.length ? `<ul class="flags">${PLAN.flags.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : `<div class="ok-line">Every week is within capacity.</div>`;
+  const noteHtml = PLAN.notes.length ? `<details style="margin-top:8px"><summary class="mono-label" style="cursor:pointer">${PLAN.notes.length} adjustment${PLAN.notes.length > 1 ? "s" : ""} the planner made</summary><ul class="flags muted">${PLAN.notes.map(f => `<li>${esc(f)}</li>`).join("")}</ul></details>` : "";
+  w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${PLAN.slots.length} slots · ${camp} campaign · ${reuse} reuse · ${over ? `${over} week${over > 1 ? "s" : ""} over` : "within capacity"}</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === S.calTab}" data-ctab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="calBody">${body}</div><div class="out-actions" style="display:block"><div style="margin-bottom:10px">${flagHtml}${noteHtml}${filled ? `<div class="applied" style="margin-top:6px">Claude's titles are in ${filled} slots. <button type="button" class="add" style="margin:0 0 0 6px" id="clearFill">Clear titles</button></div>` : ""}${stale ? `<div class="hint" style="margin-top:6px">Titles were written for an earlier version of this plan, so they're hidden. Fill again to match.</div>` : ""}</div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="pill" type="button" id="copyCsv">Copy as CSV</button><button class="pill ghost" type="button" id="copyTsv">Copy for Sheets</button><span class="msg" id="csvMsg" role="status"></span></div></div></div>`;
+}
+function rowsForExport() {
+  const head = ["Week", "Week of", "Date", "Day", "Channel", "Pillar", "Goal", "Type", "Campaign", "Phase", "Reuse", "Slot ID", "Working title", "Angle"];
+  const rows = PLAN.slots.map(x => { const f = fillFor(x.id) || {}; return [x.w + 1, iso(PLAN.weeks[x.w].start), iso(x.date), DAY[new Date(x.date).getUTCDay()], chName(x.ch), PLAN.pillars[x.pillar], goalName(x.goal), x.kind === "campaign" ? "Campaign" : x.reuse ? "Reuse" : "Evergreen", x.event || "", x.phase || "", x.reuse || "", x.id, f.title || "", f.angle || ""]; });
+  return [head, ...rows];
+}
+const toCsv = rows => rows.map(r => r.map(v => { v = String(v); return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; }).join(",")).join("\n");
+const toTsv = rows => rows.map(r => r.map(v => String(v).replace(/[\t\n]/g, " ")).join("\t")).join("\n");
+
+/* ---------------- prompts ---------------- */
+function planBlock() {
+  const ev = PLAN.evs.filter(e => !e.out).map(e => `- ${iso(e.t)} (week ${e.w + 1}): ${e.name} [${KITS[e.type]?.name || e.type}], pillar: ${PLAN.pillars[Math.min(+e.pillar || 0, PLAN.pillars.length - 1)]}`).join("\n") || "- None";
+  const cad = CHANNELS.map(c => { const cd = S.cadence[c.id]; return `- ${c.name}: ${+cd?.n || 0} per ${cd?.per || "week"} (counts as ${num(c.effort)} piece${c.effort === 1 ? "" : "s"})`; }).join("\n");
+  const goals = PLAN.goals.map(g => `- ${goalName(g)}: ${byId(GOALS, g).play}`).join("\n") || "- None picked";
+  const assets = String(S.assets || "").split("\n").map(x => x.trim()).filter(Boolean).map(a => `- ${a}`).join("\n") || "- None";
+  return [
+    `\nQUARTER\nStarts ${iso(PLAN.start)}, 13 weeks. Team capacity: ${num(PLAN.cap)} pieces per week.`,
+    `\nGOALS\n${goals}`,
+    `\nCONTENT PILLARS\n${PLAN.pillars.map(p => `- ${p}`).join("\n")}`,
+    `\nLAUNCHES AND EVENTS\n${ev}`,
+    `\nCHANNELS AND CADENCE\n${cad}`,
+    `\nASSETS TO REUSE\n${assets}`
+  ].join("\n");
+}
+function slotTable() {
+  return "ID | Date | Channel | Pillar | Goal | Role\n" + PLAN.slots.map(x => `${x.id} | ${DAY[new Date(x.date).getUTCDay()]} ${iso(x.date)} | ${chName(x.ch)} | ${PLAN.pillars[x.pillar]} | ${goalName(x.goal) || "-"} | ${x.kind === "campaign" ? `${x.event}, ${x.phase.toLowerCase()}: ${x.what}` : x.reuse ? `Repurpose: ${x.reuse}` : "Evergreen"}`).join("\n");
+}
+function buildPrompt() {
+  const head = [`You are a senior B2B content strategist and managing editor working for ${CONFIG.company}.`, `\nABOUT ${CONFIG.company.toUpperCase()}\n${CONFIG.about}`, `\nHOUSE VOICE\n${CONFIG.voice}`, planBlock()];
+  const rules = `\nRULES\n- Never invent statistics, customer names, quotes or results. Where a piece needs one, write [placeholder: what's needed].\n- Use only the launches, events and assets listed. Don't add new launches.\n- Plain, specific titles in sentence case. No hype words, no exclamation points.`;
+  if (S.mode === "fill") return [...head,
+    `\nTASK (FILL THE CALENDAR)\nWrite a working title and a one-sentence angle for every slot below. Match each to its pillar, channel and goal. Campaign slots must serve their launch or event and phase (teasers don't name the product; follow-ups assume it shipped). Repurpose slots must be built from the named asset. Vary the angles so no two slots in the same pillar repeat an idea. Fit the format: LinkedIn titles read as hooks, newsletter titles as issue subjects, video titles as what the viewer will see.`,
+    `\nSLOTS (${PLAN.slots.length})\n${slotTable()}`,
+    rules,
+    `\nOUTPUT FORMAT\nReturn one Markdown table with exactly these columns: | ID | Working title | Angle |. One row per slot, in the order given, using the IDs exactly. No text before the table. After the table, up to three bullets on gaps you noticed.`].join("\n");
+  const weekLines = PLAN.weeks.map(wk => `- Week ${wk.w + 1} (${iso(wk.start)}): load ${num(wk.load)} / ${num(PLAN.cap)}${wk.over ? " OVER" : ""}; ${PLAN.activeCh.map(c => `${c.name} ${PLAN.slots.filter(x => x.w === wk.w && x.ch === c.id).length}`).join(", ")}; pillars ${PLAN.pillars.map((p, i) => `${p} ${PLAN.slots.filter(x => x.w === wk.w && x.pillar === i).length}`).join(", ")}`).join("\n");
+  return [...head,
+    `\nTASK (REBALANCE)\nReview this quarter's plan as an experienced managing editor. Judge whether it will move the chosen goals, whether launches get enough lead time and follow-up, whether pillars and channels are balanced, and whether every week fits capacity. Then propose specific changes that hit the goals without exceeding capacity in any week.`,
+    `\nWEEK BY WEEK\n${weekLines}`,
+    `\nFLAGS FROM THE PLANNER\n${PLAN.flags.map(f => `- ${f}`).join("\n") || "- None"}`,
+    `\nSLOTS\n${slotTable()}`,
+    rules,
+    `\nOUTPUT FORMAT\nMarkdown. Start with a one-line **Verdict:**. Then "## What's working" (3 bullets), "## Proposed changes" as a table | Change | Weeks | Why | Capacity effect | (4–8 rows, each a concrete move, cut, swap or addition using slot IDs where useful), "## Revised load" (which weeks change and confirm none exceed capacity), and "## Risks" (2–3 bullets). No preamble.`].join("\n");
+}
+
+/* ---------------- render: Claude output ---------------- */
+function renderOutput() {
+  const w = $("#outWrap"); if (!w) return;
+  const ex = EXAMPLES[S.mode], m = byId(MODES, S.mode);
+  const tabs = SAMPLE ? [["out", "Output"], ["prompt", "Prompt"]] : [["prompt", "Your prompt"], ["example", "Example output"]];
+  if (!tabs.find(t => t[0] === OUT.tab)) OUT.tab = tabs[0][0];
+  let body = "", actions = "";
+  if (OUT.tab === "prompt") {
+    body = !SAMPLE && !OUT.built ? `<div class="out-empty">Set up the quarter, pick a task, then click “Build my prompt.”</div>` : `<pre class="prompt" id="promptText">${esc(buildPrompt())}</pre>`;
+    actions = `<button class="pill" type="button" id="copyPrompt">Copy prompt</button><a class="pill ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "example") {
+    body = ex ? `<div class="ex-note">Worked example. ${esc(ex.note)}</div><div class="prose">${md(ex.text)}</div>` : `<div class="out-empty">No example for this task.</div>`;
+  } else {
+    if (OUT.status === "idle") body = `<div class="out-empty">Nothing yet. Pick a task, then click ${esc($("#genBtn")?.textContent || "the button")}.</div>`;
+    else if (OUT.status === "thinking") body = `<div class="thinking"><i></i>Claude is reading the plan…</div>`;
+    else body = `<div class="prose">${md(OUT.text)}</div>`;
+    if (OUT.status === "streaming" || OUT.status === "thinking") actions = `<button class="pill ghost" type="button" id="stopBtn">Stop</button>`;
+    else if (OUT.text) actions = `<button class="pill" type="button" id="copyOut">Copy</button><button class="pill ghost" type="button" id="regen">Try another version</button>`;
+    if (OUT.applied) actions += `<span class="msg applied">${OUT.applied}</span>`;
+    if (OUT.truncated) actions += `<span class="msg">The answer was cut short. Titles that arrived are in the calendar; fill again or cut a channel to get the rest.</span>`;
+    if (OUT.msg) actions += `<span class="msg err">${esc(OUT.msg)}</span>`;
+    actions += `<span class="msg" id="copyMsg" role="status"></span>`;
+  }
+  w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${esc(m.name)} · ${PLAN.slots.length} slots</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === OUT.tab}" data-otab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="outBody">${body}</div>${actions ? `<div class="out-actions">${actions}</div>` : ""}</div>`;
+}
+function parseFill(text) {
+  const rows = {};
+  String(text).split("\n").forEach(l => {
+    if (!/^\s*\|/.test(l)) return;
+    const c = l.trim().replace(/^\||\|$/g, "").split("|").map(x => x.trim().replace(/^\*\*|\*\*$/g, ""));
+    if (c.length >= 3 && /^W\d{2}-[A-Z]+-\d+$/.test(c[0])) rows[c[0]] = { title: c[1], angle: c.slice(2).join(" | ") };
+  });
+  return rows;
+}
+function save() { store.set("state", { start: S.start, capacity: S.capacity, goals: S.goals, events: S.events, pillars: S.pillars, cadence: S.cadence, assets: S.assets, view: S.view, calTab: S.calTab, mode: S.mode }); }
+
+/* ---------------- generation ---------------- */
+async function generate(fresh) {
+  if (!SAMPLE) { OUT.built = true; OUT.tab = "prompt"; renderOutput(); $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+  CTL?.abort(); CTL = new AbortController();
+  const mode = S.mode, sig = PLAN.sig;
+  OUT = { tab: "out", text: "", status: "thinking", msg: "", truncated: false }; renderOutput();
+  $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  try {
+    const r = await SAMPLE(buildPrompt(), { signal: CTL.signal, cache: fresh ? false : undefined, onText: ({ text }) => { OUT.text = text; OUT.status = "streaming"; const b = $("#outBody"); if (b && OUT.tab === "out") b.innerHTML = `<div class="prose">${md(text)}</div>`; else renderOutput(); } });
+    OUT.text = r.text; OUT.truncated = r.truncated; OUT.status = "done";
+  } catch (e) {
+    OUT.text = e && e.code !== "refused" ? (e.text || "") : "";
+    OUT.status = OUT.text ? "done" : "idle";
+    const copy = { not_granted: "Claude isn't allowed for this page. Allow it from the page's permissions, or copy the prompt instead.", sampling_disabled: "Claude isn't available on this account. Copy the prompt instead.", rate_limited: "You've hit a usage limit. Try again in a little while.", session_expired: "Sign in to Claude again, then retry.", refused: "Claude declined this request. Change the plan and try again.", prompt_too_large: "The plan is too big to send at once. Lower a cadence or shorten the asset list.", empty_completion: "Claude returned nothing. Try again.", cancelled: "" };
+    OUT.msg = e && e.code in copy ? copy[e.code] : "Something interrupted the answer. Try again.";
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled")) { SAMPLE = null; setChip(); renderModes(); renderOutput(); return; }
+  }
+  if (mode === "fill" && OUT.text && sig === PLAN.sig) {
+    const rows = parseFill(OUT.text), k = Object.keys(rows).length;
+    if (k) { FILL = { sig, rows }; store.set("fill", FILL); OUT.applied = `${k} of ${PLAN.slots.length} titles added to the calendar.`; renderCal(); }
+  }
+  renderOutput();
+}
+
+/* ---------------- method view ---------------- */
+function renderMethod() {
+  const items = [
+    { icon: "calendar", name: "1. Recurring slots", blurb: "Your cadence, laid across 13 weeks", body: `<p>Weekly channels get the same days every week (${CHANNELS.map(c => `${c.name} ${c.days.slice(0, 2).map(d => DAY[d]).join("/")}`).join(", ")}). Monthly channels become three per month for the quarter, each placed in the lightest week of its stretch so they don't stack up.</p>` },
+    { icon: "rocket", name: "2. Launch and event kits", blurb: "Teaser, launch, follow-up", body: Object.values(KITS).map(k => `<h4 class="mono-label" style="margin:10px 0 6px">${k.name}</h4><ul class="tl">${k.pieces.map(p => `<li><span class="o">${p.week === 0 ? "Week of" : (p.week > 0 ? "+" : "") + p.week + " wk"}</span><span class="n"><strong>${esc(chName(p.ch))}</strong> · ${esc(p.phase)}</span><span>${esc(p.what)}</span></li>`).join("")}</ul>`).join("") + `<p class="muted" style="font-size:13px;margin-top:10px">A kit piece takes over an existing slot in the same channel and week when there is one, so launches replace evergreen content rather than piling on. Newsletters and video can shift a week to find a slot. Kit pieces for channels you've turned off are skipped, except the webinar itself.</p>` },
+    { icon: "recycle", name: "3. Reuse", blurb: "Assets spread across the quarter", body: `<p>Each asset you list is attached to an evergreen slot, spaced evenly across the 13 weeks and preferring video, then LinkedIn, then blog. A reused piece counts as half effort.</p>` },
+    { icon: "gear", name: "4. Capacity", blurb: "Effort per week, with flags", body: `<p>Each piece costs effort: ${CHANNELS.map(c => `${c.name.toLowerCase()} ${num(c.effort)}`).join(", ")}. When a week is over capacity, the planner moves evergreen slots to the nearest week with room (one or two weeks either side). Campaign pieces never move. Any week still over is flagged in red.</p>` },
+    { icon: "target", name: "5. Pillars and goals", blurb: "Even rotation, tagged by fit", body: `<p>Campaign pieces take their launch's pillar. Every other slot gets the pillar used least so far, avoiding repeats in the same channel and week. Each slot is tagged with the picked goal its channel serves best, spread so no goal crowds out the others.</p>` },
+    { icon: "pen", name: "6. Claude", blurb: "Titles, angles and a second opinion", body: `<p><strong>Fill the calendar</strong> sends every slot to Claude and writes a working title and angle back into the grid. <strong>Rebalance</strong> sends the week-by-week load and flags and asks for specific changes within capacity. Both are told never to invent numbers, names or quotes.</p>` }
+  ];
+  $("#methodList").innerHTML = items.map((a, i) => `<details class="aud"${i < 2 ? " open" : ""}><summary><span class="ib">${svg(a.icon)}</span><span><strong>${esc(a.name)}</strong><br><span class="muted" style="font-size:13px">${esc(a.blurb)}</span></span><span class="dim">Step</span></summary><div class="aud-body" style="display:block" ><div class="fld prose" style="max-width:none">${a.body}</div></div></details>`).join("");
+  renderMethodNote();
+}
+function renderMethodNote() { const n = $("#methodNote"); if (n) n.textContent = `Everything above runs in your browser. Same inputs, same calendar. ${SAMPLE ? "To change the kits, efforts or goal fits, ask Claude to update them and republish this page." : CONFIG.demoNote}`; }
+
+/* ---------------- wiring ---------------- */
+function setChip() {
+  $("#modeChip").classList.toggle("live", !!SAMPLE);
+  $("#modeChipText").textContent = SAMPLE ? "Live · planning with Claude" : "Demo · planner + prompt";
+  $("#brandTag").textContent = SAMPLE ? "Editorial calendar planner" : (CONFIG.brand?.tag || "");
+}
+function boot() {
+  const tw = CONFIG.title.split(" ");
+  $("#title").innerHTML = tw.length > 2 ? `${esc(tw.slice(0, -2).join(" "))} <span class="hl">${esc(tw.slice(-2).join(" "))}</span>` : `<span class="hl">${esc(CONFIG.title)}</span>`;
+  $("#eyebrow").textContent = `For ${CONFIG.company}`;
+  $("#lede").textContent = "Put in your goals, launches and team capacity. Get a 13-week content calendar with launch lead time, pillars rotated evenly and every week checked against capacity.";
+  document.title = CONFIG.title;
+  const br = CONFIG.brand; $("#brandbar").hidden = !br;
+  if (br) { const [w1, ...rest] = br.name.split(" "); $("#brandLink").innerHTML = rest.length ? `${esc(w1)} <span>${esc(rest.join(" "))}</span>` : `<span>${esc(w1)}</span>`; $("#brandLink").href = br.url || "#"; }
+  $("#siteFooter").hidden = !CONFIG.footer; $("#footerText").textContent = CONFIG.footer || "";
+  $("#cta").hidden = !CONFIG.ctaUrl; if (CONFIG.ctaUrl) $("#ctaLink").href = CONFIG.ctaUrl;
+  setChip(); renderSteps(); renderOutput(); renderMethod(); showView(S.view);
+}
+function showView(v) {
+  S.view = v; save();
+  document.querySelectorAll("nav.views button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  $("#planner").hidden = v !== "planner"; $("#method").hidden = v !== "method";
+}
+function copyText(text, msgEl, selEl) {
+  const done = () => { if (msgEl) msgEl.textContent = "Copied."; };
+  const fallback = () => { const pre = selEl || $("#promptText") || $("#outBody"); if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } if (msgEl) msgEl.textContent = "Couldn't copy. Select the text and press Ctrl+C or ⌘C."; };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+function markDone() { document.querySelectorAll(".step").forEach((el, i) => { const d = [!!S.start, S.goals.length > 0, S.events.length > 0, S.pillars.filter(p => p.trim()).length >= 3, CHANNELS.some(c => +S.cadence[c.id]?.n > 0), !!S.assets.trim()][i]; if (d !== undefined) el.classList.toggle("done", d); }); }
+function changed() { save(); markDone(); recompute(); }
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.view) return showView(t.dataset.view);
+  if (t.dataset.goal) {
+    const g = t.dataset.goal, h = $("#goalHint");
+    if (S.goals.includes(g)) S.goals = S.goals.filter(x => x !== g);
+    else if (S.goals.length >= 3) { h.textContent = "Pick up to three. Unpick one first."; h.classList.add("req"); return; }
+    else S.goals = [...S.goals, g];
+    h.textContent = ""; h.classList.remove("req");
+    document.querySelectorAll(".opt[data-goal]").forEach(b => b.setAttribute("aria-pressed", S.goals.includes(b.dataset.goal)));
+    return changed();
+  }
+  if (t.dataset.mode) { S.mode = t.dataset.mode; save(); OUT = { tab: OUT.tab, text: "", status: "idle", msg: "", built: OUT.built }; renderModes(); renderOutput(); return; }
+  if (t.dataset.ctab) { S.calTab = t.dataset.ctab; save(); renderCal(); return; }
+  if (t.dataset.otab) { OUT.tab = t.dataset.otab; renderOutput(); return; }
+  if (t.dataset.rmev != null) { S.events.splice(+t.dataset.rmev, 1); save(); renderSteps(); return; }
+  if (t.dataset.rmpillar != null) { const i = +t.dataset.rmpillar; S.pillars.splice(i, 1); S.events.forEach(ev => { if (+ev.pillar === i) ev.pillar = 0; else if (+ev.pillar > i) ev.pillar = +ev.pillar - 1; }); save(); renderSteps(); return; }
+  if (t.id === "addEv") { const last = S.events[S.events.length - 1]; const base = parseDate(last?.date) || parseDate(S.start) || Date.now(); S.events.push({ date: iso(base + 21 * MS_DAY), name: "", type: "launch", pillar: 0 }); save(); renderSteps(); const ins = document.querySelectorAll(".ev-name"); ins[ins.length - 1]?.focus(); return; }
+  if (t.id === "addPillar") { if (S.pillars.length < 5) { S.pillars.push(""); save(); renderSteps(); const ins = document.querySelectorAll("[data-pillar]"); ins[ins.length - 1]?.focus(); } return; }
+  if (t.id === "loadSample") { Object.assign(S, clone(SAMPLE_PLAN)); save(); renderSteps(); renderOutput(); return; }
+  if (t.id === "clearFill") { FILL = null; store.set("fill", null); renderCal(); return; }
+  if (t.id === "copyCsv") return copyText(toCsv(rowsForExport()), $("#csvMsg"), $("#calBody"));
+  if (t.id === "copyTsv") return copyText(toTsv(rowsForExport()), $("#csvMsg"), $("#calBody"));
+  if (t.id === "genBtn") return generate(false);
+  if (t.id === "regen") return generate(true);
+  if (t.id === "stopBtn") { CTL?.abort(); return; }
+  if (t.id === "copyPrompt") return copyText(buildPrompt(), $("#copyMsg"));
+  if (t.id === "copyOut") return copyText(OUT.text, $("#copyMsg"));
+});
+function onField(e) {
+  const el = e.target;
+  if (el.id === "qStart") { S.start = el.value; return changed(); }
+  if (el.id === "qCap") { S.capacity = el.value; return changed(); }
+  if (el.id === "assets") { S.assets = el.value; return changed(); }
+  if (el.dataset.ev != null) { const ev = S.events[+el.dataset.ev]; if (!ev) return; ev[el.dataset.f] = el.dataset.f === "pillar" ? +el.value : el.value; return changed(); }
+  if (el.dataset.pillar != null) { S.pillars[+el.dataset.pillar] = el.value; document.querySelectorAll(`select[data-f="pillar"] option[value="${el.dataset.pillar}"]`).forEach(o => o.textContent = el.value || `Pillar ${+el.dataset.pillar + 1}`); return changed(); }
+  if (el.dataset.cad) { const c = S.cadence[el.dataset.cad] = S.cadence[el.dataset.cad] || { n: 0, per: "week" }; c[el.dataset.f] = el.dataset.f === "n" ? Math.max(0, Math.min(7, Math.floor(+el.value || 0))) : el.value; return changed(); }
+}
+document.addEventListener("input", e => { if (e.target.tagName !== "SELECT") onField(e); });
+document.addEventListener("change", e => { if (e.target.tagName === "SELECT") onField(e); });
+
+boot();
+(async () => {
+  try { SAMPLE = window.claude ? await window.claude.use("sample") : null; } catch (e) { SAMPLE = null; }
+  if (SAMPLE) { OUT.tab = "out"; }
+  setChip(); renderModes(); renderOutput(); renderMethodNote();
+})();
+</script>
+
+</body>
+</html>

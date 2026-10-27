@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Live demo of the Competitive content gap, a free Claude skill from saturday content. Invented data for a fictional company.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Competitive content gap</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paper page, one working column; each step is a numbered rail; inputs, the coverage matrix and the output "window" sit on the rail. */
+:root{
+  --bg:#efede8; --surface:#f5f4f0; --surface-2:#e6e3dc; --ink:#141413; --muted:#55534d; --faint:#8d8a82; --line:#d3d0c8; --dot:#b9b5ab;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#fbe6ad; --bad:#b4442c; --bad-soft:#f3dcd3; --good:#2f7a4d; --good-soft:#d7eadc;
+  --shadow-c:#141413;
+  --f-body:"Host Grotesk","Helvetica Neue",Arial,sans-serif; --f-mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --good-soft:#1c3324; --shadow-c:#000000; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --good-soft:#1c3324; --shadow-c:#000000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(30px,4.4vw,44px);letter-spacing:-.04em;line-height:1.05}
+h2{font-size:22px;letter-spacing:-.03em}
+h3{font-size:16px;letter-spacing:-.02em;font-weight:600}
+.hl{background:var(--hl);color:var(--hl-ink);padding:0 .12em;border-radius:3px}
+.mono-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.brandbar{border-bottom:1px solid var(--line)}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-block:12px}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.03em;text-decoration:none}
+.logo span{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--hl)}
+
+header.head .wrap{padding-block:36px 8px;display:grid;gap:12px}
+.head-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.lede{font-size:18px;line-height:1.4;letter-spacing:-.01em;color:var(--muted);max-width:60ch;margin:0}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:6px;padding:5px 10px;font-family:var(--f-mono);font-size:12px;background:var(--bg)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.chip.live .dot{background:var(--hl);box-shadow:0 0 0 1.5px var(--ink)}
+nav.views{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px}
+nav.views button{border:0;background:none;padding:12px 0 9px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+nav.views button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+nav.views button:hover{color:var(--ink)}
+
+main{padding-block:28px 64px}
+.q{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.04em;font-weight:700;margin:0 0 18px}
+.modes{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.mode{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 14px 16px;display:grid;gap:8px;align-content:start}
+.mode:hover{border-color:var(--ink)}
+.mode[aria-pressed=true]{border:1.5px solid var(--ink);background:var(--hl);color:var(--hl-ink);box-shadow:4px 4px 0 var(--shadow-c)}
+.mode[aria-pressed=true] .mdesc{color:var(--hl-ink)}
+.mode .ic{width:26px;height:26px}
+.mode .mname{font-weight:700;font-size:19px;letter-spacing:-.03em}
+.mode .mdesc{font-size:13px;color:var(--muted);line-height:1.4}
+.mode .tick{position:absolute;right:12px;top:12px;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--faint)}
+.mode[aria-pressed=true] .tick{border-color:var(--hl-ink);background:var(--hl-ink);box-shadow:inset 0 0 0 3px var(--hl)}
+
+.steps{list-style:none;margin:30px 0 0;padding:0;display:grid}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:30px}
+.step::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:1.5px;background:var(--line)}
+.step:last-child::before{display:none}
+.num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;background:var(--bg);position:relative}
+.step.done .num{background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.step-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;min-height:34px;padding-top:4px}
+.step-h h3{font-size:19px;letter-spacing:-.03em;font-weight:700}
+.step-h .sub{display:block;margin-top:2px}
+.opt-note{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.step-b{grid-column:2;margin-top:12px;min-width:0}
+.rowwrap{position:relative}
+.cards{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);padding-right:40px!important;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 6px 10px 2px;scrollbar-width:thin}
+.opt{scroll-snap-align:start;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-height:132px;position:relative}
+.opt:hover{border-color:var(--ink)}
+.opt .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.opt .ib svg{width:20px;height:20px}
+.opt .on{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.opt .od{font-size:13px;color:var(--muted);line-height:1.35}
+.opt[aria-pressed=true]{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.opt[aria-pressed=true] .ib{background:var(--hl);color:var(--hl-ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt[aria-pressed=true]::after{content:"Selected";position:absolute;right:10px;top:10px;font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:2px 5px;border-radius:3px}
+.funnel .opt{min-height:0}
+textarea.box{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;line-height:1.5}
+textarea.box:focus{outline:none;border-color:var(--ink)}
+.hint{font-size:12px;color:var(--faint);margin-top:6px}
+.hint.req{color:var(--bad)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;padding:12px 20px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+.pill:hover:not(:disabled){background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.pill.ghost{background:transparent;color:var(--ink)}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.gen-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.gen-note{font-size:13px;color:var(--muted);max-width:60ch}
+.summary-line{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:10px}
+.summary-line b{font-weight:500;color:var(--ink);background:var(--hl-soft);padding:0 3px}
+
+.window{background:var(--bg);border:1.5px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--shadow-c);overflow:hidden;margin-right:6px}
+.window-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1.5px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap}
+.window-bar i{flex:none;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}
+.window-bar .wt{margin-left:4px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.otabs{display:flex;gap:4px}
+.otabs button{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.otabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out-body{padding:20px 22px;max-height:640px;overflow:auto}
+.out-empty{color:var(--muted);text-align:center;padding:28px}
+.out-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.out-actions .pill{padding:8px 14px;font-size:11px}
+.prose{max-width:70ch}
+.prose h1,.prose h2,.prose h3,.prose h4{margin:18px 0 6px;letter-spacing:-.02em}
+.prose h1{font-size:24px}.prose h2{font-size:20px}.prose h3{font-size:17px}.prose h4{font-size:15px}
+.prose > :first-child{margin-top:0}
+.prose p{margin:0 0 10px}
+.prose ul,.prose ol{margin:0 0 12px;padding-left:22px}
+.prose li{margin:3px 0}
+.prose blockquote{margin:0 0 12px;padding:4px 12px;border-left:3px solid var(--hl);color:var(--muted)}
+.prose code{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+.prose hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+pre.prompt{font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;margin:0;line-height:1.55}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.thinking i{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--hl);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation-duration:3s}}
+.msg{font-size:13px}
+.msg.err{color:var(--bad)}
+.ex-note{border-left:3px solid var(--hl);background:var(--surface);padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* library */
+.lib-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.lib-tools input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-width:min(100%,260px)}
+.seg{display:flex;gap:16px}
+.seg button{border:0;background:none;padding:4px 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+.seg button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.lib{display:grid;gap:10px}
+details.aud{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.aud[open]{border-color:var(--ink);background:var(--bg)}
+details.aud summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+details.aud summary::-webkit-details-marker{display:none}
+details.aud .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+details.aud .ib svg{width:20px;height:20px}
+.dim{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px}
+.aud-body{padding:0 14px 16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.fld h4{margin:0 0 4px;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld p,.fld li{margin:0;font-size:14px;line-height:1.45}
+.fld ul{margin:0;padding-left:18px}
+.fld.wide{grid-column:1 / -1}
+.lib-note{margin-top:18px;font-size:13px;color:var(--muted);max-width:70ch}
+
+.cta{margin-top:36px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:18px;background-color:var(--surface-2);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px}
+.cta > div{background:var(--bg);padding:8px 12px;border-radius:6px}
+footer.site{border-top:1px solid var(--line)}
+footer.site .wrap{padding-block:22px}
+
+/* inputs */
+.field-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+input.name{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 10px;min-width:0;flex:1 1 180px;font-weight:600}
+input.name:focus{outline:none;border-color:var(--ink)}
+.comp-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.comp{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;min-width:0}
+.comp textarea.box{min-height:120px;background:var(--bg);font-size:13px}
+.comp .slot{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.count{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.tool-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.tool-row .pill{padding:8px 14px;font-size:11px}
+
+/* results */
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));margin-bottom:16px}
+.tile{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;display:grid;gap:2px}
+.tile:hover{border-color:var(--ink)}
+.tile b{font-size:30px;letter-spacing:-.04em;line-height:1.1}
+.tile .tl{font-weight:600}
+.tile .td{font-size:12px;color:var(--muted);line-height:1.35}
+.tile[aria-pressed=true]{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.tile .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;border:1.5px solid var(--ink);vertical-align:0}
+.sw.gap{background:var(--bad-soft)} .sw.strength{background:var(--good-soft)} .sw.shared{background:var(--surface-2)} .sw.ws{background:var(--hl)}
+.matrix-wrap{overflow-x:auto;border:1.5px solid var(--ink);border-radius:8px;background:var(--bg);box-shadow:6px 6px 0 var(--shadow-c);margin-right:6px}
+table.matrix{border-collapse:separate;border-spacing:0;width:100%;font-size:14px}
+.matrix th,.matrix td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.matrix thead th{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;color:var(--muted);background:var(--surface);border-bottom:1.5px solid var(--ink);position:sticky;top:0}
+.matrix th.topic,.matrix td.topic{text-align:left;white-space:normal;min-width:170px;position:sticky;left:0;background:var(--bg);z-index:1}
+.matrix thead th.topic{background:var(--surface);z-index:2}
+.matrix thead th.you{color:var(--ink)}
+.matrix tr:last-child td{border-bottom:0}
+.matrix td.topic .tn{font-weight:600;letter-spacing:-.01em}
+.matrix td.topic .ts{font-size:12px;color:var(--faint);display:block;overflow:hidden;text-overflow:ellipsis;max-width:280px;white-space:nowrap}
+.cell{display:inline-grid;place-items:center;min-width:30px;height:24px;border-radius:5px;font-family:var(--f-mono);font-size:12px}
+.cell.on{background:var(--ink);color:var(--bg)}
+.cell.off{color:var(--faint)}
+.cell.miss{background:var(--bad-soft);color:var(--bad);border:1.5px dashed var(--bad)}
+.badge{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px;color:var(--ink)}
+.badge.gap{background:var(--bad-soft)} .badge.strength{background:var(--good-soft)} .badge.shared{background:var(--surface-2)}
+.matrix-foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin-top:14px}
+.matrix-foot .pill{padding:8px 14px;font-size:11px}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer}
+.qlist{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px}
+.qlist li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:baseline;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;font-size:14px}
+.qlist li .qm{font-size:12px;color:var(--muted);grid-column:2}
+.qlist li.none{border-color:var(--ink);background:var(--bg)}
+.badge.ws{background:var(--hl);color:var(--hl-ink)}
+.badge.you{background:var(--good-soft)} .badge.them{background:var(--bad-soft)}
+h4.sec{margin:22px 0 4px;font-family:var(--f-mono);font-size:11px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ctx{min-height:90px!important}
+@media (max-width:560px){.matrix th.topic,.matrix td.topic{min-width:120px;max-width:140px}.matrix td.topic .ts{display:none}.matrix th,.matrix td{padding:7px 6px}}
+.pagelist{margin:0;padding-left:18px;font-size:13px;columns:2 220px;column-gap:24px}
+.pagelist li{break-inside:avoid;margin:2px 0}
+.pagelist .co{font-family:var(--f-mono);font-size:10px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+</style>
+
+<div class="brandbar" id="brandbar"><div class="wrap"><a class="logo" id="brandLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">saturday <span>content</span></a><span class="tag" id="brandTag">Competitive content gap · demo</span></div></div>
+
+<header class="head">
+  <div class="wrap">
+    <div class="head-row">
+      <div style="display:grid;gap:10px;min-width:0">
+        <span class="mono-label" id="eyebrow"></span>
+        <h1 id="title">Competitive <span class="hl">content gap</span></h1>
+      </div>
+      <span class="chip" id="modeChip"><span class="dot"></span><span id="modeChipText">Checking for Claude…</span></span>
+    </div>
+    <p class="lede" id="lede"></p>
+    <nav class="views" role="tablist">
+      <button type="button" role="tab" id="v-map" aria-selected="true" data-view="map">Gap map</button>
+      <button type="button" role="tab" id="v-topics" aria-selected="false" data-view="topics">Topic clusters</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="map" role="tabpanel" aria-labelledby="v-map">
+    <h2 class="q">Where are the gaps?</h2>
+    <ol class="steps" id="steps"></ol>
+  </section>
+  <section id="topics" role="tabpanel" aria-labelledby="v-topics" hidden>
+    <div class="lib-tools">
+      <div class="seg" id="topSeg" role="group" aria-label="Filter"></div>
+      <input type="search" id="topSearch" placeholder="Search topics and pages…" aria-label="Search topics and pages">
+    </div>
+    <div class="lib" id="topList"></div>
+    <p class="lib-note" id="topNote"></p>
+  </section>
+  <div class="cta" id="cta">
+    <div><strong>Get the competitive content gap skill</strong><div class="muted" style="font-size:14px">Claude collects your competitors' sitemaps and blog indexes, maps the topics they own against yours, and briefs the gaps worth closing.</div></div>
+    <a class="pill" id="ctaLink" href="https://saturdaycontent.co/templates/competitive-content-gap-claude" target="_blank" rel="noopener">Get the free skill →</a>
+  </div>
+</main>
+<footer class="site" id="siteFooter"><div class="wrap mono-label" id="footerText"></div></footer>
+<script>
+/* =====================================================================
+   CONFIG — whose content this maps. See CUSTOMIZE.md.
+   ===================================================================== */
+const CONFIG = {
+  title: "Competitive content gap",
+  company: "Fieldbook",
+  about: "Fieldbook is a content operations platform for B2B marketing teams. It puts briefs, the editorial calendar, reviews and approvals, a searchable content library, and content performance in one workspace.",
+  audience: "Content leads, content ops managers and demand gen marketers at B2B companies with marketing teams of 3 to 30 people.",
+  voice: "Plainspoken, specific and a little wry. Short sentences. Concrete examples over abstractions. Never hypey; no exclamation points; no 'revolutionize', 'unlock' or 'game-changer'.",
+  demoNote: "Fieldbook, Quillcrate, Draftmoor and Pressfold are fictional companies. Their page lists are invented so you can see how the gap map works.",
+  brand: { name: "saturday content", url: "https://saturdaycontent.co", tag: "Competitive content gap · demo" },
+  footer: "saturday content — tools for content teams",
+  ctaUrl: "https://saturdaycontent.co/templates/competitive-content-gap-claude"
+};
+
+/* =====================================================================
+   YOUR CONTENT — one URL, path or title per line. A pasted sitemap.xml
+   works too (the page pulls out every <loc>). Replace with your own.
+   ===================================================================== */
+const YOUR_CONTENT = {
+  name: "Fieldbook",
+  pages: `/blog/content-brief-template
+/blog/what-goes-in-a-content-brief
+/blog/content-briefs-writers-actually-follow
+/guides/editorial-calendar
+/blog/editorial-calendar-for-small-teams
+/blog/content-calendar-vs-editorial-calendar
+/blog/content-review-rounds
+/blog/approval-workflow-for-marketing-content
+/blog/approval-bottlenecks
+/guides/content-library-setup
+/blog/content-library-tagging
+/blog/stop-duplicate-content-work
+/blog/content-performance-dashboard
+/blog/content-performance-metrics
+/blog/measuring-content-performance-by-asset
+/guides/repurposing-content
+/blog/repurposing-webinar-recordings
+/blog/product-launch-content-checklist
+/blog/product-launch-content-plan
+/blog/launch-messaging-consistency
+/blog/sales-enablement-content-library
+/blog/sales-enablement-content-reps-use
+/blog/sme-interview-questions
+/blog/sme-interviews-for-technical-content
+/blog/interviewing-engineers-as-sme
+/blog/content-ops-team-structure
+/blog/content-operations-roles
+/blog/content-ops-maturity-model
+/blog/brief-to-publish-cycle-time
+/blog/reducing-content-cycle-time
+/blog/campaign-content-planning
+/blog/fewer-status-meetings`
+};
+
+/* =====================================================================
+   COMPETITORS — up to 4. Name plus one URL, path or title per line.
+   These three companies are invented for the demo.
+   ===================================================================== */
+const COMPETITORS = [
+  { name: "Quillcrate", pages: `https://www.quillcrate.example/blog/content-audit-checklist
+https://www.quillcrate.example/blog/how-to-run-a-content-audit
+https://www.quillcrate.example/blog/content-audit-spreadsheet
+https://www.quillcrate.example/blog/content-refresh-strategy
+https://www.quillcrate.example/blog/refresh-old-blog-posts
+https://www.quillcrate.example/blog/content-decay
+https://www.quillcrate.example/blog/content-decay-signals
+https://www.quillcrate.example/blog/keyword-research-for-b2b
+https://www.quillcrate.example/blog/keyword-research-tools
+https://www.quillcrate.example/blog/topic-clusters-seo
+https://www.quillcrate.example/blog/topic-cluster-examples
+https://www.quillcrate.example/blog/pillar-pages
+https://www.quillcrate.example/blog/seo-content-brief
+https://www.quillcrate.example/blog/content-brief-examples
+https://www.quillcrate.example/blog/editorial-calendar-template
+https://www.quillcrate.example/blog/content-calendar-examples
+https://www.quillcrate.example/blog/content-strategy-framework
+https://www.quillcrate.example/blog/b2b-content-strategy
+https://www.quillcrate.example/blog/content-strategy-document
+https://www.quillcrate.example/blog/content-roi
+https://www.quillcrate.example/blog/measuring-content-roi
+https://www.quillcrate.example/blog/content-attribution-models
+https://www.quillcrate.example/blog/content-attribution-b2b
+https://www.quillcrate.example/blog/ai-content-writing
+https://www.quillcrate.example/blog/ai-content-guidelines
+https://www.quillcrate.example/blog/ai-writing-tools-for-marketers
+https://www.quillcrate.example/blog/style-guide-template
+https://www.quillcrate.example/blog/brand-style-guide
+https://www.quillcrate.example/blog/brand-voice-guidelines
+https://www.quillcrate.example/blog/brand-voice-examples
+https://www.quillcrate.example/blog/content-distribution-strategy
+https://www.quillcrate.example/blog/content-distribution-channels
+https://www.quillcrate.example/blog/b2b-newsletter-strategy
+https://www.quillcrate.example/blog/content-performance-metrics
+https://www.quillcrate.example/blog/content-gap-analysis
+https://www.quillcrate.example/blog/competitor-content-analysis
+https://www.quillcrate.example/blog/repurpose-content-ideas
+https://www.quillcrate.example/blog/managing-freelance-writers
+https://www.quillcrate.example/blog/hiring-freelance-writers
+https://www.quillcrate.example/blog/content-governance` },
+  { name: "Draftmoor", pages: `/resources/approval-workflow
+/resources/approval-workflow-examples
+/resources/content-approval-process
+/resources/marketing-review-process
+/resources/content-review-checklist
+/resources/content-governance-framework
+/resources/content-governance-policy
+/resources/localization-workflow
+/resources/content-localization
+/resources/translation-management
+/resources/translation-workflow-for-marketing
+/resources/brand-consistency
+/resources/brand-voice-at-scale
+/resources/style-guide-enforcement
+/resources/content-calendar-template
+/resources/editorial-calendar-tools
+/resources/content-brief-template
+/resources/freelance-writer-onboarding
+/resources/freelance-writer-rates
+/resources/content-operations-guide
+/resources/content-ops-tools
+/resources/content-ops-metrics
+/resources/digital-asset-management
+/resources/asset-library-organization
+/resources/ai-content-workflow
+/resources/ai-content-review
+/resources/content-audit-template
+/resources/content-refresh-workflow
+/resources/content-version-control
+/resources/content-collaboration-tools
+/resources/agency-collaboration
+/resources/content-repurposing-workflow
+/resources/content-team-structure` },
+  { name: "Pressfold", pages: `How to measure content ROI in B2B
+Content attribution: a practical guide
+First-touch vs multi-touch attribution for content
+The B2B content distribution playbook
+Content distribution on LinkedIn
+Building a B2B newsletter people open
+Newsletter growth tactics
+Gated vs ungated content
+Lead magnets that convert
+Webinar promotion checklist
+Repurposing webinars into a content series
+Content repurposing for demand gen
+Content-led pipeline
+Account-based marketing content
+ABM content personalization
+Sales enablement content that reps use
+Case study template
+How to write a case study customers approve
+Customer story interviews
+Content refresh for organic growth
+Content decay: when to update
+SEO content brief template
+Topic clusters for demand gen
+Keyword research for pipeline
+AI content: what to automate
+Content performance reporting
+Content dashboard for executives
+Content marketing budget
+Content marketing budget template
+Content team KPIs` }
+];
+
+/* =====================================================================
+   AUDIENCE QUESTIONS — optional. One question per line. Questions no
+   one's content answers show up as Whitespace.
+   ===================================================================== */
+const QUESTIONS = `What should a content brief include?
+How often should we refresh old blog posts?
+How do we get legal review done faster?
+How do we write for the buying committee, not just the champion?
+How do we localize content?
+How do we measure ROI from content?
+When should we retire a page instead of updating it?
+How do we run SME interviews without wasting engineers' time?`;
+
+/* =====================================================================
+   TOPIC RULES — words the parser ignores when it groups pages.
+   STOPWORDS: ordinary English. GENERIC: format and filler words that
+   say what kind of page it is, not what it's about. DOMAIN: words every
+   page in your market shares (add your category name here).
+   SYNONYMS: spellings to treat as one word.
+   ===================================================================== */
+const TOPIC_RULES = {
+  stopwords: "a an the and or but of to in on for with without by from at as is are be been being it its this that these those your our you we they their them my me i us how what why when where which who whom do does did done can could should would will shall may might must not no vs versus via into over under about than then so if up out off more most less very just all any each every own same other such only also new old one two three get got make made use used using run running people actually really want need needs".split(" "),
+  generic: "blog blogs post posts article articles resource resources guide guides template templates example examples checklist checklists tip tips idea ideas best practice practices ultimate complete playbook framework frameworks strategy strategies process tool tools workflow workflows plan plans planning page pages step steps way ways thing things introduction intro overview basics management 101 tutorial index html htm php aspx en us uk www com io co example".split(" "),
+  domain: "content contents marketing marketer marketers b2b".split(" "),
+  synonyms: { ops: "operation", operations: "operation", operational: "operation", roi: "roi", kpi: "metric", kpis: "metric", metrics: "metric", analytics: "metric", calendars: "calendar", editorial: "editorial", update: "refresh", updating: "refresh", updates: "refresh", sme: "sme", smes: "sme", experts: "sme", expert: "sme" },
+  pathSkip: "blog blogs resources resource guides guide learn library articles article posts post insights hub academy en en-us us uk category categories tag tags topic topics page p news".split(" ")
+};
+
+/* ---------------- parsing ---------------- */
+const SETS = { stop: new Set(TOPIC_RULES.stopwords), generic: new Set(TOPIC_RULES.generic), domain: new Set(TOPIC_RULES.domain), skip: new Set(TOPIC_RULES.pathSkip) };
+function stem(w) {
+  w = w.toLowerCase();
+  if (TOPIC_RULES.synonyms[w]) return TOPIC_RULES.synonyms[w];
+  if (w.length <= 4) return w.replace(/s$/, "");
+  for (const [suf, rep] of [["izations", "iz"], ["ization", "iz"], ["isation", "iz"], ["ations", ""], ["ation", ""], ["ings", ""], ["ing", ""], ["ies", "y"], ["ied", "y"], ["ed", ""], ["es", ""], ["s", ""]]) {
+    if (w.endsWith(suf) && w.length - suf.length >= 3 && !(suf === "s" && /(ss|us|is)$/.test(w))) { w = w.slice(0, -suf.length) + rep; break; }
+  }
+  if (w.length > 5 && /e$/.test(w)) w = w.slice(0, -1);
+  if (w.length > 6 && /al$/.test(w)) w = w.slice(0, -2);
+  if (w.length > 5 && /e$/.test(w)) w = w.slice(0, -1);
+  return w;
+}
+/* One line → { raw, title, words[] (display words), tokens[] (stems) } */
+function parseLine(line) {
+  let raw = line.trim(); if (!raw) return null;
+  let text = raw, isUrl = false;
+  if (/^(https?:\/\/|www\.|\/)/i.test(raw) || (/^[\w.-]+\.[a-z]{2,}\//i.test(raw) && !/\s/.test(raw))) {
+    isUrl = true;
+    let path = raw.replace(/^https?:\/\//i, "").replace(/^[^/]*(?=\/)/, "").replace(/[?#].*$/, "").replace(/\/+$/, "").replace(/\.(html?|php|aspx?)$/i, "");
+    const segs = path.split("/").filter(Boolean).map(s => decodeURIComponentSafe(s)).filter(s => !SETS.skip.has(s.toLowerCase()) && !/^\d{1,4}$/.test(s));
+    if (!segs.length) return null;
+    let last = segs[segs.length - 1];
+    if (last.replace(/[^a-z]/gi, "").length < 4 && segs.length > 1) last = segs[segs.length - 2] + "-" + last;
+    text = last;
+  }
+  const words = text.replace(/['’]s\b/g, "").split(/[^A-Za-z0-9]+/).filter(Boolean);
+  const title = isUrl ? words.join(" ").replace(/\b(seo|ai|roi|sme|abm|b2b|b2c|kpis?|cms|crm)\b/gi, m => m.toUpperCase()).replace(/^./, c => c.toUpperCase()) : raw;
+  const display = [], tokens = [];
+  for (const w of words) {
+    const lw = w.toLowerCase();
+    if (SETS.stop.has(lw) || /^\d+$/.test(lw)) { display.push(null); continue; }
+    if (SETS.generic.has(lw) || SETS.domain.has(lw)) { display.push(lw); tokens.push(null); continue; }
+    display.push(lw); tokens.push(stem(lw));
+  }
+  if (!tokens.some(Boolean)) { // only format or domain words left ("B2B content strategy"): keep the format words so the page still counts
+    const fb = words.map(w => w.toLowerCase()).filter(w => SETS.generic.has(w) && !SETS.stop.has(w) && !/^(blog|post|article|page|html?|php|www|com|example)s?$/.test(w)).map(stem);
+    return { raw, title, words: display, tokens: fb, seq: fb };
+  }
+  return { raw, title, words: display, tokens: tokens.filter(Boolean), seq: tokens };
+}
+function decodeURIComponentSafe(s) { try { return decodeURIComponent(s); } catch (e) { return s; } }
+function parseList(text) {
+  let lines = String(text || "");
+  if (/<loc>/i.test(lines)) lines = [...lines.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map(m => m[1]).join("\n");
+  const seen = new Set(), out = [];
+  for (const l of lines.split(/\r?\n/)) { const p = parseLine(l.replace(/^[-*•\d.)\s]+(?=\S)/, m => /^\//.test(l.trim()) ? m : "").trim()); if (p && p.tokens.length && !seen.has(p.raw.toLowerCase())) { seen.add(p.raw.toLowerCase()); out.push(p); } }
+  return out;
+}
+
+/* ---------------- clustering ----------------
+   Greedy set cover over shared terms: the term (a stem, or two adjacent
+   stems) that covers the most unassigned pages becomes a cluster, until
+   no term covers two pages. Leftovers become one-page clusters. */
+function terms(p) {
+  const t = new Set(p.tokens), seq = p.seq.filter(Boolean);
+  for (let i = 0; i < seq.length - 1; i++) if (seq[i] !== seq[i + 1]) t.add(seq[i] + " " + seq[i + 1]);
+  return t;
+}
+function buildClusters(companies) {
+  const pages = [];
+  companies.forEach((c, ci) => c.pages.forEach(p => pages.push(Object.assign({ ci, terms: terms(p) }, p))));
+  const surface = {};
+  pages.forEach(p => p.words.forEach(w => { if (!w) return; const s = SETS.domain.has(w) ? null : stem(w); if (!s) return; (surface[s] = surface[s] || {})[w] = (surface[s][w] || 0) + 1; }));
+  const clusters = []; let open = pages.slice();
+  while (open.length) {
+    const count = new Map();
+    for (const p of open) for (const t of p.terms) count.set(t, (count.get(t) || 0) + 1);
+    let best = null, bestScore = 0;
+    for (const [t, n] of count) {
+      if (n < 2) continue;
+      const cos = new Set(open.filter(p => p.terms.has(t)).map(p => p.ci)).size;
+      const score = n * (t.includes(" ") ? 1.35 : 1) + cos * 0.6;
+      if (score > bestScore || (score === bestScore && t < best)) { best = t; bestScore = score; }
+    }
+    if (!best) break;
+    const members = open.filter(p => p.terms.has(best));
+    clusters.push({ key: best, pages: members });
+    open = open.filter(p => !p.terms.has(best));
+  }
+  open.forEach(p => clusters.push({ key: p.tokens[0], pages: [p], single: true }));
+  clusters.forEach(c => { c.label = labelFor(c, surface); c.counts = companies.map((_, i) => c.pages.filter(p => p.ci === i).length); });
+  return clusters;
+}
+function labelFor(c, surface) {
+  if (c.single) return c.pages[0].title;
+  const word = s => { const m = surface[s]; return m ? Object.entries(m).sort((a, b) => b[1] - a[1])[0][0] : s; };
+  const keyWords = c.key.split(" ").map(word);
+  // prefer the most common two-word phrase containing the key, if half the pages share it
+  const phr = {};
+  if (keyWords.length === 1) c.pages.forEach(p => { const w = p.words; for (let i = 0; i < w.length - 1; i++) if (w[i] && w[i + 1] && (stem(w[i]) === c.key || stem(w[i + 1]) === c.key) && !(SETS.generic.has(w[i]) || SETS.generic.has(w[i + 1]))) { const k = w[i] + " " + w[i + 1]; phr[k] = (phr[k] || 0) + 1; } });
+  const top = Object.entries(phr).sort((a, b) => b[1] - a[1])[0];
+  let lab = top && top[1] >= Math.max(2, c.pages.length / 2) ? top[0] : keyWords.join(" ");
+  if (lab === keyWords.join(" ") && keyWords.length === 1) { // a generic neighbour in every page ("style guide") still makes a better label
+    const nb = {}; c.pages.forEach(p => { const w = p.words, i = w.findIndex(x => x && stem(x) === c.key); if (i >= 0 && w[i + 1] && SETS.generic.has(w[i + 1])) nb[w[i + 1]] = (nb[w[i + 1]] || 0) + 1; });
+    const g = Object.entries(nb).find(e => e[1] === c.pages.length); if (g) lab = lab + " " + g[0];
+  }
+  return lab.replace(/\b(seo|ai|roi|sme|abm|b2b|kpi)\b/gi, m => m.toUpperCase()).replace(/^./, ch => ch.toUpperCase());
+}
+
+/* ---------------- analysis ---------------- */
+function matchQuestion(q, clusters) {
+  const qp = parseLine(q.replace(/^\//, "")); if (!qp) return null;
+  const qt = [...new Set(qp.tokens)];
+  const hits = [];
+  clusters.forEach(c => {
+    const union = new Set(c.pages.flatMap(p => p.tokens));
+    const keyHit = !c.single && c.key.split(" ").every(k => qt.includes(k)) && qt.filter(t => union.has(t)).length / qt.length >= 0.5; // the cluster's defining term is in the question, and the cluster covers at least half of it
+    c.pages.forEach(p => { const ov = qt.filter(t => p.tokens.includes(t)).length; if (keyHit || (qt.length && ov / qt.length >= 0.6 && (qt.length < 3 || ov >= 2))) hits.push({ c, p, ov }); });
+  });
+  return { q: q.trim(), tokens: qt, hits };
+}
+function analyze(you, comps, qText) {
+  const companies = [{ name: you.name || "You", pages: parseList(you.pages) }].concat(comps.filter(c => c.name.trim() || c.pages.trim()).map((c, i) => ({ name: c.name.trim() || `Competitor ${i + 1}`, pages: parseList(c.pages) })));
+  const clusters = buildClusters(companies);
+  const qs = String(qText || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(q => matchQuestion(q, clusters)).filter(Boolean);
+  qs.forEach(q => { q.byCo = companies.map((_, i) => q.hits.filter(h => h.p.ci === i).length); q.status = q.byCo[0] ? "you" : q.byCo.some(Boolean) ? "them" : "none"; q.clusters = [...new Set(q.hits.map(h => h.c))]; });
+  clusters.forEach(c => {
+    const you = c.counts[0], them = c.counts.slice(1), nThem = them.filter(Boolean).length, sumThem = them.reduce((a, b) => a + b, 0);
+    c.status = you && nThem ? "shared" : you ? "strength" : "gap";
+    c.qhits = qs.filter(q => q.clusters.includes(c)).length;
+    c.score = c.status === "gap" ? nThem * 3 + Math.min(sumThem, 6) * 0.5 + c.qhits * 2 : c.status === "strength" ? you + c.qhits * 2 : 0;
+  });
+  const order = { gap: 0, strength: 1, shared: 2 };
+  clusters.sort((a, b) => (a.single - b.single) || order[a.status] - order[b.status] || b.score - a.score || b.pages.length - a.pages.length || a.label.localeCompare(b.label));
+  return { companies, clusters, questions: qs,
+    gaps: clusters.filter(c => c.status === "gap"), strengths: clusters.filter(c => c.status === "strength"), shared: clusters.filter(c => c.status === "shared"),
+    whitespace: qs.filter(q => q.status === "none") };
+}
+
+
+/* =====================================================================
+   MODES — what Claude does with the map. Edit the task text to change
+   the output. The rubric lives in references/prioritization-rubric.md.
+   ===================================================================== */
+const RUBRIC = `Score each gap on four factors:
+- Audience fit (1-5): how directly the topic answers a question the target audience asks while choosing or running their content program. 5 = core job-to-be-done; 1 = adjacent curiosity.
+- Competitive pressure (0-3): how many competitors cover it, and how deeply (page count).
+- Question match (0-2): 2 if it answers one of the audience questions listed, 1 if it's close, 0 if not.
+- Effort (S/M/L): S = one article from knowledge the team has; M = needs an SME, data or a template; L = a hub, original research or a tool.
+Priority = Audience fit x 2 + Competitive pressure + Question match, minus 1 for M and 3 for L. Break ties toward topics that link naturally to the company's existing strengths.`;
+
+const MODES = [
+  { id: "cluster", name: "Cluster and prioritize", icon: "layers", blurb: "Claude regroups topics by meaning and ranks the gaps by audience fit and effort.",
+    task: `Regroup every page from every company into 10-16 topic clusters by meaning, not by shared words (for example, "content decay" and "refresh old posts" belong together). Then rank the gaps.
+
+Output, in this order:
+1. **Coverage by meaning:** a table with one row per cluster: Topic | one column per company with its page count (0 if none) | Status (Gap, Strength, Shared). Gaps first.
+2. **Gaps, ranked:** a table: # | Topic | Who covers it | Fit (1-5) | Effort (S/M/L) | Priority score | Why it matters to this audience (one line). Use the rubric.
+3. **Strengths to defend:** 2-4 clusters the company owns that competitors don't, with one line each on how to deepen them.
+4. **Whitespace:** audience questions no one answers, plus up to 3 more you can infer from the lists. One line on the angle for each.
+5. **Do these first:** the 3 moves you'd make this quarter, one sentence each.` },
+  { id: "brief", name: "Brief the top gaps", icon: "doc", blurb: "A short content brief for each of the top 5 gaps, built to beat what competitors published.",
+    task: `Rank the gaps with the rubric, take the top 5, and write a short content brief for each.
+
+For each brief:
+### [n]. Working title
+- **Gap it closes:** the topic, and which competitors cover it (cite their page titles).
+- **Reader and question:** who it's for and the question they're asking.
+- **Angle:** how this piece will be more useful than the competitor pages, judging only from their titles. Name the one thing they likely miss.
+- **Outline:** 4-6 H2s.
+- **Format and length:** e.g. guide ~1,800 words, template + article, checklist.
+- **Internal links:** 2-3 existing pages from the company's own list to link to.
+- **Call to action:** one, matched to the topic's funnel stage.
+- **Needs before writing:** SMEs, data or examples to gather, as [placeholder: ...] lines.
+
+End with one line on the order to publish them in and why.` }
+];
+
+/* =====================================================================
+   WORKED EXAMPLES — shown in the demo when Claude isn't connected.
+   Written from the sample lists above. Replace or delete them.
+   ===================================================================== */
+const EXAMPLES = {
+  cluster: `## Coverage by meaning
+
+| Topic | Fieldbook | Quillcrate | Draftmoor | Pressfold | Status |
+|---|---|---|---|---|---|
+| Refresh, decay and audits | 0 | 7 | 3 | 2 | Gap |
+| Measuring ROI and attribution | 0 | 4 | 0 | 3 | Gap |
+| Brand voice and style guides | 0 | 4 | 3 | 0 | Gap |
+| AI in the content workflow | 0 | 3 | 2 | 1 | Gap |
+| Distribution and newsletters | 0 | 3 | 0 | 4 | Gap |
+| SEO planning (keywords, clusters, pillars) | 0 | 5 | 0 | 2 | Gap |
+| Governance and localization | 0 | 1 | 6 | 0 | Gap |
+| Freelancers and agencies | 0 | 2 | 3 | 0 | Gap |
+| Budget and team KPIs | 0 | 0 | 1 | 3 | Gap |
+| Product launch content | 3 | 0 | 0 | 0 | Strength |
+| Cycle time and meetings | 3 | 0 | 0 | 0 | Strength |
+| Briefs | 4 | 3 | 1 | 1 | Shared |
+| Calendar | 3 | 2 | 2 | 0 | Shared |
+| Reviews and approvals | 3 | 0 | 5 | 0 | Shared |
+| Performance reporting | 3 | 1 | 1 | 2 | Shared |
+| Repurposing | 2 | 1 | 1 | 2 | Shared |
+| Library and enablement | 4 | 0 | 2 | 1 | Shared |
+
+## Gaps, ranked
+
+| # | Topic | Who covers it | Fit | Effort | Score | Why it matters |
+|---|---|---|---|---|---|---|
+| 1 | Refresh, decay and audits | All three | 5 | M | 15 | Content leads inherit hundreds of old pages; deciding what to fix is a weekly question. |
+| 2 | Measuring ROI and attribution | Quillcrate, Pressfold | 5 | M | 14 | Ties straight to "show leadership what content did," which Fieldbook already promises. |
+| 3 | Governance and localization | Draftmoor, Quillcrate | 4 | M | 11 | Natural extension of Fieldbook's approvals story. |
+| 4 | Brand voice and style guides | Quillcrate, Draftmoor | 4 | S | 11 | Easy to write well, and it links to briefs and reviews. |
+| 5 | AI in the content workflow | All three | 3 | S | 9 | Every competitor has a take; Fieldbook's should be about review, not writing. |
+| 6 | Freelancers and agencies | Quillcrate, Draftmoor | 3 | S | 8 | Briefs and reviews are where freelancer work goes wrong. |
+| 7 | SEO planning | Quillcrate, Pressfold | 2 | M | 5 | Crowded and only loosely tied to content ops. Lower priority. |
+
+## Strengths to defend
+- **Product launch content.** No competitor covers launches. Add a launch brief template and a post-launch review.
+- **Cycle time and meetings.** Fieldbook owns "brief to publish" as a measurable idea. Turn it into a benchmark worksheet.
+
+## Whitespace
+- **How do we get legal review done faster?** No one covers legal or compliance review. Angle: a review lane with clear owners and approved language.
+- **How do we write for the buying committee, not just the champion?** Unanswered. Angle: one brief, three readers.
+- **When should we retire a page instead of updating it?** Competitors cover refresh but not retirement. Angle: a keep, refresh, merge or retire decision table.
+
+## Do these first
+1. Publish a refresh-or-retire guide that answers the whitespace question and closes the biggest gap at once.
+2. Write a content ROI piece that starts from Fieldbook's per-asset performance pages and links back to them.
+3. Add a legal and compliance review guide that extends the approvals cluster into territory nobody holds.`,
+
+  brief: `### 1. Refresh, merge or retire: a decision table for old content
+- **Gap it closes:** Refresh, decay and audits. Quillcrate ("Content refresh strategy", "Content decay signals", "How to run a content audit"), Draftmoor ("Content refresh workflow"), Pressfold ("Content decay: when to update").
+- **Reader and question:** Content lead with a large back catalog. "Which pages do we fix, and which do we let go?"
+- **Angle:** Competitor titles cover refreshing. None covers retiring. Give a four-way decision table and the workflow to run it every quarter.
+- **Outline:** Why audits stall · The four verdicts · Signals for each verdict · Running it as a quarterly review · What to do with redirects
+- **Format and length:** Guide with a downloadable-style table, ~1,800 words
+- **Internal links:** /blog/content-performance-metrics, /guides/content-library-setup, /blog/stop-duplicate-content-work
+- **Call to action:** See per-asset performance in Fieldbook
+- **Needs before writing:** [placeholder: one real example of a page the team retired and what happened to traffic]
+
+### 2. Content ROI without a data team
+- **Gap it closes:** Measuring ROI and attribution. Quillcrate ("Measuring content ROI", "Content attribution models"), Pressfold ("How to measure content ROI in B2B", "First-touch vs multi-touch attribution for content").
+- **Reader and question:** Content lead asked for numbers by a VP. "What do I report, and how do I get it?"
+- **Angle:** Competitors lead with attribution models. Lead with the three numbers leadership will accept and how to pull them by hand first.
+- **Outline:** What leadership is really asking · Three numbers that hold up · Pulling them without new tools · When to invest in attribution · A one-page report
+- **Format and length:** Article plus a report template, ~1,500 words
+- **Internal links:** /blog/measuring-content-performance-by-asset, /blog/content-performance-dashboard
+- **Call to action:** Download the one-page report template
+- **Needs before writing:** [placeholder: example report with invented-free, real figures from a customer who agrees to be named]
+
+### 3. Legal and compliance review that doesn't take three weeks
+- **Gap it closes:** Whitespace. No competitor page covers legal review. Adjacent: Draftmoor ("Content governance framework", "Content approval process").
+- **Reader and question:** Content ops manager in a regulated company. "How do we get legal review done faster?"
+- **Angle:** Treat legal as a lane with its own brief fields, not a final gate.
+- **Outline:** Why legal review is slow · Legal fields in the brief · Approved-language library · Setting a review SLA · What to send and what not to
+- **Format and length:** Guide, ~1,500 words, with a checklist
+- **Internal links:** /blog/approval-workflow-for-marketing-content, /blog/approval-bottlenecks
+- **Call to action:** See approval steps in Fieldbook
+- **Needs before writing:** [placeholder: interview with an in-house counsel or compliance reviewer]
+
+### 4. Brand voice that survives five writers
+- **Gap it closes:** Brand voice and style guides. Quillcrate ("Brand voice guidelines", "Style guide template"), Draftmoor ("Brand voice at scale", "Style guide enforcement").
+- **Reader and question:** Managing editor with freelancers. "How do we keep everyone sounding like us?"
+- **Angle:** Competitors publish guides. This shows where voice gets enforced: in the brief and the review, not a PDF.
+- **Outline:** Why style guides go unread · Voice rules that fit in a brief · Reviewing for voice · Before and after examples
+- **Format and length:** Article with a template, ~1,200 words
+- **Internal links:** /blog/content-brief-template, /blog/content-review-rounds
+- **Call to action:** Copy the voice section of the Fieldbook brief template
+- **Needs before writing:** [placeholder: two real before and after paragraphs]
+
+### 5. Where AI fits in a content review
+- **Gap it closes:** AI in the content workflow. Quillcrate ("AI content guidelines"), Draftmoor ("AI content review"), Pressfold ("AI content: what to automate").
+- **Reader and question:** Content lead setting team policy. "What should AI do in our process, and what should it never do?"
+- **Angle:** Skip writing tools. Focus on checks before human review: brief compliance, links, claims to verify.
+- **Outline:** What changes when drafts arrive faster · Checks AI can run · What stays human · A team policy in five lines
+- **Format and length:** Article, ~1,200 words
+- **Internal links:** /blog/content-review-rounds, /blog/what-goes-in-a-content-brief
+- **Call to action:** Subscribe for the content ops newsletter
+- **Needs before writing:** [placeholder: the team's current AI policy, if any]
+
+Publish 1 and 3 first: they answer audience questions no one else answers and link straight to Fieldbook's existing strengths.`
+};
+
+/* ---------------- icons ---------------- */
+const ICON = {
+  layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/>'
+};
+const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.doc}</svg>`;
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("ccg:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("ccg:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const byId = (list, id) => list.find(x => x.id === id);
+const MAX_COMP = 4;
+const sampleInputs = () => ({ you: { name: YOUR_CONTENT.name, pages: YOUR_CONTENT.pages }, comps: COMPETITORS.map(c => ({ name: c.name, pages: c.pages })).concat(Array(MAX_COMP).fill(0).map(() => ({ name: "", pages: "" }))).slice(0, MAX_COMP), questions: QUESTIONS });
+
+const S = Object.assign({ mode: "cluster", context: "", view: "map", filter: "all", singles: false, topFilter: "all" }, store.get("state", {}));
+const IN = store.get("inputs", null) || sampleInputs();
+let SAMPLE = null, CTL = null, OUT = { tab: "example", text: "", status: "idle", msg: "", truncated: false }, R = null;
+
+/* ---------------- markdown-lite ---------------- */
+function md(src) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const lines = String(src).replace(/\r/g, "").split("\n"); let html = "", list = null, para = [], table = null;
+  const flushP = () => { if (para.length) { html += `<p>${inline(para.join(" "))}</p>`; para = []; } };
+  const flushL = () => { if (list) { html += `</${list}>`; list = null; } };
+  const flushT = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()); html += `<div style="overflow-x:auto"><table style="border-collapse:collapse;margin:0 0 12px">${[h, ...rows].map((r, i) => `<tr>${cells(r).map(c => `<${i ? "td" : "th"} style="border-bottom:1px solid var(--line);padding:4px 12px 4px 0;text-align:left">${inline(c)}</${i ? "td" : "th"}>`).join("")}</tr>`).join("")}</table></div>`; table = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^\s*\|.*\|\s*$/.test(l)) { flushP(); flushL(); (table = table || []).push(l.trim()); continue; } else flushT();
+    let m;
+    if (!l.trim()) { flushP(); flushL(); continue; }
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { flushP(); flushL(); html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(l.trim())) { flushP(); flushL(); html += "<hr>"; continue; }
+    if ((m = l.match(/^>\s?(.*)/))) { flushP(); flushL(); html += `<blockquote>${inline(m[1])}</blockquote>`; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (list !== "ul") { flushL(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (list !== "ol") { flushL(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    flushL(); para.push(l.trim());
+  }
+  flushP(); flushL(); flushT();
+  return html;
+}
+
+/* ---------------- client-side map as text (copied, and sent to Claude as a starting point) ---------------- */
+function matrixMarkdown(r, includeSingles) {
+  const rows = r.clusters.filter(c => includeSingles || !c.single);
+  const head = `| Topic | ${r.companies.map(c => c.name).join(" | ")} | Status |\n|---|${r.companies.map(() => "---|").join("")}---|`;
+  const label = { gap: "Gap", strength: "Strength", shared: "Shared" };
+  const body = rows.map(c => `| ${c.label} | ${c.counts.join(" | ")} | ${label[c.status]} |`).join("\n");
+  const ws = r.questions.length ? `\n\nAudience questions\n${r.questions.map(q => `- ${q.q}: ${q.status === "none" ? "Whitespace (no one covers it)" : q.status === "you" ? `covered by ${r.companies[0].name}` : `competitors only (${r.companies.filter((_, i) => i && q.byCo[i]).map(c => c.name).join(", ")})`}`).join("\n")}` : "";
+  return head + "\n" + body + ws;
+}
+
+/* ---------------- prompt ---------------- */
+function buildPrompt() {
+  const m = byId(MODES, S.mode), r = R;
+  const lists = r.companies.map((c, i) => `${i ? "COMPETITOR" : "OUR CONTENT"}: ${c.name} (${c.pages.length} pages)\n${c.pages.slice(0, 400).map(p => "- " + p.raw).join("\n")}`).join("\n\n");
+  const parts = [
+    `You are a senior B2B content strategist running a competitive content gap analysis for ${CONFIG.company}.`,
+    `\nABOUT ${CONFIG.company.toUpperCase()}\n${CONFIG.about}`,
+    CONFIG.audience ? `\nTARGET AUDIENCE\n${CONFIG.audience}` : "",
+    `\nHOUSE VOICE\n${CONFIG.voice}`,
+    `\nTASK (${m.name.toUpperCase()})\n${m.task}`,
+    `\nPRIORITIZATION RUBRIC\n${RUBRIC}`,
+    `\nPAGE LISTS\nEach line is a URL, path or title from that company's site. Judge topics from these only; you cannot open the pages.\n\n${lists}`,
+    r.questions.length ? `\nAUDIENCE QUESTIONS\n${r.questions.map(q => "- " + q.q).join("\n")}` : "",
+    `\nKEYWORD-BASED MAP (a starting point built by simple word matching; regroup by meaning)\n${matrixMarkdown(r, false)}`,
+    S.context.trim() ? `\nEXTRA CONTEXT FROM THE USER\n${S.context.trim()}` : "",
+    `\nRULES\n- Work only from the lists above. Don't claim to know what a page says beyond its title or path.\n- Never invent statistics, traffic numbers, customer names or quotes; write [placeholder: what's needed] instead.\n- Use the company names exactly as given.\n- Write in Markdown with clear headings and tables. No preamble; start with the output.`
+  ];
+  return parts.filter(Boolean).join("\n");
+}
+
+/* ---------------- render ---------------- */
+function stepHtml(n, done, title, sub, note, body, id) {
+  return `<li class="step${done ? " done" : ""}"${id ? ` id="${id}"` : ""}><span class="num">${n}</span><div class="step-h"><div><h3>${esc(title)}</h3>${sub ? `<span class="mono-label sub">${esc(sub)}</span>` : ""}</div>${note ? `<span class="opt-note">${esc(note)}</span>` : ""}</div><div class="step-b">${body}</div></li>`;
+}
+const countLabel = t => { const n = parseList(t).length; return n ? `${n} page${n === 1 ? "" : "s"} read` : "No pages yet"; };
+function renderSteps() {
+  const out = [];
+  out.push(stepHtml(1, !!IN.you.pages.trim(), "Your content", "URLs, paths, titles or a sitemap", "", `<div class="field-row"><input class="name" id="youName" value="${esc(IN.you.name)}" aria-label="Your company name" placeholder="Your company"><span class="count" id="youCount">${countLabel(IN.you.pages)}</span></div><textarea class="box" id="youPages" placeholder="One per line: /blog/content-brief-template, a full URL, or a page title. You can also paste a sitemap.xml.">${esc(IN.you.pages)}</textarea><div class="tool-row"><button class="pill ghost" type="button" id="loadSample">Load the sample</button><button class="pill ghost" type="button" id="clearAll">Clear everything</button></div>`));
+  out.push(stepHtml(2, IN.comps.some(c => c.pages.trim()), "Competitors", "Up to four", "Name plus one page per line", `<div class="comp-grid">${IN.comps.map((c, i) => `<div class="comp"><div class="field-row"><span class="slot">${i + 1}</span><input class="name" data-cname="${i}" value="${esc(c.name)}" aria-label="Competitor ${i + 1} name" placeholder="Competitor ${i + 1}"><span class="count" data-ccount="${i}">${countLabel(c.pages)}</span></div><textarea class="box" data-cpages="${i}" aria-label="Competitor ${i + 1} pages" placeholder="Paste their blog index, resource list or sitemap URLs.">${esc(c.pages)}</textarea></div>`).join("")}</div>`));
+  out.push(stepHtml(3, !!IN.questions.trim(), "Audience questions", "What your buyers ask", "Optional", `<textarea class="box" id="questions" style="min-height:110px" placeholder="One question per line, from sales calls, search, support tickets or community threads.">${esc(IN.questions)}</textarea><div class="hint">Questions no one's pages answer show up as Whitespace.</div>`));
+  out.push(stepHtml(4, true, "Coverage map", "Built in your browser", "", `<div id="mapBox"></div>`, "mapStep"));
+  out.push(stepHtml(5, false, "Ask Claude", "Optional", "", `<div class="modes" id="modes" role="group" aria-label="Mode" style="margin-bottom:12px"></div><textarea class="box ctx" id="ctx" placeholder="Anything Claude should weigh: topics you won't cover, a launch coming up, where your traffic comes from…">${esc(S.context)}</textarea><div class="gen-row" style="margin-top:12px"><button class="pill" id="genBtn" type="button">${SAMPLE ? "Generate with Claude" : "Build my prompt"}</button><span class="gen-note" id="genNote">${SAMPLE ? "Uses your Claude account. You'll be asked to allow it the first time. Claude works from your lists only; it can't open the pages." : "Claude isn't connected here, so the page writes the full prompt, with your lists and the map, for you to paste into Claude. A worked example is below."}</span></div><div class="summary-line" id="summaryLine"></div>`));
+  out.push(stepHtml(6, OUT.status === "done", "Output", "", "", `<div id="outWrap"></div>`));
+  $("#steps").innerHTML = out.join("");
+  renderModes(); refresh();
+}
+function renderModes() {
+  $("#modes").innerHTML = MODES.map(m => `<button type="button" class="mode" aria-pressed="${m.id === S.mode}" data-mode="${m.id}"><span class="tick"></span><span class="ic">${svg(m.icon)}</span><span class="mname">${m.name}</span><span class="mdesc">${esc(m.blurb)}</span></button>`).join("");
+}
+function summaryLine() {
+  if (!R) return "";
+  return `${byId(MODES, S.mode).name}: <b>${R.companies.length - 1} competitor${R.companies.length === 2 ? "" : "s"}</b> · <b>${R.gaps.filter(c => !c.single).length} gaps</b> · <b>${R.whitespace.length} whitespace</b>`;
+}
+function refresh() {
+  R = analyze(IN.you, IN.comps, IN.questions);
+  renderMap(); const sl = $("#summaryLine"); if (sl) sl.innerHTML = summaryLine();
+  renderTopics();
+  if (OUT.tab !== "out" || OUT.status === "idle") renderOutput();
+}
+function renderMap() {
+  const box = $("#mapBox"); if (!box) return;
+  const r = R;
+  if (!r.companies[0].pages.length || r.companies.length < 2) { box.innerHTML = `<div class="out-empty">${!r.companies[0].pages.length ? "Add your own pages in step 1." : "Add at least one competitor in step 2."} The map builds as you paste.</div>`; return; }
+  const multi = c => !c.single;
+  const cnt = { gap: r.gaps.filter(multi).length, strength: r.strengths.filter(multi).length, shared: r.shared.filter(multi).length };
+  const tiles = [
+    ["gap", "Gaps", cnt.gap, "Competitors cover it, you don't"],
+    ["strength", "Strengths", cnt.strength, "You cover it, they don't"],
+    ["shared", "Shared", cnt.shared, "Everyone covers it"],
+    ["ws", "Whitespace", r.whitespace.length, r.questions.length ? "Questions no one answers" : "Add audience questions"]
+  ];
+  const rows = r.clusters.filter(c => (S.singles || !c.single) && (S.filter === "all" || S.filter === "ws" || c.status === S.filter));
+  const label = { gap: "Gap", strength: "Strength", shared: "Shared" };
+  const table = `<div class="matrix-wrap"><table class="matrix"><thead><tr><th class="topic" scope="col">Topic</th>${r.companies.map((c, i) => `<th scope="col" class="${i ? "" : "you"}">${esc(c.name)}</th>`).join("")}<th scope="col">Status</th></tr></thead><tbody>${rows.length ? rows.map(c => `<tr><td class="topic"><span class="tn">${esc(c.label)}</span><span class="ts" title="${esc(c.pages.map(p => p.title).join(" · "))}">${esc(c.pages.slice(0, 3).map(p => p.title).join(" · "))}${c.pages.length > 3 ? ` +${c.pages.length - 3}` : ""}</span></td>${c.counts.map((n, i) => `<td>${n ? `<span class="cell on" title="${n} page${n === 1 ? "" : "s"}">${n}</span>` : i === 0 && c.status === "gap" ? `<span class="cell miss" title="Not covered">0</span>` : `<span class="cell off">·</span>`}</td>`).join("")}<td><span class="badge ${c.status}">${label[c.status]}</span></td></tr>`).join("") : `<tr><td colspan="${r.companies.length + 2}" class="out-empty">Nothing in this view.</td></tr>`}</tbody></table></div>`;
+  const singles = r.clusters.filter(c => c.single).length;
+  const qs = r.questions.length ? `<h4 class="sec">Audience questions</h4><ul class="qlist">${r.questions.slice().sort((a, b) => ({ none: 0, them: 1, you: 2 }[a.status] - { none: 0, them: 1, you: 2 }[b.status])).map(q => `<li class="${q.status}"><span class="badge ${q.status === "none" ? "ws" : q.status}">${q.status === "none" ? "Whitespace" : q.status === "you" ? "Covered" : "Gap"}</span><span>${esc(q.q)}</span><span class="qm">${q.status === "none" ? "No page on any list matches this question." : `Matched ${esc(q.clusters.map(c => c.label).join(", "))}: ${r.companies.map((c, i) => q.byCo[i] ? `${esc(c.name)} ${q.byCo[i]}` : "").filter(Boolean).join(" · ")}`}</span></li>`).join("")}</ul>` : "";
+  box.innerHTML = `<div class="tiles" role="group" aria-label="Filter the map">${tiles.map(([k, l, n, d]) => `<button type="button" class="tile" data-filter="${k}" aria-pressed="${S.filter === k}"><span class="tl"><span class="sw ${k}"></span>${l}</span><b>${n}</b><span class="td">${d}</span></button>`).join("")}</div>
+  ${S.filter === "ws" ? "" : table}
+  ${S.filter === "ws" && !r.questions.length ? `<div class="out-empty">Add audience questions in step 3 to find whitespace.</div>` : ""}
+  ${S.filter === "ws" ? qs : `<div class="matrix-foot"><span style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center">${S.filter !== "all" ? `<button class="pill ghost" type="button" data-filter="all">Show all topics</button>` : ""}<label class="chk"><input type="checkbox" id="singles" ${S.singles ? "checked" : ""}> Show ${singles} one-page topic${singles === 1 ? "" : "s"}</label></span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="msg" id="mapMsg" role="status"></span><button class="pill ghost" type="button" id="copyMap">Copy as table</button></span></div>${qs}`}`;
+}
+function renderOutput() {
+  const w = $("#outWrap"); if (!w) return;
+  const ex = EXAMPLES[S.mode];
+  const tabs = SAMPLE ? [["out", "Output"], ["prompt", "Prompt"]] : [["prompt", "Your prompt"], ["example", "Example output"]];
+  if (!tabs.find(t => t[0] === OUT.tab)) OUT.tab = tabs[0][0];
+  let body = "", actions = "";
+  if (OUT.tab === "prompt") {
+    body = OUT.status === "idle" && !SAMPLE && !OUT.built ? `<div class="out-empty">Pick what Claude should do, then click “Build my prompt.”</div>` : `<pre class="prompt" id="promptText">${esc(buildPrompt())}</pre>`;
+    actions = `<button class="pill" type="button" id="copyPrompt">Copy prompt</button><a class="pill ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "example") {
+    body = ex ? `<div class="ex-note">Worked example for ${esc(byId(MODES, S.mode).name)}, written from the sample lists for ${esc(CONFIG.company)} and three invented competitors.</div><div class="prose">${md(ex)}</div>` : `<div class="out-empty">No example for this mode.</div>`;
+  } else {
+    if (OUT.status === "idle") body = `<div class="out-empty">Nothing generated yet. Pick what Claude should do, then click Generate.</div>`;
+    else if (OUT.status === "thinking") body = `<div class="thinking"><i></i>Claude is reading the lists…</div>`;
+    else body = `<div class="prose">${md(OUT.text)}</div>`;
+    if (OUT.status === "streaming" || OUT.status === "thinking") actions = `<button class="pill ghost" type="button" id="stopBtn">Stop</button>`;
+    else if (OUT.text) actions = `<button class="pill" type="button" id="copyOut">Copy</button><button class="pill ghost" type="button" id="regen">Try another version</button>`;
+    if (OUT.truncated) actions += `<span class="msg">The answer was cut short. Ask for less at a time.</span>`;
+    if (OUT.msg) actions += `<span class="msg err">${esc(OUT.msg)}</span>`;
+    actions += `<span class="msg" id="copyMsg" role="status"></span>`;
+  }
+  w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${esc(summaryLine().replace(/<[^>]+>/g, ""))}</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === OUT.tab}" data-otab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="outBody">${body}</div>${actions ? `<div class="out-actions">${actions}</div>` : ""}</div>`;
+}
+
+/* ---------------- topic clusters view ---------------- */
+function renderTopics() {
+  if (!R) return;
+  const segs = [["all", "All"], ["gap", "Gaps"], ["strength", "Strengths"], ["shared", "Shared"]];
+  $("#topSeg").innerHTML = segs.map(([k, l]) => `<button type="button" aria-pressed="${k === S.topFilter}" data-tfilter="${k}">${l}</button>`).join("");
+  const q = $("#topSearch").value.trim().toLowerCase();
+  const label = { gap: "Gap", strength: "Strength", shared: "Shared" };
+  const rows = R.clusters.filter(c => (S.topFilter === "all" || c.status === S.topFilter) && (!q || (c.label + " " + c.pages.map(p => p.raw).join(" ")).toLowerCase().includes(q)));
+  $("#topList").innerHTML = rows.length ? rows.map(c => `<details class="aud"><summary><span class="ib">${svg(c.single ? "doc" : "grid")}</span><span><strong>${esc(c.label)}</strong><br><span class="muted" style="font-size:13px">${c.pages.length} page${c.pages.length === 1 ? "" : "s"} · ${R.companies.map((co, i) => c.counts[i] ? `${esc(co.name)} ${c.counts[i]}` : "").filter(Boolean).join(" · ")}</span></span><span class="badge ${c.status}">${label[c.status]}</span></summary><div class="aud-body" style="display:block"><ul class="pagelist">${c.pages.map(p => `<li><span class="co">${esc(R.companies[p.ci].name)}</span> ${esc(p.title)}</li>`).join("")}</ul></div></details>`).join("") : `<div class="out-empty">No topics match${q ? ` “${esc(q)}”` : ""}.</div>`;
+  const total = R.companies.reduce((a, c) => a + c.pages.length, 0);
+  $("#topNote").textContent = `${total} pages from ${R.companies.length} sites in ${R.clusters.filter(c => !c.single).length} shared-term topics and ${R.clusters.filter(c => c.single).length} one-page topics. Topics are grouped by shared words in titles and paths, so synonyms can land apart. "Cluster and prioritize" asks Claude to regroup them by meaning. ${SAMPLE ? "" : CONFIG.demoNote}`;
+}
+
+/* ---------------- generation ---------------- */
+async function generate(fresh) {
+  if (!SAMPLE) { OUT.built = true; OUT.tab = "prompt"; renderOutput(); $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+  CTL?.abort(); CTL = new AbortController();
+  OUT = { tab: "out", text: "", status: "thinking", msg: "", truncated: false }; renderOutput();
+  $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  try {
+    const r = await SAMPLE(buildPrompt(), { signal: CTL.signal, cache: fresh ? false : undefined, onText: ({ text }) => { OUT.text = text; OUT.status = "streaming"; const b = $("#outBody"); if (b && OUT.tab === "out") b.innerHTML = `<div class="prose">${md(text)}</div>`; else renderOutput(); } });
+    OUT.text = r.text; OUT.truncated = r.truncated; OUT.status = "done";
+  } catch (e) {
+    OUT.text = e && e.code !== "refused" ? (e.text || "") : "";
+    OUT.status = OUT.text ? "done" : "idle";
+    const copy = { not_granted: "Claude isn't allowed for this page. Allow it from the page's permissions, or copy the prompt instead.", sampling_disabled: "Claude isn't available on this account. Copy the prompt instead.", rate_limited: "You've hit a usage limit. Try again in a little while.", session_expired: "Sign in to Claude again, then retry.", refused: "Claude declined this request. Change the lists or context and try again.", prompt_too_large: "The lists are too long. Trim each to its blog and resource pages.", empty_completion: "Claude returned nothing. Try again with fewer pages.", cancelled: "" };
+    OUT.msg = e && e.code in copy ? copy[e.code] : "Something interrupted the answer. Try again.";
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled")) { SAMPLE = null; setChip(); renderSteps(); return; }
+  }
+  renderOutput();
+}
+
+/* ---------------- wiring ---------------- */
+function save() { store.set("state", { mode: S.mode, context: S.context, view: S.view, filter: S.filter, singles: S.singles, topFilter: S.topFilter }); store.set("inputs", IN); }
+function setChip() {
+  $("#modeChip").classList.toggle("live", !!SAMPLE);
+  $("#modeChipText").textContent = SAMPLE ? "Live · analyzing with Claude" : "Demo · map + prompt builder";
+  $("#brandTag").textContent = SAMPLE ? CONFIG.title : (CONFIG.brand?.tag || "");
+}
+function boot() {
+  const tw = CONFIG.title.split(" ");
+  $("#title").innerHTML = tw.length > 2 ? `${esc(tw.slice(0, -2).join(" "))} <span class="hl">${esc(tw.slice(-2).join(" "))}</span>` : `<span class="hl">${esc(CONFIG.title)}</span>`;
+  $("#eyebrow").textContent = `For ${CONFIG.company}`;
+  $("#lede").textContent = "Paste your page list and up to four competitors'. See the topics they own that you don't, the ones only you cover, and the questions nobody answers yet.";
+  document.title = CONFIG.title;
+  const br = CONFIG.brand; $("#brandbar").hidden = !br;
+  if (br) { const [w1, ...rest] = br.name.split(" "); $("#brandLink").innerHTML = rest.length ? `${esc(w1)} <span>${esc(rest.join(" "))}</span>` : `<span>${esc(w1)}</span>`; $("#brandLink").href = br.url || "#"; }
+  $("#siteFooter").hidden = !CONFIG.footer; $("#footerText").textContent = CONFIG.footer || "";
+  $("#cta").hidden = !CONFIG.ctaUrl; if (CONFIG.ctaUrl) $("#ctaLink").href = CONFIG.ctaUrl;
+  setChip(); renderSteps(); showView(S.view);
+}
+function showView(v) {
+  S.view = v; save();
+  document.querySelectorAll("nav.views button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  $("#map").hidden = v !== "map"; $("#topics").hidden = v !== "topics";
+}
+function copyText(text, msgEl, selEl) {
+  const done = () => { if (msgEl) msgEl.textContent = "Copied."; };
+  const fallback = () => { const pre = selEl || $("#promptText") || $("#outBody"); if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } if (msgEl) msgEl.textContent = "Selected. Press Ctrl+C or ⌘C."; };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+let timer = null;
+const later = () => { clearTimeout(timer); timer = setTimeout(() => { save(); refresh(); }, 250); };
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.view) return showView(t.dataset.view);
+  if (t.dataset.mode) { S.mode = t.dataset.mode; save(); OUT = { tab: OUT.tab, text: "", status: "idle", msg: "", built: OUT.built }; renderModes(); const sl = $("#summaryLine"); if (sl) sl.innerHTML = summaryLine(); renderOutput(); return; }
+  if (t.dataset.filter) { S.filter = S.filter === t.dataset.filter && t.dataset.filter !== "all" ? "all" : t.dataset.filter; save(); renderMap(); return; }
+  if (t.dataset.tfilter) { S.topFilter = t.dataset.tfilter; save(); renderTopics(); return; }
+  if (t.dataset.otab) { OUT.tab = t.dataset.otab; renderOutput(); return; }
+  if (t.id === "genBtn") return generate(false);
+  if (t.id === "regen") return generate(true);
+  if (t.id === "stopBtn") { CTL?.abort(); return; }
+  if (t.id === "copyPrompt") return copyText(buildPrompt(), $("#copyMsg"));
+  if (t.id === "copyOut") return copyText(OUT.text, $("#copyMsg"));
+  if (t.id === "copyMap") return copyText(matrixMarkdown(R, S.singles), $("#mapMsg"), $(".matrix"));
+  if (t.id === "loadSample") { Object.assign(IN, sampleInputs()); save(); renderSteps(); return; }
+  if (t.id === "clearAll") { Object.assign(IN, { you: { name: CONFIG.company === "Fieldbook" ? "" : CONFIG.company, pages: "" }, comps: Array(MAX_COMP).fill(0).map(() => ({ name: "", pages: "" })), questions: "" }); save(); renderSteps(); return; }
+});
+document.addEventListener("change", e => { if (e.target.id === "singles") { S.singles = e.target.checked; save(); renderMap(); } });
+document.addEventListener("input", e => {
+  const el = e.target, d = el.dataset;
+  if (el.id === "youName") { IN.you.name = el.value; later(); }
+  else if (el.id === "youPages") { IN.you.pages = el.value; $("#youCount").textContent = countLabel(el.value); el.closest(".step").classList.toggle("done", !!el.value.trim()); later(); }
+  else if (d.cname != null) { IN.comps[+d.cname].name = el.value; later(); }
+  else if (d.cpages != null) { IN.comps[+d.cpages].pages = el.value; document.querySelector(`[data-ccount="${d.cpages}"]`).textContent = countLabel(el.value); el.closest(".step").classList.toggle("done", IN.comps.some(c => c.pages.trim())); later(); }
+  else if (el.id === "questions") { IN.questions = el.value; el.closest(".step").classList.toggle("done", !!el.value.trim()); later(); }
+  else if (el.id === "ctx") { S.context = el.value; save(); }
+  else if (el.id === "topSearch") renderTopics();
+});
+
+if (!Array.isArray(IN.comps) || !IN.you) Object.assign(IN, sampleInputs());
+while (IN.comps.length < MAX_COMP) IN.comps.push({ name: "", pages: "" });
+IN.comps = IN.comps.slice(0, MAX_COMP);
+boot();
+(async () => {
+  try { SAMPLE = window.claude ? await window.claude.use("sample") : null; } catch (e) { SAMPLE = null; }
+  if (SAMPLE) { OUT.tab = "out"; setChip(); renderSteps(); }
+  else { setChip(); }
+})();
+</script>
+
+</body>
+</html>

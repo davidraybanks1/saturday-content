@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Live demo of the Repurposing engine, a free Claude skill from saturday content. Invented data for a fictional company.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Repurposing engine</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paper page, one working column; each step is a numbered rail; picks scroll sideways as card rows; output sits in an outlined "window". */
+:root{
+  --bg:#efede8; --surface:#f5f4f0; --surface-2:#e6e3dc; --ink:#141413; --muted:#55534d; --faint:#8d8a82; --line:#d3d0c8; --dot:#b9b5ab;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#fbe6ad; --bad:#b4442c; --bad-soft:#f3dcd3; --good:#2f7a4d;
+  --shadow-c:#141413;
+  --f-body:"Host Grotesk","Helvetica Neue",Arial,sans-serif; --f-mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(30px,4.4vw,44px);letter-spacing:-.04em;line-height:1.05}
+h2{font-size:22px;letter-spacing:-.03em}
+h3{font-size:16px;letter-spacing:-.02em;font-weight:600}
+.hl{background:var(--hl);color:var(--hl-ink);padding:0 .12em;border-radius:3px}
+.mono-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.brandbar{border-bottom:1px solid var(--line)}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-block:12px}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.03em;text-decoration:none}
+.logo span{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--hl)}
+
+header.head .wrap{padding-block:36px 8px;display:grid;gap:12px}
+.head-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.lede{font-size:18px;line-height:1.4;letter-spacing:-.01em;color:var(--muted);max-width:60ch;margin:0}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:6px;padding:5px 10px;font-family:var(--f-mono);font-size:12px;background:var(--bg)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.chip.live .dot{background:var(--hl);box-shadow:0 0 0 1.5px var(--ink)}
+nav.views{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px}
+nav.views button{border:0;background:none;padding:12px 0 9px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+nav.views button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+nav.views button:hover{color:var(--ink)}
+
+main{padding-block:28px 64px}
+.q{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.04em;font-weight:700;margin:0 0 18px}
+.modes{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.mode{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 14px 16px;display:grid;gap:8px;align-content:start}
+.mode:hover{border-color:var(--ink)}
+.mode[aria-pressed=true]{border:1.5px solid var(--ink);background:var(--hl);color:var(--hl-ink);box-shadow:4px 4px 0 var(--shadow-c)}
+.mode[aria-pressed=true] .mdesc{color:var(--hl-ink)}
+.mode .ic{width:26px;height:26px}
+.mode .mname{font-weight:700;font-size:19px;letter-spacing:-.03em}
+.mode .mdesc{font-size:13px;color:var(--muted);line-height:1.4}
+.mode .tick{position:absolute;right:12px;top:12px;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--faint)}
+.mode[aria-pressed=true] .tick{border-color:var(--hl-ink);background:var(--hl-ink);box-shadow:inset 0 0 0 3px var(--hl)}
+
+.steps{list-style:none;margin:30px 0 0;padding:0;display:grid}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:30px}
+.step::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:1.5px;background:var(--line)}
+.step:last-child::before{display:none}
+.num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;background:var(--bg);position:relative}
+.step.done .num{background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.step-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;min-height:34px;padding-top:4px}
+.step-h h3{font-size:19px;letter-spacing:-.03em;font-weight:700}
+.step-h .sub{display:block;margin-top:2px}
+.opt-note{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.step-b{grid-column:2;margin-top:12px;min-width:0}
+.rowwrap{position:relative}
+.cards{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);padding-right:40px!important;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 6px 10px 2px;scrollbar-width:thin}
+.opt{scroll-snap-align:start;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-height:132px;position:relative}
+.opt:hover{border-color:var(--ink)}
+.opt .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.opt .ib svg{width:20px;height:20px}
+.opt .on{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.opt .od{font-size:13px;color:var(--muted);line-height:1.35}
+.opt[aria-pressed=true]{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.opt[aria-pressed=true] .ib{background:var(--hl);color:var(--hl-ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt[aria-pressed=true]::after{content:"Selected";position:absolute;right:10px;top:10px;font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:2px 5px;border-radius:3px}
+.funnel .opt{min-height:0}
+textarea.box{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;line-height:1.5}
+textarea.box:focus{outline:none;border-color:var(--ink)}
+.hint{font-size:12px;color:var(--faint);margin-top:6px}
+.hint.req{color:var(--bad)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;padding:12px 20px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+.pill:hover:not(:disabled){background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.pill.ghost{background:transparent;color:var(--ink)}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.gen-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.gen-note{font-size:13px;color:var(--muted);max-width:60ch}
+.summary-line{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:10px}
+.summary-line b{font-weight:500;color:var(--ink);background:var(--hl-soft);padding:0 3px}
+
+.window{background:var(--bg);border:1.5px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--shadow-c);overflow:hidden;margin-right:6px}
+.window-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1.5px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap}
+.window-bar i{flex:none;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}
+.window-bar .wt{margin-left:4px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.otabs{display:flex;gap:4px}
+.otabs button{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.otabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out-body{padding:20px 22px;max-height:640px;overflow:auto}
+.out-empty{color:var(--muted);text-align:center;padding:28px}
+.out-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.out-actions .pill{padding:8px 14px;font-size:11px}
+.prose{max-width:70ch}
+.prose h1,.prose h2,.prose h3,.prose h4{margin:18px 0 6px;letter-spacing:-.02em}
+.prose h1{font-size:24px}.prose h2{font-size:20px}.prose h3{font-size:17px}.prose h4{font-size:15px}
+.prose > :first-child{margin-top:0}
+.prose p{margin:0 0 10px}
+.prose ul,.prose ol{margin:0 0 12px;padding-left:22px}
+.prose li{margin:3px 0}
+.prose blockquote{margin:0 0 12px;padding:4px 12px;border-left:3px solid var(--hl);color:var(--muted)}
+.prose code{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+.prose hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+pre.prompt{font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;margin:0;line-height:1.55}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.thinking i{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--hl);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation-duration:3s}}
+.msg{font-size:13px}
+.msg.err{color:var(--bad)}
+.ex-note{border-left:3px solid var(--hl);background:var(--surface);padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* library */
+.lib-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.lib-tools input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-width:min(100%,260px)}
+.seg{display:flex;gap:16px}
+.seg button{border:0;background:none;padding:4px 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+.seg button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.lib{display:grid;gap:10px}
+details.aud{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.aud[open]{border-color:var(--ink);background:var(--bg)}
+details.aud summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+details.aud summary::-webkit-details-marker{display:none}
+details.aud .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+details.aud .ib svg{width:20px;height:20px}
+.dim{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px}
+.aud-body{padding:0 14px 16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.fld h4{margin:0 0 4px;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld p,.fld li{margin:0;font-size:14px;line-height:1.45}
+.fld ul{margin:0;padding-left:18px}
+.fld.wide{grid-column:1 / -1}
+.lib-note{margin-top:18px;font-size:13px;color:var(--muted);max-width:70ch}
+
+.cta{margin-top:36px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:18px;background-color:var(--surface-2);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px}
+.cta > div{background:var(--bg);padding:8px 12px;border-radius:6px}
+footer.site{border-top:1px solid var(--line)}
+footer.site .wrap{padding-block:22px}
+
+/* repurposing engine additions: source tools, atom panel, multi-pick, per-asset blocks, ladder */
+.src-tools{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin-top:8px}
+.src-tools .hint{margin-top:0}
+.mini{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.mini:hover{border-color:var(--ink)}
+.mini-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.stats{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));margin-bottom:14px}
+.stat{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px}
+.stat b{display:block;font-size:24px;letter-spacing:-.03em;line-height:1.1}
+.stat span{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.atoms{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.agroup{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:12px 14px;min-width:0}
+.agroup h4{margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.agroup h4 .n{background:var(--ink);color:var(--bg);border-radius:3px;padding:1px 6px}
+.agroup ol{margin:0;padding-left:20px;display:grid;gap:7px;max-height:300px;overflow:auto}
+.agroup li{font-size:14px;line-height:1.4}
+.agroup li .who{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:2px}
+.agroup li mark{background:var(--hl-soft);color:inherit;padding:0 2px;border-radius:2px}
+.agroup .none{font-size:13px;color:var(--faint)}
+.speakers{font-size:13px;color:var(--muted);margin:0 0 12px}
+.speakers b{color:var(--ink);font-weight:600}
+.asset{border-top:1px solid var(--line);padding:16px 0 6px}
+.asset:first-child{border-top:0;padding-top:0}
+.asset-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.asset-h h2{font-size:19px;letter-spacing:-.03em;margin:0}
+.asset .prose h3{font-size:17px}
+.ladder{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:8px}
+.ladder th,.ladder td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.ladder th{font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.bar{display:inline-block;height:8px;border-radius:4px;background:var(--ink);vertical-align:middle}
+.bar.r{background:var(--hl);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.method{margin:0 0 22px;padding-left:20px;max-width:70ch}
+.method li{margin:4px 0}
+.sec-h{margin:28px 0 12px}
+</style>
+
+<div class="brandbar" id="brandbar"><div class="wrap"><a class="logo" id="brandLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">saturday <span>content</span></a><span class="tag" id="brandTag">Repurposing engine · demo</span></div></div>
+
+<header class="head">
+  <div class="wrap">
+    <div class="head-row">
+      <div style="display:grid;gap:10px;min-width:0">
+        <span class="mono-label" id="eyebrow"></span>
+        <h1 id="title"><span class="hl">Repurposing engine</span></h1>
+      </div>
+      <span class="chip" id="modeChip"><span class="dot"></span><span id="modeChipText">Checking for Claude…</span></span>
+    </div>
+    <p class="lede" id="lede"></p>
+    <nav class="views" role="tablist">
+      <button type="button" role="tab" id="v-engine" aria-selected="true" data-view="engine">Engine</button>
+      <button type="button" role="tab" id="v-method" aria-selected="false" data-view="method">Method and ladder</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="engine" role="tabpanel" aria-labelledby="v-engine">
+    <h2 class="q">What are we repurposing?</h2>
+    <ol class="steps" id="steps"></ol>
+  </section>
+  <section id="method" role="tabpanel" aria-labelledby="v-method" hidden>
+    <h2 class="q">Atoms first, then assets</h2>
+    <p class="lede" style="font-size:16px;margin-bottom:14px">Break the source into atoms before writing anything. Every asset is built from atoms, never from memory, so nothing drifts from what was actually said.</p>
+    <ol class="method" id="methodList"></ol>
+    <h3 class="sec-h" style="font-size:19px;letter-spacing:-.03em">The repurposing ladder</h3>
+    <p class="muted" style="margin:0 0 12px;max-width:70ch;font-size:14px">Effort to finish after the pack is generated, against how far each asset usually travels. When time is short, ship from the top down. Your picks are marked.</p>
+    <div style="overflow-x:auto"><table class="ladder" id="ladder"></table></div>
+    <p class="lib-note" id="methodNote"></p>
+  </section>
+  <div class="cta" id="cta">
+    <div><strong>Get the repurposing engine skill</strong><div class="muted" style="font-size:14px">Claude turns your webinars, reports and long posts into a full, fact-checked set of assets, and builds this page for your team.</div></div>
+    <a class="pill" id="ctaLink" href="https://saturdaycontent.co/templates/repurposing-engine-claude" target="_blank" rel="noopener">Get the free skill →</a>
+  </div>
+</main>
+<footer class="site" id="siteFooter"><div class="wrap mono-label" id="footerText"></div></footer>
+
+<script>
+/* =====================================================================
+   CONFIG — who the engine writes for. See CUSTOMIZE.md.
+   ===================================================================== */
+const CONFIG = {
+  title: "Repurposing engine",
+  company: "Fieldbook",
+  about: "Fieldbook is a content operations platform for B2B marketing teams. It puts briefs, the editorial calendar, reviews and approvals, a searchable content library, and content performance in one workspace.",
+  voice: "Plainspoken, specific and a little wry. Short sentences. Concrete examples over abstractions. Never hypey; no exclamation points; no 'revolutionize', 'unlock' or 'game-changer'.",
+  ctaDefault: "Start a free Fieldbook trial",
+  demoNote: "Fieldbook is a fictional company. The sample webinar, its speakers and every number in it are invented so you can see how the engine works.",
+  brand: { name: "saturday content", url: "https://saturdaycontent.co", tag: "Repurposing engine · demo" },
+  footer: "saturday content — tools for content teams",
+  ctaUrl: "https://saturdaycontent.co/templates/repurposing-engine-claude"
+};
+
+/* =====================================================================
+   OUTPUTS — the assets the engine can make. One entry per checkbox card.
+   play: the playbook sent to Claude (fuller notes in references/output-playbooks.md).
+   headings: the exact H2 headings Claude must use, so each asset gets its own Copy button.
+   effort / reach: 1–5, used by the repurposing ladder on the Method tab.
+   ===================================================================== */
+const OUTPUTS = [
+  { id: "linkedin", name: "3 LinkedIn posts", icon: "chat", blurb: "Three posts, three different hooks", effort: 2, reach: 4, life: "Days each",
+    headings: ["LinkedIn post 1", "LinkedIn post 2", "LinkedIn post 3"],
+    play: "Three posts of 120–220 words, each leading with a different atom (a stat, the method, a quote or contrarian belief). Hook in the first two lines. One idea, one example from the source, one takeaway. Short paragraphs. End with a question or a pointer to the full source. 3 hashtags at most, at the end. First person, for a named person to post; add a line '*For: [name]*' under each post saying who should post it. Add a short label after the number in each heading, e.g. 'LinkedIn post 1: the stat'." },
+  { id: "newsletter", name: "Newsletter section", icon: "mail", blurb: "A ready-to-drop block for your issue", effort: 2, reach: 3, life: "One send",
+    headings: ["Newsletter section"],
+    play: "150–250 words. A short H3 headline, two or three paragraphs on what the reader gets from the source (not what happened at the event), one stat and one short quote at most, then a link line like [Link: full recording]." },
+  { id: "blog", name: "Blog post summary", icon: "doc", blurb: "A searchable recap that lasts", effort: 3, reach: 4, life: "Months to years",
+    headings: ["Blog post summary"],
+    play: "500–800 words. Start with an italic line 'Adapted from [source name].' Then an H3 title a reader would search for, a suggested meta description under 155 characters, a 2–3 sentence intro, 3–4 H4 sections following the source's structure (any list or method as a list), two attributed quotes at most, a short conclusion and one CTA." },
+  { id: "email", name: "Sales follow-up email", icon: "send", blurb: "For attendees, sent within 48 hours", effort: 1, reach: 2, life: "One send",
+    headings: ["Sales follow-up email"],
+    play: "90–150 words to someone who attended or registered. A subject line under 50 characters plus one alternative. Thanks in one line, the single most useful idea for this reader, one stat from the source, one soft ask (a reply, a 20-minute call, or the resource). Use [First name], [Rep name] and [Link] placeholders. No full recap, no 'just following up'." },
+  { id: "video", name: "Short video script", icon: "video", blurb: "45–75 seconds, with on-screen notes", effort: 5, reach: 4, life: "Weeks",
+    headings: ["Short video script"],
+    play: "45–75 seconds read aloud (about 120–180 words). A Markdown table with columns Time | Said | On screen: hook (0–5s, a question or the strongest stat), problem, the idea, close and CTA. Write it for the original speaker using their actual lines where possible. Note length and speaker above the table." },
+  { id: "quotes", name: "5 pull quotes", icon: "quote", blurb: "Word for word, attributed", effort: 1, reach: 3, life: "Weeks",
+    headings: ["5 pull quotes"],
+    play: "Exactly five quotes, word for word from the source (trim with an ellipsis only), each under 30 words, formatted as '> \"Quote.\" — Name, role' (role only the first time). Under each, one italic line saying where it works best (quote card, slide, email, video overlay). Pick lines with a point of view, a number or a turn of phrase; skip lines that only make sense in context." },
+  { id: "thread", name: "Social thread", icon: "thread", blurb: "5–8 posts for X, Threads or Bluesky", effort: 2, reach: 3, life: "Days",
+    headings: ["Social thread"],
+    play: "5–8 numbered posts (1/, 2/…), each under 280 characters. Post 1 is the hook (a stat or contrarian belief) and promises what's in the thread. Middle posts carry the method, one step per post. The last post gives the takeaway and a [Link] to the source." },
+  { id: "faq", name: "FAQ", icon: "help", blurb: "Real questions, sourced answers", effort: 3, reach: 3, life: "Months",
+    headings: ["FAQ"],
+    play: "5–7 questions in bold, each followed by a 2–4 sentence answer drawn from the source. Use the questions actually asked in the source first. Mark any question not asked in the source with *(likely question)* after it. Attribute when quoting." }
+];
+
+/* =====================================================================
+   PERSONAS — short form of the Fieldbook messaging library (see references/personas.md).
+   angle steers which atoms each asset leads with; avoid keeps the pack on-message.
+   ===================================================================== */
+const PERSONAS = [
+  { id: "content-lead", name: "Content lead", icon: "target", blurb: "Ship more without more meetings",
+    angle: "Fewer review rounds and status meetings; briefs the whole team follows; showing leadership what content did.", avoid: "Don't call Fieldbook a project management tool. Don't lead with AI." },
+  { id: "demand-gen", name: "Demand gen marketer", icon: "megaphone", blurb: "Content that fills pipeline",
+    angle: "Campaign content that ships on time and can be tied to pipeline.", avoid: "Don't promise attribution magic. Don't talk about 'storytelling' in the abstract." },
+  { id: "pmm", name: "Product marketer", icon: "rocket", blurb: "Launches that land",
+    angle: "Launch assets that stay on-message and are easy for sales to find.", avoid: "Don't suggest anyone else should own positioning." },
+  { id: "ops", name: "Marketing ops", icon: "gear", blurb: "Workflows that run themselves",
+    angle: "A clean, consistent structure for content work and data that can be reported on.", avoid: "Don't say 'seamless'. Be specific or say nothing." },
+  { id: "creator", name: "Writer and creator", icon: "pen", blurb: "Write more, chase less",
+    angle: "Clear briefs up front, feedback in one place, fewer surprise rewrites.", avoid: "Don't talk about output or productivity metrics. Don't imply surveillance." },
+  { id: "exec", name: "Executive buyer", icon: "building", blurb: "Content ROI the board believes",
+    angle: "A content program leadership can see, measure and defend.", avoid: "Don't bury the outcome under features. No team-level jargon." }
+];
+const FUNNEL = [
+  { id: "tofu", name: "Top of funnel", short: "TOFU", level: 0, blurb: "Spark problem awareness",
+    play: "Lead with the problem and the idea. Mention the company lightly or not at all. CTAs: watch, read, follow." },
+  { id: "mofu", name: "Middle of funnel", short: "MOFU", level: 1, blurb: "Prove expertise, build trust",
+    play: "Lead with the method. Show where the product fits without pushing. CTAs: get the template, register, see how it works." },
+  { id: "bofu", name: "Bottom of funnel", short: "BOFU", level: 2, blurb: "Equip buyers to decide",
+    play: "Lead with outcomes and proof from the source. The sales email and FAQ do the heavy lifting. CTAs: book a call, start a trial." }
+];
+
+/* =====================================================================
+   METHOD — the "atoms first" steps shown on the Method tab (references/atoms-first.md).
+   ===================================================================== */
+const METHOD = [
+  "Read the whole source once without writing anything.",
+  "Write the core belief in one sentence. If you can't, the source may hold two pieces.",
+  "List the atoms: quotes with their speaker, stats with their context, questions, and any method or list.",
+  "Check each stat: what it measures and what it doesn't.",
+  "Give each asset a different lead atom so the set doesn't repeat itself.",
+  "Write each asset from its atoms. Add only a hook, a CTA and what the format needs.",
+  "Fact-check against the atom list, not your memory of the source."
+];
+
+/* =====================================================================
+   SAMPLE_SOURCE — preloaded so the demo works on first load. Invented.
+   Replace with one of your own sources, or set to "" to start empty.
+   ===================================================================== */
+const SAMPLE_SOURCE = `Briefs that survive review: a Fieldbook webinar (excerpt)
+
+Host: Dev Ramirez, community lead at Fieldbook
+Guest: Maya Okafor, head of content at Fieldbook
+
+Dev Ramirez: Welcome back, everyone. For the next half hour we're talking about the least glamorous document in content marketing: the brief. Maya, you've said the brief is where most content goes wrong. Why there and not in the draft?
+
+Maya Okafor: Because the draft gets blamed for decisions nobody made earlier. When a piece comes back from review with forty comments, most of those comments aren't about the writing. They're about who the piece is for, what it's supposed to prove, and what the reader should do next. Those are brief questions. If the brief doesn't answer them, the review does, and the review is the most expensive place to answer anything.
+
+Dev Ramirez: You actually measured this, right?
+
+Maya Okafor: We did. Last year we pulled 140 briefs from our own team and matched each one to how many review rounds the finished piece needed. The briefs that left the audience vague averaged 4.2 review rounds. The briefs that named a specific role and the one belief we wanted to change averaged 2.1. Same writers, same reviewers, same quarter. The only real difference was the brief.
+
+Dev Ramirez: That's half the review time.
+
+Maya Okafor: Roughly half the rounds, yes. And the rounds you cut are the painful ones, the late rewrites where a stakeholder shows up and says, "Wait, who is this for?"
+
+Dev Ramirez: So what goes into a brief that survives review?
+
+Maya Okafor: Five fields, and we made all five required. First, the reader, by role, not by persona nickname. "Marketing ops manager at a 200-person software company" beats "Ops Olivia" every time, because a writer can picture that person's Tuesday. Second, the one thing the reader should believe after reading. One thing. If you write two, you have two pieces. Third, what the reader believes today and why it's wrong. That's where the tension in the piece comes from. Fourth, the proof we'll use, with links. Not "some stats," the actual sources. Fifth, the single next step we want the reader to take.
+
+Dev Ramirez: Only five? People expect a longer template.
+
+Maya Okafor: Long templates are part of the problem. We had a brief template with 23 fields at one point. Writers filled in the easy ones, like word count and due date, and skipped the hard ones. A brief with 23 fields and the belief field left blank is worse than a brief with five fields filled in properly. A short template that's actually finished beats a long one that's half finished.
+
+Dev Ramirez: We've got a question from the audience. Priya asks: "Who should write the brief, the strategist or the writer?"
+
+Maya Okafor: The person who will defend the piece in review. Usually that's the strategist or the content lead. The writer should push back on the brief before they start, and we built a fifteen-minute brief review into our process for exactly that. If the writer can't explain the one belief back to you in a sentence, the brief isn't done.
+
+Dev Ramirez: Doesn't that slow everything down?
+
+Maya Okafor: It moves the time, it doesn't add it. Our briefs now take about 20 minutes longer to write. But the average piece goes from brief to publish in 9 working days instead of 16. You spend 20 minutes up front to save a week at the back.
+
+Dev Ramirez: Another question, from Tomás: "What do you do when a stakeholder ignores the brief and rewrites the piece anyway?"
+
+Maya Okafor: You show them the brief. That's the other job a brief does: it's a record of what we agreed. When a late comment contradicts the brief, the reviewer has two options. Either the brief was wrong, and we update it and accept the delay, or the comment is out of scope and it goes into a list for the next piece. Both are fine. What's not fine is quietly rewriting the piece to a brief nobody wrote down.
+
+Dev Ramirez: I like that. "A brief nobody wrote down."
+
+Maya Okafor: It happens constantly. Somebody has a different brief in their head, and the review is where you find out.
+
+Dev Ramirez: Let's talk about the belief field, because I think that's the one people struggle with. What does a good one look like?
+
+Maya Okafor: A good belief is something a reader could disagree with. "Content is important" is not a belief, nobody argues with it. "Your calendar isn't why content slips, your briefs are" is a belief, and some readers will push back, which is exactly what makes it worth writing. If the belief is safe, the piece will be forgettable.
+
+Dev Ramirez: And the proof field? Where do teams get that wrong?
+
+Maya Okafor: They write "add stats" and hope the writer finds some. Then the writer finds a number from an unrelated survey, and the reviewer flags it, and that's another round. We ask for the specific source in the brief, or we write "no proof yet" so everyone knows the piece is an opinion piece. Being honest about that up front saves a lot of arguments.
+
+Dev Ramirez: Last question before we wrap. From Jordan: "If I can only change one thing on Monday, what should it be?"
+
+Maya Okafor: Make the belief field required. Don't let a brief move to drafting until someone has written, in one sentence, what the reader should believe afterward. Even if you change nothing else, you'll see it in the reviews within a month.
+
+Dev Ramirez: Maya, thank you. For everyone watching, the five-field brief template is in the resources tab, and we'll send the recording tomorrow.
+
+Maya Okafor: Thanks, Dev. And to everyone with a 23-field template: you can delete 18 of them. Nobody will notice.`;
+
+/* =====================================================================
+   EXAMPLE — the full pack for SAMPLE_SOURCE, shown when Claude isn't connected.
+   Each "## " heading is one asset; your output picks filter which ones show.
+   Replace with a pack for your own sample, or set text to "" to hide the tab.
+   ===================================================================== */
+const EXAMPLE = { picks: { persona: "content-lead", funnel: "mofu" }, text: `## Atom map
+
+- **Core belief:** Most content goes wrong in the brief, not the draft, and a short brief that's actually finished fixes it.
+- **Lead atoms by asset:** LinkedIn 1 → the 4.2 vs 2.1 stat · LinkedIn 2 → the five fields · LinkedIn 3 → "a brief nobody wrote down" · Video → Jordan's Monday question · Email → 16 to 9 days · Thread → the five fields · FAQ → audience questions from Priya, Tomás and Jordan
+
+---
+
+## LinkedIn post 1: the stat
+
+We pulled 140 of our own briefs and matched each one to how many review rounds the finished piece needed.
+
+Briefs that left the audience vague: 4.2 rounds on average.
+Briefs that named a specific role and the one belief we wanted to change: 2.1.
+
+Same writers. Same reviewers. Same quarter.
+
+When a piece comes back with forty comments, most of them aren't about the writing. They're about who it's for, what it should prove, and what the reader should do next. Those are brief questions. If the brief doesn't answer them, the review does, and review is the most expensive place to answer anything.
+
+What does your team's brief leave for review to decide?
+
+#ContentOps #ContentMarketing
+
+*For: Maya Okafor*
+
+## LinkedIn post 2: the method
+
+Our brief template once had 23 fields.
+
+Writers filled in word count and due date. They skipped the hard ones.
+
+Now it has five, and all five are required:
+
+1. The reader, by role. Not a persona nickname.
+2. The one thing they should believe after reading.
+3. What they believe today, and why it's wrong.
+4. The proof, with links. Not "some stats."
+5. The single next step.
+
+A short template that's actually finished beats a long one that's half finished.
+
+Which of the five does your team skip?
+
+#ContentMarketing #Briefs
+
+*For: Maya Okafor*
+
+## LinkedIn post 3: the quote
+
+"What's not fine is quietly rewriting the piece to a brief nobody wrote down."
+
+Maya Okafor said this on our webinar last week, and I keep thinking about it.
+
+Her point: a brief isn't only instructions for the writer. It's a record of what the team agreed. So when a late comment contradicts it, there are two honest options. The brief was wrong, so you update it and accept the delay. Or the comment is out of scope, and it goes on a list for the next piece.
+
+Both are fine. The silent rewrite isn't.
+
+Full recording in the comments.
+
+#ContentOps
+
+*For: Dev Ramirez*
+
+---
+
+## Newsletter section
+
+### Your briefs are doing more damage than your drafts
+
+When a piece comes back from review covered in comments, it's tempting to blame the draft. Maya Okafor, head of content at Fieldbook, thinks that's usually wrong. On our latest webinar she shared what happened when her team matched 140 briefs to the review rounds each piece needed: briefs with a vague audience averaged 4.2 rounds, and briefs that named a specific role and one belief averaged 2.1.
+
+Her fix is five required fields: the reader by role, the one belief, what they believe today, the proof with links, and the next step. Briefs now take about 20 minutes longer to write, and pieces move from brief to publish in 9 working days instead of 16.
+
+"You spend 20 minutes up front to save a week at the back."
+
+[Link: watch the full recording and get the five-field template]
+
+---
+
+## Blog post summary
+
+*Adapted from the Fieldbook webinar "Briefs that survive review."*
+
+### How to write a content brief that survives review
+
+**Meta description:** Most review rounds fix problems the brief should have solved. Five required fields that cut review rounds roughly in half.
+
+When a draft comes back with forty comments, the writing usually isn't the problem. In a recent Fieldbook webinar, head of content Maya Okafor explained why most content goes wrong in the brief, and what her team changed.
+
+#### The review is answering the brief's questions
+
+"The draft gets blamed for decisions nobody made earlier," Okafor said. Most review comments ask who the piece is for, what it should prove, and what the reader should do next. If the brief doesn't answer those, the review does.
+
+Her team tested this on 140 of their own briefs from last year. Briefs that left the audience vague averaged 4.2 review rounds. Briefs that named a specific role and the one belief to change averaged 2.1, with the same writers and reviewers in the same quarter.
+
+#### Five required fields
+
+1. **The reader, by role.** "Marketing ops manager at a 200-person software company," not a persona nickname.
+2. **The one belief.** One thing the reader should believe after reading. Two beliefs means two pieces.
+3. **What they believe today, and why it's wrong.** This is where the tension comes from.
+4. **The proof, with links.** The actual sources, or "no proof yet" if it's an opinion piece.
+5. **The single next step.**
+
+The team's old template had 23 fields. Writers filled in the easy ones and skipped the hard ones. "A short template that's actually finished beats a long one that's half finished."
+
+#### Who writes it, and what it costs
+
+The brief belongs to whoever will defend the piece in review, usually the strategist or content lead. Writers get a fifteen-minute brief review to push back before they start. Briefs now take about 20 minutes longer, and the average piece goes from brief to publish in 9 working days instead of 16.
+
+#### When a stakeholder ignores the brief
+
+The brief is a record of what the team agreed. A late comment that contradicts it means either the brief was wrong (update it and accept the delay) or the comment is out of scope (save it for the next piece).
+
+#### Start on Monday
+
+If you change one thing, make the belief field required. No brief moves to drafting until someone has written, in one sentence, what the reader should believe afterward.
+
+**[Watch the full recording and get the five-field template]**
+
+---
+
+## Sales follow-up email
+
+**Subject:** The one field to add to your briefs
+**Alternative subject:** 16 days to 9, from one brief change
+
+Hi [First name],
+
+Thanks for joining "Briefs that survive review."
+
+If you only take one thing from it: Maya's team cut brief-to-publish time from 16 working days to 9, and the change started with making one field required. The belief field. No brief moves to drafting until someone writes, in one sentence, what the reader should believe afterward.
+
+The five-field template from the session is here: [Link]
+
+If your team is looking at how briefs and reviews run today, I'm happy to walk through how Fieldbook sets up required brief fields and review steps. Would 20 minutes next week be useful?
+
+[Rep name]
+
+---
+
+## Short video script
+
+**Length:** about 60 seconds · **Speaker:** Maya Okafor
+
+| Time | Said | On screen |
+|---|---|---|
+| 0–5s | "If I can only change one thing on Monday, what should it be?" | Text: *One change for Monday* |
+| 5–15s | "When a piece comes back from review with forty comments, most of those comments aren't about the writing." | Maya to camera |
+| 15–30s | "We pulled 140 briefs. The ones that left the audience vague averaged 4.2 review rounds. The ones that named a specific role and one belief averaged 2.1." | Text: *4.2 rounds → 2.1 rounds* |
+| 30–45s | "A good belief is something a reader could disagree with. If the belief is safe, the piece will be forgettable." | Text: *Is your belief arguable?* |
+| 45–55s | "Make the belief field required. Even if you change nothing else, you'll see it in the reviews within a month." | Text: *Make the belief field required* |
+| 55–60s | Voiceover: "Get the five-field brief template." | Text: *Five-field template, link in caption* |
+
+---
+
+## 5 pull quotes
+
+> "The draft gets blamed for decisions nobody made earlier." — Maya Okafor, head of content, Fieldbook
+
+*Works best:* quote card, opening slide.
+
+> "If the brief doesn't answer them, the review does, and the review is the most expensive place to answer anything." — Maya Okafor
+
+*Works best:* LinkedIn image, blog pull quote.
+
+> "A short template that's actually finished beats a long one that's half finished." — Maya Okafor
+
+*Works best:* quote card, newsletter.
+
+> "You spend 20 minutes up front to save a week at the back." — Maya Okafor
+
+*Works best:* sales email sign-off, slide.
+
+> "If the belief is safe, the piece will be forgettable." — Maya Okafor
+
+*Works best:* quote card, video overlay.
+
+---
+
+## Social thread
+
+1/ We matched 140 content briefs to the review rounds each piece needed. Vague audience: 4.2 rounds. Specific role plus one belief: 2.1. Here are the five fields that made the difference.
+
+2/ The reader, by role. "Marketing ops manager at a 200-person software company" beats a persona nickname, because a writer can picture that person's Tuesday.
+
+3/ The one belief. One thing the reader should believe after reading. If you write two, you have two pieces.
+
+4/ What they believe today, and why it's wrong. That's where the tension in the piece comes from.
+
+5/ The proof, with links. Not "add stats." The actual source, or "no proof yet" so everyone knows it's an opinion piece.
+
+6/ The single next step for the reader.
+
+7/ The old template had 23 fields. Writers filled in the easy ones and skipped the hard ones. Five fields, all required, all finished.
+
+8/ If you only change one thing: make the belief field required. Full webinar and template: [Link]
+
+---
+
+## FAQ
+
+**Who should write the brief, the strategist or the writer?**
+"The person who will defend the piece in review," said Maya Okafor. Usually that's the strategist or content lead. The writer should push back before starting, which is why her team runs a fifteen-minute brief review.
+
+**Doesn't a longer brief slow everything down?**
+It moves the time rather than adding it. Briefs take about 20 minutes longer to write, and the average piece goes from brief to publish in 9 working days instead of 16.
+
+**What do you do when a stakeholder ignores the brief and rewrites the piece?**
+Show them the brief. Either the brief was wrong, so you update it and accept the delay, or the comment is out of scope and goes on a list for the next piece.
+
+**If I can only change one thing, what should it be?**
+Make the belief field required. Don't let a brief move to drafting until someone has written, in one sentence, what the reader should believe afterward.
+
+**What makes a good belief?** *(likely question)*
+Something a reader could disagree with. "Content is important" isn't a belief. "Your calendar isn't why content slips, your briefs are" is.
+
+**What if we don't have proof for the piece?** *(likely question)*
+Write "no proof yet" in the brief so everyone knows it's an opinion piece, rather than asking the writer to find numbers later.
+
+**Why only five fields?** *(likely question)*
+Long templates get half filled. The team's 23-field template had the easy fields done and the belief field blank, which Okafor called worse than five fields filled in properly.` };
+
+/* ---------------- icons ---------------- */
+const ICON = {
+  pen: '<path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/><path d="M14 7l3 3"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  send: '<path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/>',
+  quote: '<path d="M5 17c0-4 1-7 5-9M14 17c0-4 1-7 5-9"/><path d="M5 17h4v-4H5zM14 17h4v-4h-4z"/>',
+  thread: '<circle cx="6" cy="5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v3M6 14v3M11 5h9M11 12h9M11 19h6"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.7-2.5 2-2.5 4M12 17h.01"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8"/>',
+  megaphone: '<path d="M3 10v4h3l8 5V5L6 10z"/><path d="M18 9a4 4 0 0 1 0 6"/>',
+  rocket: '<path d="M12 2c4 3 5 8 3 13H9C7 10 8 5 12 2z"/><path d="M9 15l-3 4M15 15l3 4"/><circle cx="12" cy="9" r="1.5"/>',
+  gear: '<circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  building: '<path d="M4 21V5l8-3v19M12 9h8v12M7 8h2M7 12h2M7 16h2M15 13h2M15 17h2M2 21h20"/>'
+};
+const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.doc}</svg>`;
+const funnelSvg = (lvl) => `<svg viewBox="0 0 24 24" aria-hidden="true">${[[3,4,21,4,18,9,6,9],[6.5,10,17.5,10,15,15,9,15],[9.5,16,14.5,16,13,21,11,21]].map((p,i)=>`<path d="M${p[0]} ${p[1]}L${p[2]} ${p[3]}L${p[4]} ${p[5]}L${p[6]} ${p[7]}Z" fill="${i===lvl?'currentColor':'none'}" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`).join("")}</svg>`;
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("rpe:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("rpe:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const byId = (list, id) => list.find(x => x.id === id);
+
+const S = Object.assign({ outputs: ["linkedin", "newsletter", "email", "quotes"], persona: "", funnel: "", source: SAMPLE_SOURCE, view: "engine" }, store.get("state", {}));
+if (!Array.isArray(S.outputs)) S.outputs = [];
+let SAMPLE = null, CTL = null, OUT = { tab: "example", text: "", status: "idle", msg: "", truncated: false }, ATOMS = null, PACK = [];
+
+/* ---------------- markdown-lite ---------------- */
+function md(src) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const lines = String(src).replace(/\r/g, "").split("\n"); let html = "", list = null, para = [], table = null;
+  const flushP = () => { if (para.length) { html += `<p>${inline(para.join(" "))}</p>`; para = []; } };
+  const flushL = () => { if (list) { html += `</${list}>`; list = null; } };
+  const flushT = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()); html += `<div style="overflow-x:auto"><table style="border-collapse:collapse;margin:0 0 12px">${[h, ...rows].map((r, i) => `<tr>${cells(r).map(c => `<${i ? "td" : "th"} style="border-bottom:1px solid var(--line);padding:4px 12px 4px 0;text-align:left;vertical-align:top">${inline(c)}</${i ? "td" : "th"}>`).join("")}</tr>`).join("")}</table></div>`; table = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^\s*\|.*\|\s*$/.test(l)) { flushP(); flushL(); (table = table || []).push(l.trim()); continue; } else flushT();
+    let m;
+    if (!l.trim()) { flushP(); flushL(); continue; }
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { flushP(); flushL(); html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(l.trim())) { flushP(); flushL(); html += "<hr>"; continue; }
+    if ((m = l.match(/^>\s?(.*)/))) { flushP(); flushL(); html += `<blockquote>${inline(m[1])}</blockquote>`; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (list !== "ul") { flushL(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (list !== "ol") { flushL(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    flushL(); para.push(l.trim());
+  }
+  flushP(); flushL(); flushT();
+  return html;
+}
+
+/* ---------------- atoms: client-side extraction ---------------- */
+const META_LABELS = /^(host|guest|guests|event|title|date|length|length of excerpt|source|note|notes|speaker|speakers|moderator|panelists?|recorded|transcript|q|a)$/i;
+const NUM_WORDS = "half|twice|double|triple|quadruple|dozen|percent|hundred|thousand|million|billion|fifteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety";
+const NUM_RE = new RegExp(`(\\d[\\d,.]*%?|\\b(?:${NUM_WORDS})\\b)`, "gi");
+const NUM_TEST = new RegExp(`\\d|\\b(?:${NUM_WORDS})\\b`, "i");
+const BACKREF = /^(this|that|these|those|it|it's|so|and|but|or|yes|no|yeah|well|right|because|roughly|exactly|thanks|thank|okay|ok|sure|also|then|which|they|he|she|we've|you've)\b/i;
+const FILLER = /\b(um|uh|you know|kind of|sort of|i mean|i guess|let's|we've got|welcome)\b/i;
+const CONTRAST = /\b(not|isn't|aren't|don't|doesn't|never|beats|instead|than|worse|better|only|every|nobody|no one|most|least|is|are)\b/gi;
+
+function splitSentences(p) {
+  return p.replace(/\s+/g, " ").trim().replace(/([.!?]["”’']?)\s+(?=["“‘(]?[A-Z0-9])/g, "$1\u0001").split("\u0001").map(s => s.trim()).filter(Boolean);
+}
+function extractAtoms(text) {
+  const clean = String(text || "").replace(/\r/g, "").replace(/\*\*|__/g, "").replace(/^#+\s*/gm, "").replace(/^>\s?/gm, "");
+  const words = (clean.match(/\S+/g) || []).length;
+  const paras = clean.split(/\n\s*\n|\n(?=[A-Z][\w.'’-]+(?: [A-Z][\w.'’-]+){0,3}:\s)/).map(p => p.trim()).filter(Boolean);
+  const speakers = {}, roles = {}, sentences = [];
+  for (let p of paras) {
+    let who = "";
+    const m = p.match(/^([A-Z][\w.'’-]+(?: [A-Z][\w.'’-]+){0,3}|Speaker \d+):\s+([\s\S]*)$/);
+    if (m) {
+      if (META_LABELS.test(m[1])) {
+        const r = m[2].match(/^([A-Z][\w.'’-]+(?: [A-Z][\w.'’-]+){1,3}),\s*(.{3,80})$/);
+        if (r) roles[r[1]] = r[2].replace(/[.\s]+$/, "");
+        continue;
+      }
+      who = m[1]; p = m[2]; speakers[who] = (speakers[who] || 0) + p.split(/\s+/).length;
+    }
+    if (/^[-*]\s/.test(p) || p.split(/\s+/).length < 3 && !/[.?!]$/.test(p)) continue;
+    for (const s of splitSentences(p)) sentences.push({ s, who });
+  }
+  const lead = Object.entries(speakers).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+  const seen = new Set(), uniq = arr => arr.filter(x => { const k = x.s.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  const stats = uniq(sentences.filter(x => NUM_TEST.test(x.s)));
+  seen.clear();
+  const questions = uniq(sentences.filter(x => /\?["”’']?$/.test(x.s) && x.s.split(/\s+/).length >= 3));
+  seen.clear();
+  const scored = sentences.filter(x => /[.!]["”’']?$/.test(x.s)).map(x => {
+    const n = x.s.split(/\s+/).length; let sc = 0;
+    if (n < 6 || n > 32 || /^["“‘]/.test(x.s)) return null;
+    if (n >= 8 && n <= 22) sc += 2; else sc += 1;
+    sc += Math.min(2, (x.s.match(CONTRAST) || []).length);
+    if (NUM_TEST.test(x.s)) sc += 1;
+    if (BACKREF.test(x.s.replace(/^["“‘]/, ""))) sc -= 3;
+    if (FILLER.test(x.s)) sc -= 2;
+    if (/["“”]/.test(x.s)) sc -= 1;
+    if (/^(I|We)\b/.test(x.s)) sc -= 1;
+    if (x.who && x.who === lead) sc += 1; else if (x.who && lead) sc -= 1;
+    if (/^[A-Z][a-z]+,\s/.test(x.s) || /\b(you've said|we're talking|for the next)\b/i.test(x.s)) sc -= 3;
+    return Object.assign({ sc }, x);
+  }).filter(x => x && x.sc >= 2).sort((a, b) => b.sc - a.sc);
+  const quotes = uniq(scored).slice(0, 8);
+  return { words, minutes: Math.max(1, Math.round(words / 238)), sentences: sentences.length, speakers: Object.keys(speakers), roles, quotes, stats, questions };
+}
+const markNums = s => String(s).split(NUM_RE).map((part, i) => i % 2 ? `<mark>${esc(part)}</mark>` : esc(part)).join("");
+const whoLine = w => w ? `${w}${ATOMS?.roles?.[w] ? ", " + ATOMS.roles[w] : ""}` : "";
+function atomsText(a) {
+  const q = a.quotes.map(x => `- "${x.s}"${x.who ? ` (${whoLine(x.who)})` : ""}`).join("\n") || "- none found";
+  const st = a.stats.map(x => `- ${x.s}${x.who ? ` (${x.who})` : ""}`).join("\n") || "- none found";
+  const qs = a.questions.map(x => `- ${x.s}${x.who ? ` (${x.who})` : ""}`).join("\n") || "- none found";
+  return `Words: ${a.words} · Reading time: ${a.minutes} min · Speakers: ${a.speakers.map(whoLine).join("; ") || "none named"}\n\nCandidate pull quotes\n${q}\n\nSentences with numbers\n${st}\n\nQuestions in the source\n${qs}`;
+}
+
+/* ---------------- prompt ---------------- */
+function buildPrompt() {
+  const outs = OUTPUTS.filter(o => S.outputs.includes(o.id)), p = byId(PERSONAS, S.persona), fu = byId(FUNNEL, S.funnel);
+  const a = ATOMS || extractAtoms(S.source);
+  const heads = ["Atom map", ...outs.flatMap(o => o.headings)];
+  const parts = [
+    `You are a senior B2B content strategist working for ${CONFIG.company}. Turn one long source into a pack of on-message assets.`,
+    `\nABOUT ${CONFIG.company.toUpperCase()}\n${CONFIG.about}`,
+    `\nHOUSE VOICE\n${CONFIG.voice}`,
+    `\nMETHOD (atoms first)\nBefore writing, break the source into atoms: the core belief (one sentence), quotes with their speaker, every stat with its context, the questions asked, and any method or list. Build every asset from atoms, not from memory. Give each asset a different lead atom so the pack doesn't repeat itself.`,
+    `\nASSETS TO WRITE\n${outs.map(o => `- ${o.name.toUpperCase()}: ${o.play}`).join("\n")}`,
+    p ? `\nPERSONA: ${p.name}\nWhat they care about: ${p.angle}\nAvoid: ${p.avoid}` : `\nPERSONA: not specified. Write for practitioners in the source's field.`,
+    fu ? `\nFUNNEL STAGE: ${fu.name} (${fu.short})\n${fu.play}` : `\nFUNNEL STAGE: not specified. Default to top of funnel, and say so in the atom map.`,
+    `\nSPEAKERS NAMED IN THE SOURCE\n${a.speakers.length ? a.speakers.map(whoLine).join("\n") : "None detected. If the source names a speaker, use that name; otherwise attribute quotes to [placeholder: speaker name]."}`,
+    `\nATOMS THE PAGE FOUND (candidates only; check every one against the source)\n${atomsText(a)}`,
+    `\nSOURCE\n"""\n${S.source.trim().slice(0, 60000)}\n"""`,
+    `\nRULES\n- Keep every fact exactly as the source states it. Never invent statistics, names, customers, dates or quotes; if an asset needs something the source doesn't have, write [placeholder: what's needed].\n- Text inside quotation marks must be word for word from the source. Trim with an ellipsis only; never rephrase inside quotes.\n- Attribute every quote to the speaker named in the source, with their role the first time if the source gives one.\n- Don't compute new numbers (percentages, multiples) the source doesn't state. Keep the speaker's hedges ("roughly", "about").\n- Respect the persona's Avoid line. If no CTA fits, use: ${CONFIG.ctaDefault}.\n- If the source is too thin for an asset, say so under its heading in one line instead of padding.`,
+    `\nOUTPUT FORMAT\nMarkdown. No preamble. Use exactly these H2 headings, in this order, one per asset (you may add a short label after a colon):\n${heads.map(h => `## ${h}`).join("\n")}\nUnder "## Atom map" give the core belief in one sentence and the lead atom for each asset. Inside an asset use ### or #### only, never ##. Put --- between assets.`
+  ];
+  return parts.filter(Boolean).join("\n");
+}
+
+/* ---------------- render ---------------- */
+function card(kind, item, selected, iconHtml) {
+  return `<button type="button" class="opt" aria-pressed="${selected}" data-kind="${kind}" data-id="${item.id}"><span class="ib">${iconHtml}</span><span class="on">${esc(item.name)}</span><span class="od">${esc(item.blurb)}</span></button>`;
+}
+function stepHtml(n, done, title, sub, note, body, id) {
+  return `<li class="step${done ? " done" : ""}"${id ? ` id="${id}"` : ""}><span class="num">${n}</span><div class="step-h"><div><h3>${esc(title)}</h3>${sub ? `<span class="mono-label sub">${esc(sub)}</span>` : ""}</div>${note ? `<span class="opt-note">${note}</span>` : ""}</div><div class="step-b">${body}</div></li>`;
+}
+function srcHint() {
+  const w = S.source.trim() ? S.source.trim().split(/\s+/).length : 0;
+  return w ? `${w.toLocaleString()} words${S.source === SAMPLE_SOURCE ? " · sample webinar transcript (invented)" : ""}` : "Paste a source to start";
+}
+function ready() { return !!S.source.trim() && S.outputs.length > 0; }
+function renderSteps() {
+  const out = [];
+  out.push(stepHtml(1, !!S.source.trim(), "Paste the source", "Transcript, long post, report or podcast notes", "", `<textarea class="box" id="src" style="min-height:220px" placeholder="Paste the full source. For transcripts, keep speaker names at the start of each turn, like “Maya Okafor: …”">${esc(S.source)}</textarea><div class="src-tools"><div class="hint${S.source.trim() ? "" : " req"}" id="srcHint">${srcHint()}</div><div class="mini-row" style="margin:0"><button type="button" class="mini" id="loadSample">Load sample</button><button type="button" class="mini" id="clearSrc">Clear</button></div></div>`));
+  out.push(stepHtml(2, !!S.source.trim(), "Atoms", "Found in your source, no Claude needed", "", `<div id="atomsWrap"></div>`));
+  out.push(stepHtml(3, S.outputs.length > 0, "Make…", "Outputs", `<span id="outCount">${S.outputs.length} of ${OUTPUTS.length}</span> · pick any`, `<div class="mini-row"><button type="button" class="mini" id="pickAll">Select all</button><button type="button" class="mini" id="pickNone">Clear</button></div><div class="cards">${OUTPUTS.map(o => card("outputs", o, S.outputs.includes(o.id), svg(o.icon))).join("")}</div>`));
+  out.push(stepHtml(4, !!S.persona, "For…", "Persona", "Optional · pick one", `<div class="cards">${PERSONAS.map(p => card("persona", p, p.id === S.persona, svg(p.icon))).join("")}</div>`));
+  out.push(stepHtml(5, !!S.funnel, "At…", "Stage of funnel", "Optional · pick one", `<div class="cards funnel">${FUNNEL.map(f => card("funnel", f, f.id === S.funnel, funnelSvg(f.level))).join("")}</div>`));
+  out.push(stepHtml(6, false, "Generate the pack", "", "", `<div class="gen-row"><button class="pill" id="genBtn" type="button" ${ready() ? "" : "disabled"}>${SAMPLE ? "Generate the pack" : "Build my prompt"}</button><span class="gen-note" id="genNote">${genNote()}</span></div><div class="summary-line" id="summaryLine">${summaryLine()}</div>`));
+  out.push(stepHtml(7, OUT.status === "done", "Your pack", "", "", `<div id="outWrap"></div>`));
+  $("#steps").innerHTML = out.join("");
+  renderAtoms(); renderOutput();
+}
+function genNote() {
+  if (!S.source.trim()) return "Paste a source first.";
+  if (!S.outputs.length) return "Pick at least one output.";
+  return SAMPLE ? "One generation writes every asset you picked. Uses your Claude account; you'll be asked to allow it the first time." : "Claude isn't connected here, so the engine writes the full prompt, atoms included, for you to paste into Claude. The example tab shows a finished pack for the sample.";
+}
+function summaryLine() {
+  const names = OUTPUTS.filter(o => S.outputs.includes(o.id)).map(o => o.name), bits = [byId(PERSONAS, S.persona)?.name, byId(FUNNEL, S.funnel)?.short].filter(Boolean);
+  return `${names.length ? names.length + " asset" + (names.length > 1 ? "s" : "") : "No outputs picked"}${bits.length ? ": " + bits.map(b => `<b>${esc(b)}</b>`).join(" · ") : names.length ? " · no persona or stage" : ""}`;
+}
+function renderAtoms() {
+  const w = $("#atomsWrap"); if (!w) return;
+  ATOMS = extractAtoms(S.source);
+  const a = ATOMS;
+  if (!a.words) { w.innerHTML = `<div class="out-empty" style="padding:14px">Paste a source above and the engine pulls out quotes, numbers and questions here.</div>`; return; }
+  const group = (title, list, empty, fn) => `<div class="agroup"><h4><span>${title}</span><span class="n">${list.length}</span></h4>${list.length ? `<ol>${list.map(fn).join("")}</ol>` : `<div class="none">${empty}</div>`}</div>`;
+  w.innerHTML = `<div class="stats"><div class="stat"><b>${a.words.toLocaleString()}</b><span>Words</span></div><div class="stat"><b>${a.minutes} min</b><span>Reading time</span></div><div class="stat"><b>${a.stats.length}</b><span>Number lines</span></div><div class="stat"><b>${a.speakers.length || "None"}</b><span>Speakers</span></div></div>
+  ${a.speakers.length ? `<p class="speakers">Quotes get attributed to: ${a.speakers.map(s => `<b>${esc(s)}</b>${a.roles[s] ? `, ${esc(a.roles[s])}` : ""}`).join(" · ")}</p>` : `<p class="speakers">No speaker labels found. Start each turn with “Name: …” so quotes can be attributed.</p>`}
+  <div class="atoms">
+    ${group("Candidate pull quotes", a.quotes, "No strong standalone sentences found.", x => `<li>“${esc(x.s)}”${x.who ? `<span class="who">${esc(x.who)}</span>` : ""}</li>`)}
+    ${group("Every sentence with a number", a.stats, "No numbers or statistics in this source.", x => `<li>${markNums(x.s)}${x.who ? `<span class="who">${esc(x.who)}</span>` : ""}</li>`)}
+    ${group("Questions asked in the source", a.questions, "No questions found. The FAQ will rely on likely questions.", x => `<li>${esc(x.s)}${x.who ? `<span class="who">${esc(x.who)}</span>` : ""}</li>`)}
+  </div>
+  <div class="mini-row" style="margin:12px 0 0"><button type="button" class="mini" id="copyAtoms">Copy atoms</button><span class="msg" id="atomMsg" role="status"></span></div>`;
+}
+function splitPack(text) {
+  const parts = String(text).split(/^(?=## )/m), pack = [];
+  for (const p of parts) {
+    const m = p.match(/^## (.*)\n?([\s\S]*)$/);
+    const body = (m ? m[2] : p).replace(/\n-{3,}\s*$/, "").trim();
+    if (m) pack.push({ title: m[1].trim(), body }); else if (body) pack.push({ title: "", body });
+  }
+  return pack;
+}
+function packHtml(text, withCopy) {
+  PACK = splitPack(text);
+  return PACK.map((x, i) => `<div class="asset">${x.title ? `<div class="asset-h"><h2>${esc(x.title)}</h2>${withCopy && x.body ? `<button type="button" class="mini" data-copy="${i}">Copy</button>` : ""}</div>` : ""}<div class="prose" id="asset-${i}">${md(x.body)}</div></div>`).join("");
+}
+function exampleText() {
+  const keep = new Set(["atom map", ...OUTPUTS.filter(o => S.outputs.includes(o.id)).flatMap(o => o.headings.map(h => h.toLowerCase()))]);
+  return splitPack(EXAMPLE.text).filter(x => x.title && [...keep].some(k => x.title.toLowerCase().startsWith(k))).map(x => `## ${x.title}\n${x.body}`).join("\n\n");
+}
+function renderOutput() {
+  const w = $("#outWrap"); if (!w) return;
+  const hasEx = !!EXAMPLE.text;
+  const tabs = SAMPLE ? [["out", "Pack"], ["prompt", "Prompt"]] : [["prompt", "Your prompt"], ...(hasEx ? [["example", "Example pack"]] : [])];
+  if (!tabs.find(t => t[0] === OUT.tab)) OUT.tab = tabs[0][0];
+  let body = "", actions = "";
+  if (OUT.tab === "prompt") {
+    body = OUT.status === "idle" && !SAMPLE && !OUT.built ? `<div class="out-empty">Paste a source, pick your outputs, then click “Build my prompt.”</div>` : `<pre class="prompt" id="promptText">${esc(buildPrompt())}</pre>`;
+    actions = `<button class="pill" type="button" id="copyPrompt" ${ready() ? "" : "disabled"}>Copy prompt</button><a class="pill ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "example") {
+    const ex = exampleText(), lbl = [byId(PERSONAS, EXAMPLE.picks.persona)?.name, byId(FUNNEL, EXAMPLE.picks.funnel)?.short].filter(Boolean).join(" · ");
+    body = `<div class="ex-note">Worked example: the pack Claude wrote for the sample webinar${lbl ? `, for ${esc(lbl)}` : ""}. Your output picks filter what shows. Every number and quote comes from the source.${S.source !== SAMPLE_SOURCE ? " You've changed the source, so this is not your pack; build the prompt to run your own." : ""}</div>${S.outputs.length ? packHtml(ex, true) : `<div class="out-empty">Pick at least one output to see its example.</div>`}`;
+  } else {
+    if (OUT.status === "idle") body = `<div class="out-empty">Nothing generated yet. Paste a source, pick outputs, then click Generate.</div>`;
+    else if (OUT.status === "thinking") body = `<div class="thinking"><i></i>Claude is reading the source…</div>`;
+    else body = packHtml(OUT.text, OUT.status === "done");
+    if (OUT.status === "streaming" || OUT.status === "thinking") actions = `<button class="pill ghost" type="button" id="stopBtn">Stop</button>`;
+    else if (OUT.text) actions = `<button class="pill" type="button" id="copyOut">Copy whole pack</button><button class="pill ghost" type="button" id="regen">Try another version</button>`;
+    if (OUT.truncated) actions += `<span class="msg">The pack was cut short. Pick fewer outputs and generate again.</span>`;
+    if (OUT.msg) actions += `<span class="msg err">${esc(OUT.msg)}</span>`;
+    actions += `<span class="msg" id="copyMsg" role="status"></span>`;
+  }
+  w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${esc(summaryLine().replace(/<[^>]+>/g, ""))}</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === OUT.tab}" data-otab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="outBody">${body}</div>${actions ? `<div class="out-actions">${actions}</div>` : ""}</div>`;
+}
+function renderMethod() {
+  $("#methodList").innerHTML = METHOD.map(m => `<li>${esc(m)}</li>`).join("");
+  const rows = OUTPUTS.slice().sort((a, b) => a.effort - b.effort || b.reach - a.reach);
+  const bar = (n, r) => `<span class="bar${r ? " r" : ""}" style="width:${n * 14}px" aria-hidden="true"></span> <span class="muted" style="font-size:12px">${n}/5</span>`;
+  $("#ladder").innerHTML = `<tr><th>Rung</th><th>Asset</th><th>Effort to finish</th><th>Typical reach</th><th>Lifespan</th></tr>` + rows.map((o, i) => `<tr><td class="mono-label">${i + 1}</td><td>${S.outputs.includes(o.id) ? `<strong>${esc(o.name)}</strong> <span class="dim" style="margin-left:4px">Picked</span>` : esc(o.name)}</td><td>${bar(o.effort)}</td><td>${bar(o.reach, true)}</td><td class="muted">${esc(o.life)}</td></tr>`).join("");
+  $("#methodNote").textContent = `The atoms panel on the Engine tab does steps 3 and 4 for you: candidate quotes, every sentence with a number, and the questions asked. ${SAMPLE ? "" : CONFIG.demoNote}`;
+}
+function save() { store.set("state", { outputs: S.outputs, persona: S.persona, funnel: S.funnel, view: S.view, source: S.source.length < 100000 ? S.source : "" }); }
+
+/* ---------------- generation ---------------- */
+async function generate(fresh) {
+  if (!ready()) return;
+  if (!SAMPLE) { OUT.built = true; OUT.tab = "prompt"; renderOutput(); $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+  CTL?.abort(); CTL = new AbortController();
+  OUT = { tab: "out", text: "", status: "thinking", msg: "", truncated: false }; renderOutput();
+  $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  try {
+    const r = await SAMPLE(buildPrompt(), { signal: CTL.signal, cache: fresh ? false : undefined, onText: ({ text }) => { OUT.text = text; const first = OUT.status !== "streaming"; OUT.status = "streaming"; const b = $("#outBody"); if (b && OUT.tab === "out" && !first) b.innerHTML = packHtml(text, false); else renderOutput(); } });
+    OUT.text = r.text; OUT.truncated = r.truncated; OUT.status = "done";
+  } catch (e) {
+    OUT.text = e && e.code !== "refused" ? (e.text || "") : "";
+    OUT.status = OUT.text ? "done" : "idle";
+    const copy = { not_granted: "Claude isn't allowed for this page. Allow it from the page's permissions, or copy the prompt instead.", sampling_disabled: "Claude isn't available on this account. Copy the prompt instead.", rate_limited: "You've hit a usage limit. Try again in a little while.", session_expired: "Sign in to Claude again, then retry.", refused: "Claude declined this request. Check the source and try again.", prompt_too_large: "The source is too long. Paste a shorter excerpt.", empty_completion: "Claude returned nothing. Try fewer outputs.", cancelled: "" };
+    OUT.msg = e && e.code in copy ? copy[e.code] : "Something interrupted the pack. Try again.";
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled")) { SAMPLE = null; setChip(); renderSteps(); return; }
+  }
+  renderOutput();
+  const st = $("#steps .step:last-child"); if (st) st.classList.toggle("done", OUT.status === "done");
+}
+
+/* ---------------- wiring ---------------- */
+function setChip() {
+  $("#modeChip").classList.toggle("live", !!SAMPLE);
+  $("#modeChipText").textContent = SAMPLE ? "Live · writing with Claude" : "Demo · prompt builder";
+  $("#brandTag").textContent = SAMPLE ? "Repurposing engine" : (CONFIG.brand?.tag || "");
+}
+function boot() {
+  const tw = CONFIG.title.split(" ");
+  $("#title").innerHTML = tw.length > 2 ? `${esc(tw.slice(0, -2).join(" "))} <span class="hl">${esc(tw.slice(-2).join(" "))}</span>` : `<span class="hl">${esc(CONFIG.title)}</span>`;
+  $("#eyebrow").textContent = `For ${CONFIG.company}`;
+  $("#lede").textContent = "Paste one long piece. Get LinkedIn posts, a newsletter section, a blog summary, a sales email, a video script, pull quotes, a thread and an FAQ, all built from what the source actually says.";
+  document.title = CONFIG.title;
+  const br = CONFIG.brand; $("#brandbar").hidden = !br;
+  if (br) { const [w1, ...rest] = br.name.split(" "); $("#brandLink").innerHTML = rest.length ? `${esc(w1)} <span>${esc(rest.join(" "))}</span>` : `<span>${esc(w1)}</span>`; $("#brandLink").href = br.url || "#"; }
+  $("#siteFooter").hidden = !CONFIG.footer; $("#footerText").textContent = CONFIG.footer || "";
+  $("#cta").hidden = !CONFIG.ctaUrl; if (CONFIG.ctaUrl) $("#ctaLink").href = CONFIG.ctaUrl;
+  setChip(); renderSteps(); renderMethod(); showView(S.view);
+}
+function showView(v) {
+  if (v !== "engine" && v !== "method") v = "engine";
+  S.view = v; save();
+  document.querySelectorAll("nav.views button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  $("#engine").hidden = v !== "engine"; $("#method").hidden = v !== "method";
+  if (v === "method") renderMethod();
+}
+function copyText(text, msgEl, selEl) {
+  const done = () => { if (msgEl) msgEl.textContent = msgEl.tagName === "BUTTON" ? "Copied" : "Copied."; };
+  const fallback = () => { const pre = selEl || $("#promptText") || $("#outBody"); if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } if (msgEl) msgEl.textContent = msgEl.tagName === "BUTTON" ? "Selected" : "Selected. Press Ctrl+C or ⌘C."; };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+function refreshPicks() {
+  const sl = $("#summaryLine"); if (sl) sl.innerHTML = summaryLine();
+  const gb = $("#genBtn"); if (gb) gb.disabled = !ready();
+  const gn = $("#genNote"); if (gn) gn.textContent = genNote();
+  const oc = $("#outCount"); if (oc) oc.textContent = `${S.outputs.length} of ${OUTPUTS.length}`;
+  if (OUT.tab !== "out" || OUT.status === "idle") renderOutput();
+}
+function setSource(v) {
+  S.source = v; save();
+  const ta = $("#src"); if (ta && ta.value !== v) ta.value = v;
+  const h = $("#srcHint"); h.textContent = srcHint(); h.classList.toggle("req", !v.trim());
+  document.querySelectorAll("#steps .step").forEach((s, i) => { if (i < 2) s.classList.toggle("done", !!v.trim()); });
+  renderAtoms(); refreshPicks();
+}
+let atomTimer = null;
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.view) return showView(t.dataset.view);
+  if (t.dataset.kind) {
+    const k = t.dataset.kind, id = t.dataset.id;
+    if (k === "outputs") { S.outputs = S.outputs.includes(id) ? S.outputs.filter(x => x !== id) : OUTPUTS.map(o => o.id).filter(x => x === id || S.outputs.includes(x)); }
+    else S[k] = S[k] === id ? "" : id;
+    save();
+    document.querySelectorAll(`.opt[data-kind="${k}"]`).forEach(b => b.setAttribute("aria-pressed", k === "outputs" ? S.outputs.includes(b.dataset.id) : b.dataset.id === S[k]));
+    t.closest(".step").classList.toggle("done", k === "outputs" ? S.outputs.length > 0 : !!S[k]);
+    return refreshPicks();
+  }
+  if (t.id === "pickAll" || t.id === "pickNone") { S.outputs = t.id === "pickAll" ? OUTPUTS.map(o => o.id) : []; save(); document.querySelectorAll('.opt[data-kind="outputs"]').forEach(b => b.setAttribute("aria-pressed", S.outputs.includes(b.dataset.id))); t.closest(".step").classList.toggle("done", S.outputs.length > 0); return refreshPicks(); }
+  if (t.id === "loadSample") return setSource(SAMPLE_SOURCE);
+  if (t.id === "clearSrc") { setSource(""); $("#src").focus(); return; }
+  if (t.dataset.otab) { OUT.tab = t.dataset.otab; renderOutput(); return; }
+  if (t.dataset.copy != null) { const x = PACK[+t.dataset.copy]; if (x) { copyText(x.body, t, $("#asset-" + t.dataset.copy)); setTimeout(() => { t.textContent = "Copy"; }, 1600); } return; }
+  if (t.id === "copyAtoms") return copyText(atomsText(ATOMS || extractAtoms(S.source)), $("#atomMsg"), $("#atomsWrap .atoms"));
+  if (t.id === "genBtn") return generate(false);
+  if (t.id === "regen") return generate(true);
+  if (t.id === "stopBtn") { CTL?.abort(); return; }
+  if (t.id === "copyPrompt") return copyText(buildPrompt(), $("#copyMsg"));
+  if (t.id === "copyOut") return copyText(OUT.text, $("#copyMsg"));
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "src") {
+    S.source = e.target.value;
+    const h = $("#srcHint"); h.textContent = srcHint(); h.classList.toggle("req", !S.source.trim());
+    document.querySelectorAll("#steps .step").forEach((s, i) => { if (i < 2) s.classList.toggle("done", !!S.source.trim()); });
+    const gb = $("#genBtn"); if (gb) gb.disabled = !ready();
+    clearTimeout(atomTimer); atomTimer = setTimeout(() => { save(); renderAtoms(); refreshPicks(); }, 350);
+  }
+});
+
+boot();
+(async () => {
+  try { SAMPLE = window.claude ? await window.claude.use("sample") : null; } catch (e) { SAMPLE = null; }
+  if (SAMPLE) { OUT.tab = "out"; setChip(); renderSteps(); renderMethod(); }
+  else { setChip(); }
+})();
+</script>
+
+</body>
+</html>

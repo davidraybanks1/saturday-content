@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Live demo of the Content audit, a free Claude skill from saturday content. Invented data for a fictional company.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Content Audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paper page, one working column; each step is a numbered rail; verdicts as tiles; the full table, clusters and rules are their own views; Claude output sits in an outlined "window". */
+:root{
+  --bg:#efede8; --surface:#f5f4f0; --surface-2:#e6e3dc; --ink:#141413; --muted:#55534d; --faint:#8d8a82; --line:#d3d0c8; --dot:#b9b5ab;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#fbe6ad; --bad:#b4442c; --bad-soft:#f3dcd3; --good:#2f7a4d;
+  --shadow-c:#141413;
+  --f-body:"Host Grotesk","Helvetica Neue",Arial,sans-serif; --f-mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(30px,4.4vw,44px);letter-spacing:-.04em;line-height:1.05}
+h2{font-size:22px;letter-spacing:-.03em}
+h3{font-size:16px;letter-spacing:-.02em;font-weight:600}
+.hl{background:var(--hl);color:var(--hl-ink);padding:0 .12em;border-radius:3px}
+.mono-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.brandbar{border-bottom:1px solid var(--line)}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-block:12px}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.03em;text-decoration:none}
+.logo span{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--hl)}
+
+header.head .wrap{padding-block:36px 8px;display:grid;gap:12px}
+.head-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.lede{font-size:18px;line-height:1.4;letter-spacing:-.01em;color:var(--muted);max-width:60ch;margin:0}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:6px;padding:5px 10px;font-family:var(--f-mono);font-size:12px;background:var(--bg)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.chip.live .dot{background:var(--hl);box-shadow:0 0 0 1.5px var(--ink)}
+nav.views{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px}
+nav.views button{border:0;background:none;padding:12px 0 9px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+nav.views button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+nav.views button:hover{color:var(--ink)}
+
+main{padding-block:28px 64px}
+.q{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.04em;font-weight:700;margin:0 0 18px}
+.modes{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.mode{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 14px 16px;display:grid;gap:8px;align-content:start}
+.mode:hover{border-color:var(--ink)}
+.mode[aria-pressed=true]{border:1.5px solid var(--ink);background:var(--hl);color:var(--hl-ink);box-shadow:4px 4px 0 var(--shadow-c)}
+.mode[aria-pressed=true] .mdesc{color:var(--hl-ink)}
+.mode .ic{width:26px;height:26px}
+.mode .mname{font-weight:700;font-size:19px;letter-spacing:-.03em}
+.mode .mdesc{font-size:13px;color:var(--muted);line-height:1.4}
+.mode .tick{position:absolute;right:12px;top:12px;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--faint)}
+.mode[aria-pressed=true] .tick{border-color:var(--hl-ink);background:var(--hl-ink);box-shadow:inset 0 0 0 3px var(--hl)}
+
+.steps{list-style:none;margin:30px 0 0;padding:0;display:grid}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:30px}
+.step::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:1.5px;background:var(--line)}
+.step:last-child::before{display:none}
+.num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;background:var(--bg);position:relative}
+.step.done .num{background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.step-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;min-height:34px;padding-top:4px}
+.step-h h3{font-size:19px;letter-spacing:-.03em;font-weight:700}
+.step-h .sub{display:block;margin-top:2px}
+.opt-note{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.step-b{grid-column:2;margin-top:12px;min-width:0}
+.rowwrap{position:relative}
+.cards{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);padding-right:40px!important;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 6px 10px 2px;scrollbar-width:thin}
+.opt{scroll-snap-align:start;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-height:132px;position:relative}
+.opt:hover{border-color:var(--ink)}
+.opt .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.opt .ib svg{width:20px;height:20px}
+.opt .on{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.opt .od{font-size:13px;color:var(--muted);line-height:1.35}
+.opt[aria-pressed=true]{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.opt[aria-pressed=true] .ib{background:var(--hl);color:var(--hl-ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt[aria-pressed=true]::after{content:"Selected";position:absolute;right:10px;top:10px;font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:2px 5px;border-radius:3px}
+.funnel .opt{min-height:0}
+textarea.box{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;line-height:1.5}
+textarea.box:focus{outline:none;border-color:var(--ink)}
+.hint{font-size:12px;color:var(--faint);margin-top:6px}
+.hint.req{color:var(--bad)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;padding:12px 20px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+.pill:hover:not(:disabled){background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.pill.ghost{background:transparent;color:var(--ink)}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.gen-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.gen-note{font-size:13px;color:var(--muted);max-width:60ch}
+.summary-line{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:10px}
+.summary-line b{font-weight:500;color:var(--ink);background:var(--hl-soft);padding:0 3px}
+
+.window{background:var(--bg);border:1.5px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--shadow-c);overflow:hidden;margin-right:6px}
+.window-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1.5px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap}
+.window-bar i{flex:none;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}
+.window-bar .wt{margin-left:4px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.otabs{display:flex;gap:4px}
+.otabs button{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.otabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out-body{padding:20px 22px;max-height:640px;overflow:auto}
+.out-empty{color:var(--muted);text-align:center;padding:28px}
+.out-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.out-actions .pill{padding:8px 14px;font-size:11px}
+.prose{max-width:70ch}
+.prose h1,.prose h2,.prose h3,.prose h4{margin:18px 0 6px;letter-spacing:-.02em}
+.prose h1{font-size:24px}.prose h2{font-size:20px}.prose h3{font-size:17px}.prose h4{font-size:15px}
+.prose > :first-child{margin-top:0}
+.prose p{margin:0 0 10px}
+.prose ul,.prose ol{margin:0 0 12px;padding-left:22px}
+.prose li{margin:3px 0}
+.prose blockquote{margin:0 0 12px;padding:4px 12px;border-left:3px solid var(--hl);color:var(--muted)}
+.prose code{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+.prose hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+pre.prompt{font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;margin:0;line-height:1.55}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.thinking i{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--hl);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation-duration:3s}}
+.msg{font-size:13px}
+.msg.err{color:var(--bad)}
+.ex-note{border-left:3px solid var(--hl);background:var(--surface);padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* library */
+.lib-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.lib-tools input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-width:min(100%,260px)}
+.seg{display:flex;gap:16px}
+.seg button{border:0;background:none;padding:4px 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+.seg button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.lib{display:grid;gap:10px}
+details.aud{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.aud[open]{border-color:var(--ink);background:var(--bg)}
+details.aud summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+details.aud summary::-webkit-details-marker{display:none}
+details.aud .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+details.aud .ib svg{width:20px;height:20px}
+.dim{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px}
+.aud-body{padding:0 14px 16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.fld h4{margin:0 0 4px;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld p,.fld li{margin:0;font-size:14px;line-height:1.45}
+.fld ul{margin:0;padding-left:18px}
+.fld.wide{grid-column:1 / -1}
+.lib-note{margin-top:18px;font-size:13px;color:var(--muted);max-width:70ch}
+
+.cta{margin-top:36px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:18px;background-color:var(--surface-2);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px}
+.cta > div{background:var(--bg);padding:8px 12px;border-radius:6px}
+footer.site{border-top:1px solid var(--line)}
+footer.site .wrap{padding-block:22px}
+
+/* audit: sources, mapping, verdict tiles, table, clusters */
+.srcs .opt{min-height:118px}
+.paste{margin-top:12px;display:grid;gap:10px}
+.mapgrid{display:grid;gap:10px 14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.mapf{display:grid;gap:4px;min-width:0}
+.mapf label{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.mapf label b{font-weight:500;color:var(--bad)}
+.mapf select,.mapf input,.tbl-tools select,.tbl-tools input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+.mapf select:focus,.mapf input:focus,.tbl-tools input:focus,.tbl-tools select:focus{outline:none;border-color:var(--ink)}
+.status{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:10px}
+.status b{font-weight:500;color:var(--ink);background:var(--hl-soft);padding:0 3px}
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}
+.tile{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;display:grid;gap:2px}
+.tile:hover{border-color:var(--ink)}
+.tile .n{font-size:38px;font-weight:700;letter-spacing:-.04em;line-height:1.1}
+.tile .tl{display:flex;align-items:center;gap:8px;font-weight:600}
+.tile .ts{font-size:12px;color:var(--muted);line-height:1.4}
+.sw{width:10px;height:10px;border-radius:2px;flex:none;display:inline-block}
+.sw.Keep{background:var(--ink)}.sw.Refresh{background:var(--hl);box-shadow:inset 0 0 0 1px var(--ink)}.sw.Merge{background:var(--faint)}.sw.Retire{background:var(--bad)}
+.vbar{display:flex;gap:2px;height:10px;border-radius:3px;overflow:hidden;margin:14px 0 6px}
+.vbar span{display:block;height:100%}
+.vbar .Keep{background:var(--ink)}.vbar .Refresh{background:var(--hl)}.vbar .Merge{background:var(--faint)}.vbar .Retire{background:var(--bad)}
+.moves{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.moves li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:4px 12px;align-items:baseline;border-top:1px solid var(--line);padding-top:8px}
+.moves .mv{font-size:14px;line-height:1.4;min-width:0;overflow-wrap:anywhere}
+.moves .mv small{display:block;color:var(--muted);font-size:13px}
+.badge{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:1px 6px;white-space:nowrap;text-align:center}
+.badge.Keep{background:var(--bg)}
+.badge.Refresh{background:var(--hl);color:var(--hl-ink)}
+.badge.Merge{background:var(--surface-2);border-style:dashed}
+.badge.Retire{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.btnrow .pill{padding:8px 14px;font-size:11px}
+.modes.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.tbl-tools{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tbl-tools .grp{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0;max-width:100%}
+.tbl-tools select{width:auto;max-width:100%}
+.tbl-tools input{width:240px;max-width:100%}
+.seg{flex-wrap:wrap;gap:6px 16px}
+.seg button .c{color:var(--faint);margin-left:5px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);max-height:720px;overflow-y:auto}
+table.audit{border-collapse:collapse;width:100%;min-width:1080px;font-size:13px}
+table.audit th{position:sticky;top:0;z-index:1;background:var(--surface-2);text-align:left;font-weight:400;padding:0;border-bottom:1px solid var(--line);white-space:nowrap}
+table.audit th button{border:0;background:none;padding:9px 10px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);width:100%;text-align:left}
+table.audit th button[aria-sort=ascending],table.audit th button[aria-sort=descending]{color:var(--ink)}
+table.audit td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.audit tr:last-child td{border-bottom:0}
+table.audit td.nc{font-family:var(--f-mono);font-size:12px;text-align:right;white-space:nowrap}
+table.audit td .u{display:block;font-family:var(--f-mono);font-size:11px;color:var(--faint);overflow-wrap:anywhere}
+table.audit td .rl{font-size:11px;color:var(--faint);margin-top:4px;white-space:nowrap}
+table.audit td.why{color:var(--muted);min-width:250px}
+table.audit td.to{font-family:var(--f-mono);font-size:11px;overflow-wrap:anywhere;min-width:150px}
+.up{color:var(--good)}.down{color:var(--bad)}
+.clusters{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.cl{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:14px 16px;display:grid;gap:6px;align-content:start;min-width:0}
+.cl h3{font-size:18px}
+.cl .stats{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.cl .vbar{margin:6px 0 2px}
+.cl .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.cl .legend span{display:inline-flex;align-items:center;gap:5px}
+.cl .hub{font-size:13px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px;overflow-wrap:anywhere}
+.cl ul{margin:2px 0 0;padding-left:0;list-style:none;display:grid;gap:5px;font-size:13px}
+.cl li{overflow-wrap:anywhere}
+.rules{display:grid;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.rule{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;padding:12px 14px;border-top:1px solid var(--line)}
+.rule:first-child{border-top:0}
+.rule strong{font-family:var(--f-mono);font-size:13px;font-weight:500;overflow-wrap:anywhere}
+.rule code{font-family:var(--f-mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:3px;max-width:min(52vw,420px);overflow-wrap:anywhere;text-align:right}
+.rule p{margin:2px 0 0;font-size:13px;color:var(--muted);grid-column:1 / -1}
+.order{margin:0 0 18px;padding-left:22px;max-width:70ch}
+.order li{margin:4px 0}
+</style>
+
+<div class="brandbar" id="brandbar"><div class="wrap"><a class="logo" id="brandLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">saturday <span>content</span></a><span class="tag" id="brandTag">Content audit · demo</span></div></div>
+
+<header class="head">
+  <div class="wrap">
+    <div class="head-row">
+      <div style="display:grid;gap:10px;min-width:0">
+        <span class="mono-label" id="eyebrow"></span>
+        <h1 id="title">Content <span class="hl">audit</span></h1>
+      </div>
+      <span class="chip" id="modeChip"><span class="dot"></span><span id="modeChipText">Checking for Claude…</span></span>
+    </div>
+    <p class="lede" id="lede"></p>
+    <nav class="views" role="tablist">
+      <button type="button" role="tab" id="v-audit" aria-selected="true" data-view="audit">Audit</button>
+      <button type="button" role="tab" id="v-pages" aria-selected="false" data-view="pages">Every page</button>
+      <button type="button" role="tab" id="v-clusters" aria-selected="false" data-view="clusters">Clusters</button>
+      <button type="button" role="tab" id="v-rules" aria-selected="false" data-view="rules">Rules</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="audit" role="tabpanel" aria-labelledby="v-audit">
+    <h2 class="q">What stays, and what goes?</h2>
+    <ol class="steps" id="steps"></ol>
+  </section>
+  <section id="pages" role="tabpanel" aria-labelledby="v-pages" hidden>
+    <div class="tbl-tools">
+      <div class="seg" id="vSeg" role="group" aria-label="Filter by verdict"></div>
+      <div class="grp">
+        <select id="clFilter" aria-label="Filter by cluster"></select>
+        <input type="search" id="tblSearch" placeholder="Search URLs, titles, reasons…" aria-label="Search pages">
+      </div>
+    </div>
+    <div class="tablewrap"><table class="audit" id="tbl"></table></div>
+    <div class="btnrow">
+      <button class="pill" type="button" data-copy="csv">Copy as CSV</button>
+      <button class="pill ghost" type="button" data-copy="redirects">Copy redirect map</button>
+      <button class="pill ghost" type="button" id="moreRows" hidden>Show more</button>
+      <span class="msg" data-msg role="status"></span>
+    </div>
+    <p class="lib-note">Copy as CSV copies the rows that match your filters, with the verdict, rule, reason and target for each. The redirect map lists every Merge and Retire URL with where it should point.</p>
+  </section>
+  <section id="clusters" role="tabpanel" aria-labelledby="v-clusters" hidden>
+    <p class="lib-note" id="clNote" style="margin:0 0 16px"></p>
+    <div class="clusters" id="clList"></div>
+  </section>
+  <section id="rules" role="tabpanel" aria-labelledby="v-rules" hidden>
+    <p class="lib-note" style="margin:0 0 12px">Every page gets one verdict. The rules run in this order, and the first one that matches wins:</p>
+    <ol class="order">
+      <li><strong>Protected</strong> pages, and pages <strong>too new</strong> to judge, get Keep.</li>
+      <li><strong>Retire</strong>: low traffic, no conversions, old, and few backlinks.</li>
+      <li><strong>Merge</strong>: a near-duplicate title on the same topic with a stronger sibling, or a dead page with backlinks worth keeping.</li>
+      <li><strong>Refresh</strong>: still earning traffic or conversions, but declining, old, thin or converting weakly.</li>
+      <li>Everything else gets <strong>Keep</strong>.</li>
+    </ol>
+    <div class="rules" id="ruleList"></div>
+    <p class="lib-note" id="ruleNote"></p>
+  </section>
+  <div class="cta" id="cta">
+    <div><strong>Get the content audit skill</strong><div class="muted" style="font-size:14px">Claude scores your own inventory, explains every verdict, and writes the plan and the refresh briefs.</div></div>
+    <a class="pill" id="ctaLink" href="https://saturdaycontent.co/templates/content-audit-claude" target="_blank" rel="noopener">Get the free skill →</a>
+  </div>
+</main>
+<footer class="site" id="siteFooter"><div class="wrap mono-label" id="footerText"></div></footer>
+<input type="file" id="fileIn" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden>
+
+<script>
+/* =====================================================================
+   CONFIG — whose content this audits. See CUSTOMIZE.md.
+   ===================================================================== */
+const CONFIG = {
+  title: "Content audit",
+  company: "Fieldbook",
+  about: "Fieldbook is a content operations platform for B2B marketing teams. It puts briefs, the editorial calendar, reviews and approvals, a searchable content library, and content performance in one workspace.",
+  voice: "Plainspoken, specific and a little wry. Short sentences. Concrete examples over abstractions. Never hypey; no exclamation points; no 'revolutionize', 'unlock' or 'game-changer'.",
+  goal: "Grow demo requests and trial sign-ups from organic content, and stop spending writer time on pages nobody reads.",
+  demoNote: "Fieldbook is a fictional company. Its 62-page inventory is invented so you can see how the audit works.",
+  brand: { name: "saturday content", url: "https://saturdaycontent.co", tag: "Content audit · demo" },
+  footer: "saturday content — tools for content teams",
+  ctaUrl: "https://saturdaycontent.co/templates/content-audit-claude"
+};
+
+/* =====================================================================
+   RULES — how every page gets its verdict. Tune these for your site.
+   Order: protected/too new → Retire → Merge → Refresh → Keep.
+   The first rule that matches wins. Plain-language version:
+   references/scoring-rules.md.
+   ===================================================================== */
+const RULES = {
+  // Always Keep these paths (home, pricing, product pages). A trailing * matches anything below it.
+  protect: ["/", "/pricing", "/product/*"],
+  // Published fewer than this many months ago → Keep ("too new to judge").
+  newMonths: 6,
+  // Not updated for at least this many months → "old".
+  staleMonths: 24,
+  // Traffic tiers are relative to this inventory (percentiles of sessions).
+  highTrafficPercentile: 75,   // at or above → high traffic
+  lowTrafficPercentile: 30,    // at or below → low traffic
+  minSessions: 100,            // under this is always low traffic
+  // Sessions down at least this share vs. the previous period → "declining". Needs a previous-sessions column.
+  declineShare: 0.25,
+  // Conversion rate under this share of the inventory's median rate → "weak conversion".
+  weakConversionShare: 0.5,
+  // Fewer words than this → "thin". Needs a word-count column. 0 turns it off.
+  thinWords: 500,
+  // Retire needs: low traffic, conversions at or below this, old, and backlinks below retireMaxBacklinks.
+  retireMaxConversions: 0,
+  retireMaxBacklinks: 5,
+  // Title similarity (0–1, rarer words count more) at or above this → near-duplicate.
+  mergeSimilarity: 0.5,
+  // Same first URL folder (both under /blog/, say) adds this to the similarity.
+  sameFolderBonus: 0.1,
+  // "Value" decides which sibling is stronger: sessions + conversions × conversionWeight + backlinks × backlinkWeight.
+  conversionWeight: 25,
+  backlinkWeight: 40,
+  // Redirect target when a retired or merged page has nothing related left.
+  fallbackRedirect: "/blog",
+  // Format words that don't change a title's topic; ignored when comparing titles.
+  ignoreWords: ["guide", "complete", "ultimate", "primer", "explained", "intro", "introduction", "overview", "step", "tips", "best", "free", "new", "update", "updated", "part"],
+  // How many refresh candidates "Write refresh briefs" covers.
+  briefCount: 5
+};
+
+/* =====================================================================
+   COLUMNS — the fields the audit reads, and the header names it
+   recognizes automatically when you upload a CSV. Add your own
+   export's header names to "match" (lowercase).
+   ===================================================================== */
+const COLUMNS = [
+  { key: "url", label: "URL", need: "required", match: ["url", "page", "address", "page path", "landing page", "page location", "page path and screen class", "loc", "permalink", "slug", "path"] },
+  { key: "title", label: "Title", need: "recommended", match: ["title", "page title", "name", "h1", "post title", "title 1"] },
+  { key: "published", label: "Published", need: "recommended", match: ["published", "publish date", "date published", "published date", "created", "created at", "post date", "date"] },
+  { key: "updated", label: "Updated", need: "recommended", match: ["updated", "last updated", "modified", "last modified", "date modified", "lastmod", "updated at"] },
+  { key: "sessions", label: "Sessions", need: "required", match: ["sessions", "views", "pageviews", "page views", "visits", "users", "total users", "clicks", "traffic"] },
+  { key: "conversions", label: "Conversions", need: "required", match: ["conversions", "key events", "goal completions", "goals", "leads", "signups", "sign-ups", "form fills", "demo requests"] },
+  { key: "sessions_prev", label: "Previous sessions", need: "optional", match: ["sessions_prev", "previous sessions", "prior sessions", "sessions previous", "sessions (previous period)", "sessions prev", "last period sessions"] },
+  { key: "topic", label: "Topic", need: "optional", match: ["topic", "category", "cluster", "pillar", "theme", "section", "tag", "tags"] },
+  { key: "backlinks", label: "Backlinks", need: "optional", match: ["backlinks", "referring domains", "inbound links", "links", "ref domains", "linking sites"] },
+  { key: "word_count", label: "Word count", need: "optional", match: ["word_count", "word count", "words", "wordcount", "length"] }
+];
+
+/* =====================================================================
+   SAMPLE — the preloaded inventory (same as references/sample-inventory.csv).
+   SAMPLE_AS_OF keeps the sample's ages stable; your own uploads use today.
+   ===================================================================== */
+const SAMPLE_AS_OF = "2026-10-27";
+const SAMPLE_CSV = `url,title,published,updated,sessions,sessions_prev,conversions,topic,backlinks,word_count
+/,Fieldbook: content operations for B2B teams,2019-03-01,2026-09-15,48200,44100,1450,Product,310,900
+/pricing,Pricing,2019-03-01,2026-08-04,14600,13200,620,Product,12,600
+/product/briefs,Briefs,2021-02-10,2026-03-18,4100,3800,140,Product,6,700
+/product/calendar,Editorial calendar,2021-02-10,2025-11-20,3600,3700,98,Product,5,650
+/product/reviews,Reviews and approvals,2021-02-10,2025-11-20,2900,2700,77,Product,4,700
+/product/library,Content library,2022-09-01,2025-06-11,1800,1900,41,Product,3,600
+/product/performance,Content performance,2023-03-15,2025-06-11,2200,2000,56,Product,3,650
+/integrations,Integrations,2021-02-10,2024-12-02,1600,1500,22,Product,9,800
+/compare/fieldbook-vs-spreadsheets,Fieldbook vs. spreadsheets,2023-07-18,2023-07-18,2400,2100,61,Product,2,1200
+/blog/how-to-write-a-content-brief,How to write a content brief,2022-03-14,2025-11-02,18400,16900,212,Content briefs,46,2400
+/blog/writing-content-briefs-step-by-step,Writing content briefs: a step-by-step guide,2021-06-08,2021-06-08,2100,3900,6,Content briefs,4,1800
+/templates/content-brief-template,Free content brief template,2022-09-20,2026-02-11,9600,8800,388,Content briefs,31,900
+/blog/content-brief-examples,Content brief examples from real editorial teams,2023-01-17,2023-01-17,5200,7400,21,Content briefs,12,2100
+/blog/brief-fields-that-matter,The five brief fields that cut review rounds,2025-04-02,2025-04-02,3100,1200,44,Content briefs,7,1300
+/blog/creative-brief-vs-content-brief,Creative brief vs. content brief: what's the difference,2020-11-10,2020-11-10,240,610,0,Content briefs,0,700
+/blog/seo-content-brief,How to build an SEO content brief,2023-08-22,2024-03-05,2600,2900,9,Content briefs,5,1600
+/blog/content-brief-checklist,Content brief checklist,2020-02-04,2020-02-04,410,850,0,Content briefs,1,600
+/blog/ai-content-briefs,Using AI to draft content briefs,2026-05-19,2026-05-19,2200,0,19,Content briefs,2,1500
+/templates/editorial-calendar-template,Editorial calendar template,2021-09-14,2024-01-10,12800,18400,96,Editorial calendar,38,1500
+/blog/how-to-build-an-editorial-calendar,How to build an editorial calendar,2022-02-01,2025-08-19,7400,6900,58,Editorial calendar,22,2200
+/blog/editorial-calendar-guide,The editorial calendar guide,2020-08-12,2020-08-12,380,900,0,Editorial calendar,6,1100
+/blog/content-calendar-mistakes,7 content calendar mistakes that slow teams down,2023-05-09,2023-05-09,1900,2300,4,Editorial calendar,3,1400
+/blog/calendar-vs-kanban,Calendar view or kanban: which fits your team,2024-10-15,2024-10-15,860,700,3,Editorial calendar,1,1100
+/templates/editorial-calendar-template-2021,Editorial calendar template (2021),2021-01-05,2021-01-05,1500,2700,4,Editorial calendar,2,700
+/blog/content-approval-workflow,How to set up a content approval workflow,2022-06-21,2025-12-03,9800,8700,141,Reviews and approvals,27,2300
+/blog/content-approval-process,Content approval workflow: how to set one up,2021-03-30,2021-03-30,1300,2600,2,Reviews and approvals,3,1200
+/blog/stakeholder-feedback,How to give feedback on a draft without rewriting it,2024-02-13,2024-02-13,4200,3100,30,Reviews and approvals,9,1700
+/blog/review-rounds,Why your reviews take four rounds,2025-09-10,2025-09-10,2700,0,25,Reviews and approvals,4,1200
+/blog/legal-review-for-marketing,Getting marketing content through legal review,2023-03-08,2023-03-08,640,820,0,Reviews and approvals,1,1500
+/blog/approval-checklist,The approval checklist we use,2019-07-11,2019-07-11,90,210,0,Reviews and approvals,0,500
+/blog/content-marketing-metrics,12 content marketing metrics that matter,2021-10-05,2024-06-18,15200,19800,74,Content performance,52,2800
+/blog/measure-content-roi,How to measure content ROI,2022-11-29,2025-10-07,8300,7100,119,Content performance,19,2100
+/blog/measuring-content-roi,Measuring content ROI: a primer,2021-02-17,2021-02-17,1100,1900,3,Content performance,8,1300
+/blog/content-attribution,Content attribution without a data team,2025-06-24,2025-06-24,3900,800,52,Content performance,11,1900
+/blog/vanity-metrics,Vanity metrics in content marketing,2020-04-14,2020-04-14,310,720,0,Content performance,3,900
+/blog/content-dashboard,What to put on a content dashboard,2023-11-07,2023-11-07,2300,2500,17,Content performance,6,1400
+/blog/ga4-for-content-teams,A content team's guide to GA4 reports,2023-04-19,2023-04-19,6100,9200,14,Content performance,15,2600
+/blog/repurpose-content,How to repurpose content without starting over,2022-08-16,2025-07-01,6900,6400,63,Repurposing,18,2000
+/blog/content-repurposing-ideas,21 content repurposing ideas,2021-05-04,2022-01-12,4800,6800,8,Repurposing,10,1600
+/blog/repurposing-content-guide,Repurposing content: the complete guide,2020-09-22,2020-09-22,520,1300,1,Repurposing,2,2400
+/blog/webinar-to-blog-posts,Turning one webinar into twelve assets,2024-05-21,2024-05-21,1700,1400,11,Repurposing,3,1500
+/blog/content-library,Why every content team needs a content library,2023-02-28,2023-02-28,1500,1700,9,Repurposing,4,1100
+/blog/what-is-content-operations,What is content operations?,2021-04-20,2025-05-27,11200,10400,88,Content operations,41,2200
+/blog/content-ops-explained,Content operations explained,2020-10-06,2020-10-06,690,1500,0,Content operations,2,900
+/blog/content-team-structure,How to structure a B2B content team,2023-06-13,2024-09-02,7100,6800,42,Content operations,16,2300
+/blog/content-team-roles,Content team roles and responsibilities,2022-05-10,2022-05-10,3300,4900,5,Content operations,7,1800
+/blog/hiring-content-writers,Hiring your first content writer,2019-11-19,2019-11-19,180,460,0,Content operations,1,1000
+/blog/freelance-writer-onboarding,Onboarding freelance writers in a week,2024-08-06,2024-08-06,1200,950,6,Content operations,2,1300
+/blog/content-style-guide,How to write a content style guide,2022-04-12,2026-01-20,8800,8100,54,Content operations,29,2400
+/blog/style-guide-examples,Style guide examples,2021-01-26,2021-01-26,2600,3500,2,Content operations,5,450
+/blog/content-ops-tools,The content operations tool stack,2023-09-26,2023-09-26,2000,2400,12,Content operations,4,1600
+/blog/remote-content-teams,Running a remote content team,2020-06-02,2020-06-02,140,380,0,Content operations,0,1100
+/blog/content-ops-maturity,The content operations maturity model,2026-07-14,2026-07-14,1400,0,11,Content operations,3,2000
+/blog/content-audit-guide,How to run a content audit,2022-01-25,2025-03-14,5600,5100,39,Content operations,21,2500
+/blog/content-audit-template,Content audit template,2021-07-13,2021-07-13,2900,3300,26,Content operations,6,800
+/webinars/content-ops-2022,Webinar recap: content ops in 2022,2022-03-03,2022-03-03,210,640,0,Events,1,400
+/webinars/content-ops-2023,Webinar: the state of content ops 2023,2023-03-09,2023-03-09,330,980,0,Events,2,400
+/webinars/briefs-that-work,Webinar: briefs that writers actually follow,2025-02-11,2025-02-11,1300,900,48,Events,2,500
+/events/content-ops-summit-2021,Content Ops Summit 2021 recap,2021-10-21,2021-10-21,60,190,0,Events,0,700
+/customers/larkspur-analytics,How Larkspur Analytics cut review time,2024-04-09,2024-04-09,900,700,38,Customer stories,3,1100
+/customers/tallgrass-health,How Tallgrass Health runs compliant reviews,2023-10-17,2023-10-17,450,520,9,Customer stories,1,1000
+/customers/ferro-industrial,Ferro Industrial's content library rollout,2022-05-24,2022-05-24,120,260,0,Customer stories,0,900`;
+
+/* ---------------- Claude modes ---------------- */
+const MODES = [
+  { id: "recommend", name: "Recommend actions", icon: "compass", blurb: "Claude reviews the scored table cluster by cluster and writes a prioritized plan.",
+    task: `Review the scored inventory below, cluster by cluster, as an experienced content strategist. Write:
+1. **The short version**: 2–3 sentences on the state of the inventory, using the summary numbers.
+2. **Priorities**: the 8–10 actions worth doing first, in order. Group related pages into one action where it makes sense (a merge plus its redirects, say). For each: the URLs, what to do, why (cite the numbers from the data), and effort and impact as low, medium or high.
+3. **By cluster**: 1–3 sentences per cluster: its strongest page (the hub), what to fix, and any gap you notice from the titles.
+4. **Verdicts to check by hand**: any rule-based verdicts you disagree with or that need a human look, and why.
+5. **Quick wins this week**: 3–5 small tasks.` },
+  { id: "briefs", name: "Write refresh briefs", icon: "pen", blurb: "A short, ready-to-assign brief for each of the top refresh candidates.",
+    task: `Write a refresh brief for each page listed under REFRESH CANDIDATES, in the order given. Each brief has:
+- **Why now**: the numbers that triggered the refresh, from the data.
+- **Goal of the refresh**: one sentence, tied to the company goal.
+- **What to check and update**: 4–6 specific bullets. You have not seen the page itself, only its title and numbers, so frame these as things to check, and mark any assumption.
+- **Fold in**: pages being merged or redirected into this one (listed with each candidate), and what to take from each. Write "None" if there are none.
+- **Internal links to add**: 2–3 related pages from the same cluster that should link here.
+- **CTA**: the call to action that fits the page.
+- **Measure**: what to compare, and over what window, after republishing.
+Keep each brief under 250 words. Start each with a heading: "Refresh brief N: <url>".` }
+];
+
+/* ---------------- worked examples (shown in the demo, when Claude isn't available) ---------------- */
+const EXAMPLES = {
+  recommend: `## The short version
+Of 62 pages, 23 stay as they are, 20 need a refresh, 7 should merge into a stronger sibling and 12 can retire with a redirect. The Keep pages already carry 66% of sessions and 88% of conversions, so the work is about winning back a few large pages and clearing out the long tail. Content operations and Content briefs hold most of it.
+
+## Priorities
+1. **Refresh /blog/content-marketing-metrics.** 15,200 sessions, down from 19,800, with 52 backlinks, but last updated in June 2024. It's the biggest page in the refresh pile. Redirect /blog/vanity-metrics here as part of the same job. *Effort: medium. Impact: high.*
+2. **Refresh /templates/editorial-calendar-template and merge the 2021 version into it.** Sessions fell 30% (18,400 to 12,800) while it still drives 96 conversions. Fold in /templates/editorial-calendar-template-2021, then 301 it. *Effort: medium. Impact: high.*
+3. **Consolidate the brief cluster on /blog/how-to-write-a-content-brief.** Merge /blog/writing-content-briefs-step-by-step; retire /blog/content-brief-checklist and /blog/creative-brief-vs-content-brief to the same URL. Four pages competing for one query become one. *Effort: low. Impact: medium.*
+4. **Refresh /blog/ga4-for-content-teams.** Down 34% and converting at 0.23%. Tool walkthroughs date fast, so check every menu name and screenshot. *Effort: medium. Impact: medium.*
+5. **Refresh /blog/content-brief-examples and /blog/content-repurposing-ideas.** Both down about 30% and untouched for three years or more. *Effort: medium. Impact: medium.*
+6. **Merge the duplicate explainers.** /blog/content-approval-process → /blog/content-approval-workflow, /blog/measuring-content-roi → /blog/measure-content-roi, /blog/editorial-calendar-guide → /blog/how-to-build-an-editorial-calendar. *Effort: low. Impact: medium.*
+7. **Retire the old event recaps.** /webinars/content-ops-2022, /webinars/content-ops-2023 and /events/content-ops-summit-2021: 600 sessions combined, no conversions. Redirect to /webinars/briefs-that-work, which earned 48 conversions. *Effort: low. Impact: low.*
+8. **Refresh /blog/content-team-structure.** 7,100 sessions and steady, but over two years old. A light update protects it. *Effort: low. Impact: medium.*
+
+## By cluster
+**Content briefs.** Strong hub (/blog/how-to-write-a-content-brief, 18,400 sessions) and a template that converts well. Too many thin siblings around them.
+**Editorial calendar.** The template is the hub and it's slipping. Fix it before writing anything new here.
+**Content performance.** Two of the biggest refresh candidates. /blog/content-attribution is growing fast and deserves links from the rest of the cluster.
+**Content operations.** The largest cluster (13 pages). Healthy hub; the long tail is old and should shrink.
+**Customer stories.** Three pages, all small. See the note below.
+
+## Verdicts to check by hand
+- **/blog/content-ops-explained** is marked Retire, but its title duplicates /blog/what-is-content-operations. Treat it as a merge; the redirect target is the same.
+- **/customers/tallgrass-health and /customers/larkspur-analytics** are Refresh on age alone. Customer stories only need work if the facts changed. [placeholder: confirm current status with each customer]
+- **/blog/content-audit-template** is set to merge into /blog/content-audit-guide, but it earns 26 conversions. Keep it as a separate download page if that's where people sign up.
+
+## Quick wins this week
+- Ship the 19 redirects from the redirect map.
+- Update internal links that point at merged or retired URLs.
+- Add links from the Content performance cluster to /blog/content-attribution.
+- Put a "last updated" date on every page you refresh.`,
+  briefs: `## Refresh brief 1: /blog/content-marketing-metrics
+**Why now:** 15,200 sessions, down 23% from 19,800. 74 conversions (0.49%, below the 0.63% median). 52 backlinks. Last updated June 2024.
+
+**Goal of the refresh:** win back the lost traffic and turn more of it into trial sign-ups.
+
+**What to check and update**
+- Check that all 12 metrics still match how teams report today; replace any that rely on retired tools or reports.
+- Add a short "which metrics to report to leadership" section (assumption: the post lists metrics without ranking them).
+- Refresh every example and screenshot. [placeholder: current examples from the Fieldbook performance view]
+- Compare the H1 and intro against the queries the page ranks for. [placeholder: top queries from Search Console]
+
+**Fold in:** /blog/vanity-metrics (retiring). Take its one strongest example, then 301 it here.
+
+**Internal links to add:** from /blog/measure-content-roi, /blog/content-attribution and /blog/content-dashboard.
+
+**CTA:** link to /product/performance, then the trial.
+
+**Measure:** sessions and conversions for eight weeks after republishing, against the same eight weeks before.
+
+---
+
+## Refresh brief 2: /templates/editorial-calendar-template
+**Why now:** 12,800 sessions, down 30% from 18,400. Still 96 conversions. 38 backlinks. Last updated January 2024.
+
+**Goal of the refresh:** recover traffic on the page that already converts.
+
+**What to check and update**
+- Update dates, example campaigns and any year in the title or copy.
+- Check the template's columns against how teams plan today (campaign, owner, stage, due date).
+- Offer the formats people ask for. [placeholder: which formats the download form records most]
+- Shorten the path to the download; check how far down the page it sits.
+
+**Fold in:** /templates/editorial-calendar-template-2021. Keep anything unique, then 301 it here.
+
+**Internal links to add:** from /blog/how-to-build-an-editorial-calendar and /blog/content-calendar-mistakes.
+
+**CTA:** keep the template download; add a secondary link to /product/calendar.
+
+**Measure:** sessions, downloads and conversions for eight weeks, against the previous period.
+
+*Briefs 3 to 5 (/blog/content-team-structure, /blog/ga4-for-content-teams, /blog/content-brief-examples) follow the same shape.*`
+};
+
+/* ---------------- icons ---------------- */
+const ICON = {
+  pen: '<path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/><path d="M14 7l3 3"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+  table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/>',
+  upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/>',
+  paste: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8h6V4M9 10h6M9 14h6M9 18h3"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>'
+};
+const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.doc}</svg>`;
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("cau:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("cau:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const byId = (list, id) => list.find(x => x.id === id);
+const fmt = n => Math.round(n || 0).toLocaleString("en-US");
+const plural = (n, w) => `${fmt(n)} ${w}${n === 1 ? "" : "s"}`;
+const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+const VERDICTS = ["Keep", "Refresh", "Merge", "Retire"];
+const VERDICT_BLURB = { Keep: "Leave it alone", Refresh: "Update and republish", Merge: "Fold into a stronger page", Retire: "Remove and redirect" };
+const MAX_ROWS = 5000;
+
+const S = Object.assign({ mode: "recommend", view: "audit", vf: "all", cf: "", q: "", sort: "verdict", dir: 1, context: "" }, store.get("state", {}));
+let SAMPLE = null, CTL = null, OUT = { tab: "example", text: "", status: "idle", msg: "", truncated: false };
+let DATA = { name: "", header: [], rows: [], map: {}, asOf: "", isSample: true, msg: "" };
+let AUDIT = null, SHOWN = 100, SRC = "sample";
+
+/* ---------------- CSV ---------------- */
+function parseCSV(text) {
+  text = String(text).replace(/^﻿/, "");
+  const first = text.split(/\r?\n/).find(l => l.trim()) || "";
+  const delim = [",", "\t", ";"].map(d => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; continue; }
+    if (ch === '"' && cell === "") { q = true; continue; }
+    if (ch === delim) { row.push(cell); cell = ""; continue; }
+    if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(cell); cell = ""; if (row.some(c => c.trim())) rows.push(row); row = []; continue; }
+    cell += ch;
+  }
+  row.push(cell); if (row.some(c => c.trim())) rows.push(row);
+  // skip comment/preamble lines (some analytics exports start with "#" lines)
+  while (rows.length && /^#/.test(rows[0][0] || "")) rows.shift();
+  return { header: (rows.shift() || []).map(h => h.trim()), rows };
+}
+const csvCell = v => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+function guessMap(header) {
+  const norm = h => h.toLowerCase().replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim(), map = {}, used = new Set();
+  // pass 1: exact header names; pass 2: headers that contain a known name
+  COLUMNS.forEach(c => { const opts = c.match.map(norm); const i = header.findIndex((h, j) => !used.has(j) && opts.includes(norm(h))); if (i >= 0) { map[c.key] = i; used.add(i); } });
+  COLUMNS.forEach(c => {
+    if (map[c.key] != null) return;
+    const opts = c.match.map(norm).filter(o => o.length > 3);
+    const i = header.findIndex((h, j) => { const n = norm(h); return !used.has(j) && opts.some(o => n.includes(o)) && !(c.key === "sessions" && /prev|prior|last/.test(n)) && !(c.key === "published" && /modif|updat/.test(n)); });
+    if (i >= 0) { map[c.key] = i; used.add(i); }
+  });
+  return map;
+}
+const num = v => { if (v == null) return null; const s = String(v).replace(/[,\s%$]/g, ""); if (s === "" || s === "-") return null; const n = Number(s); return Number.isFinite(n) ? n : null; };
+function parseDate(v) {
+  const s = String(v ?? "").trim(); if (!s) return null; let m;
+  if ((m = s.match(/^(\d{4})(\d{2})(\d{2})$/))) return new Date(+m[1], +m[2] - 1, +m[3]);
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return new Date(+m[1], +m[2] - 1, +m[3]);
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))) { const y = +m[3] < 100 ? 2000 + +m[3] : +m[3]; return new Date(y, +m[1] - 1, +m[2]); }
+  const d = new Date(s); return isNaN(d) ? null : d;
+}
+const ymd = d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : "";
+const pathOf = u => { const s = String(u).trim().replace(/^https?:\/\/[^/]+/i, "").split(/[?#]/)[0]; return s ? (s.startsWith("/") ? s : "/" + s) : "/"; };
+const slugTitle = u => { const p = pathOf(u).split("/").filter(Boolean).pop() || "Home"; return p.replace(/[-_]+/g, " ").replace(/^\w/, c => c.toUpperCase()); };
+
+/* ---------------- scoring ---------------- */
+const STOP = new Set("a an and are as at be by can do does for from how i in is it its of on one or our the their this to up vs what when where which who why will with without you your we us not more most".split(" "));
+function stem(w) {
+  if (w.length > 5 && w.endsWith("ies")) return w.slice(0, -3) + "y";
+  if (w.length > 5 && w.endsWith("ing")) { const r = w.slice(0, -3); return /([b-df-hj-np-tv-z])\1$/.test(r) ? r.slice(0, -1) : r; }
+  if (w.length > 4 && w.endsWith("ed")) return w.slice(0, -2);
+  if (w.length > 4 && w.endsWith("es")) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
+  if (w.length > 4 && w.endsWith("e")) return w.slice(0, -1);
+  return w;
+}
+const WORD = {};
+function tokens(title) {
+  const ig = new Set(RULES.ignoreWords.map(stem));
+  const ws = String(title).toLowerCase().replace(/[’']/g, "").split(/[^a-z0-9]+/).filter(w => w && !STOP.has(w) && !/^\d+$/.test(w));
+  return [...new Set(ws.map(w => { const s = stem(w); if (!WORD[s] || w.length < WORD[s].length) WORD[s] = w; return s; }).filter(w => !ig.has(w)))];
+}
+function pctl(arr, p) {
+  const a = arr.filter(x => Number.isFinite(x)).sort((x, y) => x - y); if (!a.length) return 0;
+  const i = (a.length - 1) * p / 100, lo = Math.floor(i), hi = Math.ceil(i); return a[lo] + (a[hi] - a[lo]) * (i - lo);
+}
+const monthsSince = (d, asOf) => d ? (asOf - d) / (1000 * 60 * 60 * 24 * 30.44) : null;
+const folderOf = u => { const p = pathOf(u).split("/").filter(Boolean); return p.length > 1 ? p[0] : ""; };
+function isProtected(u) { const p = pathOf(u).replace(/\/$/, "") || "/"; return RULES.protect.some(r => { const x = r.replace(/\/$/, "") || "/"; return x.endsWith("*") ? p.startsWith(x.slice(0, -1)) : p === x; }); }
+
+function buildPages() {
+  const m = DATA.map, get = (r, k) => m[k] == null ? null : r[m[k]];
+  return DATA.rows.slice(0, MAX_ROWS).map(r => {
+    const url = String(get(r, "url") || "").trim(); if (!url) return null;
+    return { url, path: pathOf(url), title: String(get(r, "title") || "").trim() || slugTitle(url),
+      published: parseDate(get(r, "published")), updated: parseDate(get(r, "updated")),
+      sessions: num(get(r, "sessions")) || 0, sessionsPrev: num(get(r, "sessions_prev")), conversions: num(get(r, "conversions")) || 0,
+      topic: String(get(r, "topic") || "").trim(), backlinks: num(get(r, "backlinks")), words: num(get(r, "word_count")) };
+  }).filter(Boolean);
+}
+
+function score() {
+  const pages = buildPages(), N = pages.length, asOf = parseDate(DATA.asOf) || new Date();
+  if (!N) return { pages, T: {}, N: 0 };
+  const has = k => DATA.map[k] != null;
+  const T = { hasPrev: has("sessions_prev"), hasLinks: has("backlinks"), hasTopic: has("topic") && pages.some(p => p.topic), hasWords: has("word_count"), hasDates: has("published") || has("updated") };
+  pages.forEach(p => {
+    p.tok = tokens(p.title); p.folder = folderOf(p.url);
+    p.value = p.sessions + p.conversions * RULES.conversionWeight + (p.backlinks || 0) * RULES.backlinkWeight;
+    p.cvr = p.sessions > 0 ? p.conversions / p.sessions : 0;
+  });
+  const df = {}; pages.forEach(p => p.tok.forEach(t => df[t] = (df[t] || 0) + 1));
+  const idf = t => Math.log((N + 1) / (df[t] || 1));
+  T.high = pctl(pages.map(p => p.sessions), RULES.highTrafficPercentile);
+  T.low = Math.max(pctl(pages.map(p => p.sessions), RULES.lowTrafficPercentile), RULES.minSessions);
+  T.medConv = pctl(pages.map(p => p.conversions), 50);
+  T.medCvr = pctl(pages.filter(p => p.sessions >= RULES.minSessions).map(p => p.cvr), 50);
+  // value score: percentile rank 0–100
+  const vals = pages.map(p => p.value).sort((a, b) => a - b);
+  const rank = v => { let lo = 0, hi = vals.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (vals[mid] <= v) lo = mid + 1; else hi = mid; } return lo; };
+  pages.forEach(p => p.score = Math.round(100 * rank(p.value) / N));
+  // clusters: topic column, else the most shared distinctive title word, else URL folder
+  const commonCap = Math.max(3, N * 0.25);
+  pages.forEach(p => {
+    if (T.hasTopic) { p.cluster = p.topic || "No topic"; return; }
+    const t = p.tok.filter(t => df[t] >= 2 && df[t] <= commonCap).sort((a, b) => df[b] - df[a] || a.localeCompare(b))[0];
+    p.cluster = t ? (WORD[t] || t).replace(/^\w/, c => c.toUpperCase()) : (p.folder ? "/" + p.folder + "/ (other)" : "Top level");
+  });
+  // similarity via an inverted index of distinctive words
+  const sets = new Map(pages.map(p => [p, new Set(p.tok)]));
+  const sim = (a, b) => {
+    if (T.hasTopic && a.topic && b.topic && a.topic !== b.topic) return 0;
+    const A = sets.get(a), B = sets.get(b); let inter = 0, uni = 0;
+    new Set([...A, ...B]).forEach(t => { const w = idf(t); uni += w; if (A.has(t) && B.has(t)) inter += w; });
+    return uni ? inter / uni + (a.folder && a.folder === b.folder ? RULES.sameFolderBonus : 0) : 0;
+  };
+  const idx = {}; pages.forEach(p => p.tok.forEach(t => { if (df[t] <= Math.max(5, N * 0.2)) (idx[t] = idx[t] || []).push(p); }));
+  pages.forEach(p => {
+    const ref = p.updated || p.published;
+    p.age = monthsSince(ref, asOf); p.pubAge = monthsSince(p.published || p.updated, asOf);
+    p.tier = p.sessions >= T.high ? "high" : p.sessions <= T.low ? "low" : "mid";
+    p.change = p.sessionsPrev > 0 ? (p.sessions - p.sessionsPrev) / p.sessionsPrev : null;
+    p.declining = p.change != null && p.change <= -RULES.declineShare;
+    p.stale = p.age != null && p.age >= RULES.staleMonths;
+    p.weakCvr = p.sessions >= RULES.minSessions && T.medCvr > 0 && p.cvr < T.medCvr * RULES.weakConversionShare;
+    p.thin = RULES.thinWords > 0 && p.words != null && p.words > 0 && p.words < RULES.thinWords;
+    p.strong = p.tier === "high" && p.conversions >= T.medConv;
+    const cand = new Set(); p.tok.forEach(t => (idx[t] || []).forEach(q => q !== p && cand.add(q)));
+    let best = null, bs = 0;
+    cand.forEach(q => { const s = sim(p, q); if (s > bs || (s === bs && best && q.value > best.value)) { bs = s; best = q; } });
+    p.sibling = best; p.siblingSim = bs;
+  });
+  const ageTxt = p => p.age == null ? "an unknown time" : p.age >= 24 ? `${Math.floor(p.age / 12)} years` : `${Math.max(1, Math.round(p.age))} months`;
+  const chg = p => p.change == null ? "" : `${p.change >= 0 ? "+" : ""}${Math.round(p.change * 100)}% vs. previous period`;
+  // pass 1: verdicts
+  pages.forEach(p => {
+    const s = plural(p.sessions, "session"), c = plural(p.conversions, "conversion");
+    p.target = null; p.consolidate = false;
+    if (isProtected(p.url)) { p.verdict = "Keep"; p.rule = "Protected"; p.reason = "On the protect list. Review core pages by hand."; return; }
+    if (p.pubAge != null && p.pubAge < RULES.newMonths) { p.verdict = "Keep"; p.rule = "Too new"; p.reason = `Published ${Math.max(1, Math.round(p.pubAge))} months ago. Too new to judge; check again next quarter.`; return; }
+    const dead = p.tier === "low" && p.conversions <= RULES.retireMaxConversions && p.stale;
+    if (dead && (p.backlinks || 0) < RULES.retireMaxBacklinks) {
+      p.verdict = "Retire"; p.rule = "Low value"; p.reason = `${s}, ${c}, ${T.hasLinks ? plural(p.backlinks || 0, "backlink") + ", " : ""}not updated in ${ageTxt(p)}.`; return;
+    }
+    if (p.sibling && p.siblingSim >= RULES.mergeSimilarity && p.sibling.value > p.value && !p.strong) {
+      p.verdict = "Merge"; p.rule = "Near-duplicate"; p.target = p.sibling; p.reason = ""; return;
+    }
+    if (dead) { p.verdict = "Merge"; p.rule = "Keep the links"; p.consolidate = true; p.reason = `Low traffic and ${c}, but ${plural(p.backlinks, "backlink")} are worth keeping. Fold it into the strongest page on the topic.`; return; }
+    const why = [];
+    if (p.declining) why.push(`sessions ${chg(p)}`);
+    if (p.stale) why.push(`not updated in ${ageTxt(p)}`);
+    if (p.weakCvr) why.push(`converts at ${(p.cvr * 100).toFixed(2)}%, under half the ${(T.medCvr * 100).toFixed(2)}% median`);
+    if (p.thin) why.push(`only ${fmt(p.words)} words`);
+    if (why.length && (p.tier !== "low" || p.conversions > 0)) {
+      p.verdict = "Refresh"; p.rule = p.declining ? "Declining" : p.stale ? "Out of date" : p.weakCvr ? "Weak conversion" : "Thin";
+      p.reason = `${s}, but ${why.join("; ")}.`; return;
+    }
+    p.verdict = "Keep"; p.rule = p.strong ? "Strong" : p.tier === "low" ? "Small but healthy" : "Healthy";
+    p.reason = p.strong ? `${s} (top ${100 - RULES.highTrafficPercentile}%) and ${c}${p.change != null ? `, ${chg(p)}` : ""}.`
+      : `${s}, ${c}${p.age != null ? `, updated ${ageTxt(p)} ago` : ""}${p.change != null ? `, ${chg(p)}` : ""}. No rule flagged it.`;
+  });
+  // pass 2: merge and redirect targets (never a page that is itself going away)
+  const alive = p => p.verdict === "Keep" || p.verdict === "Refresh";
+  const resolve = t => { const seen = new Set(); while (t && !alive(t) && t.target && !seen.has(t)) { seen.add(t); t = t.target; } return t && alive(t) ? t : null; };
+  const hubs = {}; pages.forEach(q => { if (alive(q) && (!hubs[q.cluster] || q.value > hubs[q.cluster].value)) hubs[q.cluster] = q; });
+  pages.filter(p => p.verdict === "Merge").forEach(p => {
+    p.target = (!p.consolidate && resolve(p.target)) || hubs[p.cluster] || null;
+    p.targetUrl = p.target ? p.target.url : RULES.fallbackRedirect;
+    if (!p.consolidate) p.reason = p.target ? `Covers the same ground as ${p.target.path} (${fmt(p.target.sessions)} vs. ${fmt(p.sessions)} sessions). Fold the best parts in, then 301 this URL there.` : "Near-duplicate with nothing left to merge into. Pick a target by hand.";
+  });
+  pages.filter(p => p.verdict === "Retire").forEach(p => {
+    let rel = null, rs = 0;
+    pages.forEach(q => { if (q === p || !alive(q) || q.cluster !== p.cluster) return; const s = sim(p, q); if (s > rs || (s === rs && rel && q.value > rel.value)) { rs = s; rel = q; } });
+    p.target = rel && rs > 0.15 ? rel : hubs[p.cluster] || null; p.targetUrl = p.target ? p.target.url : RULES.fallbackRedirect;
+  });
+  // what folds into each surviving page
+  pages.forEach(p => { p.inbound = pages.filter(q => (q.verdict === "Merge" || q.verdict === "Retire") && q.target === p); });
+  return { pages, T, N, asOf, hubs };
+}
+
+/* ---------------- markdown-lite ---------------- */
+function md(src) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const lines = String(src).replace(/\r/g, "").split("\n"); let html = "", list = null, para = [], table = null;
+  const flushP = () => { if (para.length) { html += `<p>${inline(para.join(" "))}</p>`; para = []; } };
+  const flushL = () => { if (list) { html += `</${list}>`; list = null; } };
+  const flushT = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()); html += `<div style="overflow-x:auto"><table style="border-collapse:collapse;margin:0 0 12px">${[h, ...rows].map((r, i) => `<tr>${cells(r).map(c => `<${i ? "td" : "th"} style="border-bottom:1px solid var(--line);padding:4px 12px 4px 0;text-align:left">${inline(c)}</${i ? "td" : "th"}>`).join("")}</tr>`).join("")}</table></div>`; table = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^\s*\|.*\|\s*$/.test(l)) { flushP(); flushL(); (table = table || []).push(l.trim()); continue; } else flushT();
+    let m;
+    if (!l.trim()) { flushP(); flushL(); continue; }
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { flushP(); flushL(); html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(l.trim())) { flushP(); flushL(); html += "<hr>"; continue; }
+    if ((m = l.match(/^>\s?(.*)/))) { flushP(); flushL(); html += `<blockquote>${inline(m[1])}</blockquote>`; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (list !== "ul") { flushL(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (list !== "ol") { flushL(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    flushL(); para.push(l.trim());
+  }
+  flushP(); flushL(); flushT();
+  return html;
+}
+
+/* ---------------- exports ---------------- */
+function auditCSV(list) {
+  const head = ["url", "title", "cluster", "verdict", "rule", "reason", "target_url", "sessions", "sessions_prev", "conversions", "backlinks", "updated", "value_score"];
+  return [head.join(","), ...list.map(p => [p.url, p.title, p.cluster, p.verdict, p.rule, p.reason, p.targetUrl || "", p.sessions, p.sessionsPrev ?? "", p.conversions, p.backlinks ?? "", ymd(p.updated || p.published), p.score].map(csvCell).join(","))].join("\n");
+}
+function redirectCSV() {
+  return ["from,to,verdict", ...AUDIT.pages.filter(p => p.verdict === "Merge" || p.verdict === "Retire").map(p => [p.path, p.target ? p.target.path : RULES.fallbackRedirect, p.verdict].map(csvCell).join(","))].join("\n");
+}
+
+/* ---------------- prompts ---------------- */
+function summaryText() {
+  const P = AUDIT.pages, tot = P.reduce((a, p) => a + p.sessions, 0), conv = P.reduce((a, p) => a + p.conversions, 0);
+  return [`${P.length} pages, ${fmt(tot)} sessions, ${fmt(conv)} conversions, as of ${ymd(AUDIT.asOf)}.`,
+    ...VERDICTS.map(v => { const ps = P.filter(p => p.verdict === v); return `${v}: ${ps.length} pages, ${pct(ps.reduce((a, p) => a + p.sessions, 0), tot)}% of sessions, ${pct(ps.reduce((a, p) => a + p.conversions, 0), conv)}% of conversions`; }),
+    `Thresholds: high traffic ≥ ${fmt(AUDIT.T.high)} sessions; low traffic ≤ ${fmt(AUDIT.T.low)}; old = not updated in ${RULES.staleMonths}+ months; declining = down ${Math.round(RULES.declineShare * 100)}%+; median conversion rate ${(AUDIT.T.medCvr * 100).toFixed(2)}%.`].join("\n");
+}
+function rowLine(p) {
+  return [p.path, p.title, p.verdict + (p.rule ? ` (${p.rule})` : ""), fmt(p.sessions), p.change == null ? "" : `${p.change >= 0 ? "+" : ""}${Math.round(p.change * 100)}%`, fmt(p.conversions), p.backlinks ?? "", ymd(p.updated || p.published), p.target ? p.target.path : ""].join(" | ");
+}
+function clusterTable(limitRows) {
+  const by = {}; AUDIT.pages.forEach(p => (by[p.cluster] = by[p.cluster] || []).push(p));
+  let budget = limitRows, out = [];
+  Object.entries(by).sort((a, b) => b[1].reduce((s, p) => s + p.value, 0) - a[1].reduce((s, p) => s + p.value, 0)).forEach(([k, ps]) => {
+    ps = ps.slice().sort((a, b) => b.value - a.value);
+    let keep = ps.filter(p => p.verdict !== "Keep").concat(ps.filter(p => p.verdict === "Keep").slice(0, 3));
+    keep = keep.sort((a, b) => b.value - a.value).slice(0, Math.max(5, budget > 0 ? budget : 5));
+    budget -= keep.length;
+    out.push(`\n### ${k} (${ps.length} pages${keep.length < ps.length ? `, ${keep.length} shown` : ""})\n${keep.map(rowLine).join("\n")}`);
+  });
+  return `Columns: path | title | verdict (rule) | sessions | change vs. previous period | conversions | backlinks | last updated | merge or redirect target${out.join("\n")}`;
+}
+function briefCandidates() {
+  return AUDIT.pages.filter(p => p.verdict === "Refresh").sort((a, b) => b.value - a.value).slice(0, RULES.briefCount);
+}
+function buildPrompt() {
+  const m = byId(MODES, S.mode);
+  if (!AUDIT || !AUDIT.N) return "Load an inventory first.";
+  let data;
+  if (m.id === "briefs") {
+    const c = briefCandidates();
+    data = `REFRESH CANDIDATES (top ${c.length} by value)\n` + (c.length ? c.map((p, i) => {
+      const sib = AUDIT.pages.filter(q => q !== p && q.cluster === p.cluster && (q.verdict === "Keep" || q.verdict === "Refresh")).sort((a, b) => b.value - a.value).slice(0, 5);
+      return `\n${i + 1}. ${p.path}\nTitle: ${p.title}\nCluster: ${p.cluster}\nSessions: ${fmt(p.sessions)}${p.sessionsPrev != null ? ` (previous period ${fmt(p.sessionsPrev)})` : ""}\nConversions: ${fmt(p.conversions)} (${(p.cvr * 100).toFixed(2)}%)\n${p.backlinks != null ? `Backlinks: ${fmt(p.backlinks)}\n` : ""}${p.words != null ? `Words: ${fmt(p.words)}\n` : ""}Published: ${ymd(p.published) || "unknown"}; last updated: ${ymd(p.updated) || "unknown"}\nWhy flagged: ${p.reason}\nFolding into it: ${p.inbound.length ? p.inbound.map(q => `${q.path} ("${q.title}", ${q.verdict.toLowerCase()}, ${fmt(q.sessions)} sessions)`).join("; ") : "none"}\nOther live pages in the cluster: ${sib.map(q => `${q.path} ("${q.title}", ${fmt(q.sessions)} sessions)`).join("; ") || "none"}`;
+    }).join("\n") : "\nNo pages were marked Refresh. Say so, and suggest which Keep pages are closest to needing one.") + `\n\nINVENTORY SUMMARY\n${summaryText()}`;
+  } else {
+    data = `INVENTORY SUMMARY\n${summaryText()}\n\nSCORED PAGES BY CLUSTER (every page that needs action, plus the top Keep pages)\n${clusterTable(400)}`;
+  }
+  return [
+    `You are a senior content strategist running a content audit for ${CONFIG.company}.`,
+    `\nABOUT ${CONFIG.company.toUpperCase()}\n${CONFIG.about}`,
+    CONFIG.goal ? `\nCONTENT GOAL\n${CONFIG.goal}` : "",
+    `\nHOUSE VOICE\n${CONFIG.voice}`,
+    `\nHOW THE VERDICTS WERE MADE\nEach page was scored by fixed rules, first match wins: protected or published under ${RULES.newMonths} months ago → Keep; low traffic, no conversions, not updated in ${RULES.staleMonths}+ months and under ${RULES.retireMaxBacklinks} backlinks → Retire (redirect to the target); a near-duplicate title on the same topic with a stronger sibling → Merge into the target; declining, old, weak-converting or thin but still earning → Refresh; everything else → Keep. You may disagree with a verdict; say so and why.`,
+    `\nTASK (${m.name.toUpperCase()})\n${m.task}`,
+    S.context.trim() ? `\nEXTRA CONTEXT FROM THE USER\n${S.context.trim()}` : "",
+    `\n${data}`,
+    `\nRULES\n- Use only the numbers in the data above. Never invent statistics, traffic figures, keywords, customer names or quotes; write [placeholder: what's needed] instead.\n- You have not seen the pages themselves, only titles, URLs and numbers. Mark any assumption about a page's content.\n- Refer to pages by path.\n- Write in Markdown with clear headings. No preamble; start with the output.`
+  ].filter(Boolean).join("\n");
+}
+
+/* ---------------- render: audit steps ---------------- */
+function stepHtml(n, done, title, sub, note, body) {
+  return `<li class="step${done ? " done" : ""}"><span class="num">${n}</span><div class="step-h"><div><h3>${esc(title)}</h3>${sub ? `<span class="mono-label sub">${esc(sub)}</span>` : ""}</div>${note ? `<span class="opt-note">${esc(note)}</span>` : ""}</div><div class="step-b">${body}</div></li>`;
+}
+function srcCard(id, icon, name, blurb) {
+  return `<button type="button" class="opt" aria-pressed="${SRC === id}" data-src="${id}"><span class="ib">${svg(icon)}</span><span class="on">${esc(name)}</span><span class="od">${esc(blurb)}</span></button>`;
+}
+function renderSteps() {
+  const out = [], ok = AUDIT && AUDIT.N;
+  out.push(stepHtml(1, !!DATA.rows.length, "Load your inventory", "CSV: url, title, published, updated, sessions, conversions", "", `<div class="cards srcs">${srcCard("sample", "table", "Sample inventory", `62 invented ${CONFIG.company} pages`)}${srcCard("upload", "upload", "Upload a CSV", "From your CMS, analytics or a crawler")}${srcCard("paste", "paste", "Paste CSV", "Copy rows from a spreadsheet")}</div>
+    <div class="paste" id="pasteBox"${SRC === "paste" ? "" : " hidden"}><textarea class="box" id="pasteIn" placeholder="url,title,published,updated,sessions,conversions&#10;/blog/example,Example post,2023-01-10,2024-02-01,1200,8"></textarea><div><button class="pill ghost" type="button" id="usePaste">Use this CSV</button></div></div>
+    <div class="status" id="loadStatus">${loadStatus()}</div>`));
+  out.push(stepHtml(2, ok, "Match your columns", "We guessed from the headers", "Change any that are wrong", mapHtml()));
+  out.push(stepHtml(3, ok, "Read the verdicts", "Scored in your browser", "", `<div id="results">${resultsHtml()}</div>`));
+  out.push(stepHtml(4, false, "Ask Claude", "Optional", "", `<div class="modes two" id="modes">${MODES.map(m => `<button type="button" class="mode" aria-pressed="${m.id === S.mode}" data-mode="${m.id}"><span class="tick"></span><span class="ic">${svg(m.icon)}</span><span class="mname">${m.name}</span><span class="mdesc">${esc(m.blurb)}</span></button>`).join("")}</div>
+    <textarea class="box" id="ctx" style="min-height:90px;margin-top:12px" placeholder="Anything Claude should know: goals for this quarter, pages you can't touch, a migration coming up…">${esc(S.context)}</textarea>
+    <div class="gen-row" style="margin-top:12px"><button class="pill" id="genBtn" type="button" ${ok ? "" : "disabled"}>${SAMPLE ? "Generate with Claude" : "Build my prompt"}</button><span class="gen-note" id="genNote">${SAMPLE ? "Uses your Claude account. You'll be asked to allow it the first time." : "Claude isn't connected here, so the page writes the full prompt, scored data included, for you to paste into Claude. There's a worked example too."}</span></div>`));
+  out.push(stepHtml(5, OUT.status === "done", "Output", "", "", `<div id="outWrap"></div>`));
+  $("#steps").innerHTML = out.join("");
+  renderOutput();
+}
+function loadStatus() {
+  if (DATA.msg) return `<span class="msg err">${esc(DATA.msg)}</span>`;
+  if (!DATA.rows.length) return "No inventory loaded yet.";
+  const n = Math.min(DATA.rows.length, MAX_ROWS);
+  return `<b>${fmt(n)} pages</b> from ${esc(DATA.name)}${DATA.rows.length > MAX_ROWS ? ` (first ${fmt(MAX_ROWS)} of ${fmt(DATA.rows.length)})` : ""} · ${DATA.header.length} columns`;
+}
+function mapHtml() {
+  if (!DATA.header.length) return `<div class="hint">Load an inventory to see its columns.</div>`;
+  const opts = sel => `<option value="">Not in my file</option>` + DATA.header.map((h, i) => `<option value="${i}"${sel === i ? " selected" : ""}>${esc(h || `Column ${i + 1}`)}</option>`).join("");
+  const miss = COLUMNS.filter(c => c.need === "required" && DATA.map[c.key] == null).map(c => c.label);
+  const warn = [];
+  if (miss.length) warn.push(`Map ${miss.join(", ")} to score the inventory.`);
+  if (DATA.map.published == null && DATA.map.updated == null) warn.push("No date column, so nothing can count as old and nothing will be retired.");
+  if (DATA.map.sessions_prev == null) warn.push("No previous-period sessions, so declining pages can't be spotted.");
+  if (DATA.map.topic == null) warn.push("No topic column, so clusters are guessed from shared title words.");
+  return `<div class="mapgrid">${COLUMNS.map(c => `<div class="mapf"><label for="map-${c.key}">${esc(c.label)}${c.need === "required" ? " <b>required</b>" : c.need === "optional" ? " · optional" : ""}</label><select id="map-${c.key}" data-map="${c.key}">${opts(DATA.map[c.key])}</select></div>`).join("")}
+    <div class="mapf"><label for="asOf">Measure age as of</label><input type="date" id="asOf" value="${esc(DATA.asOf)}"></div></div>
+    ${warn.length ? `<div class="hint${miss.length ? " req" : ""}" style="margin-top:10px">${warn.map(esc).join(" ")}</div>` : ""}`;
+}
+function resultsHtml() {
+  if (!AUDIT || !AUDIT.N) return `<div class="hint">${DATA.rows.length ? "Map the required columns to see verdicts." : "Load an inventory to see verdicts."}</div>`;
+  const P = AUDIT.pages, tot = P.reduce((a, p) => a + p.sessions, 0) || 1, conv = P.reduce((a, p) => a + p.conversions, 0);
+  const c = {}; VERDICTS.forEach(v => c[v] = P.filter(p => p.verdict === v));
+  const tiles = VERDICTS.map(v => { const s = c[v].reduce((a, p) => a + p.sessions, 0), k = c[v].reduce((a, p) => a + p.conversions, 0); return `<button type="button" class="tile" data-goverdict="${v}"><span class="tl"><span class="sw ${v}"></span>${v}</span><span class="n">${c[v].length}</span><span class="ts">${VERDICT_BLURB[v]}<br>${pct(s, tot)}% of sessions · ${pct(k, conv)}% of conversions</span></button>`; }).join("");
+  const bar = VERDICTS.map(v => `<span class="${v}" style="width:${100 * c[v].reduce((a, p) => a + p.sessions, 0) / tot}%" title="${v}"></span>`).join("");
+  const moves = [...c.Refresh.slice().sort((a, b) => b.value - a.value).slice(0, 3), ...c.Merge.slice().sort((a, b) => b.value - a.value).slice(0, 2), ...c.Retire.slice().sort((a, b) => b.value - a.value).slice(0, 1)];
+  return `<div class="tiles">${tiles}</div><div class="vbar" aria-hidden="true">${bar}</div><div class="hint" style="margin-top:0">Bar: share of sessions by verdict. ${AUDIT.N} pages, ${fmt(tot)} sessions, ${fmt(conv)} conversions.</div>
+    ${moves.length ? `<div class="mono-label" style="margin-top:18px">Biggest moves</div><ul class="moves">${moves.map(p => `<li><span class="badge ${p.verdict}">${p.verdict}</span><span class="mv"><strong>${esc(p.path)}</strong>${p.target ? ` → ${esc(p.target.path)}` : ""}<small>${esc(p.reason)}</small></span></li>`).join("")}</ul>` : ""}
+    <div class="btnrow"><button class="pill" type="button" data-view="pages">See every page</button><button class="pill ghost" type="button" data-copy="csv">Copy as CSV</button><button class="pill ghost" type="button" data-copy="redirects">Copy redirect map</button><span class="msg" data-msg role="status"></span></div>`;
+}
+
+function renderOutput() {
+  const w = $("#outWrap"); if (!w) return;
+  const m = byId(MODES, S.mode), ex = EXAMPLES[S.mode];
+  const tabs = SAMPLE ? [["out", "Output"], ["prompt", "Prompt"]] : [["prompt", "Your prompt"], ["example", "Example output"]];
+  if (!tabs.find(t => t[0] === OUT.tab)) OUT.tab = tabs[0][0];
+  let body = "", actions = "";
+  if (OUT.tab === "prompt") {
+    body = OUT.status === "idle" && !SAMPLE && !OUT.built ? `<div class="out-empty">Pick a mode, then click “Build my prompt.”</div>` : `<pre class="prompt" id="promptText">${esc(buildPrompt())}</pre>`;
+    actions = `<button class="pill" type="button" id="copyPrompt">Copy prompt</button><a class="pill ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "example") {
+    body = ex ? `<div class="ex-note">Worked example for ${esc(m.name)}, written from the ${esc(CONFIG.company)} sample inventory${DATA.isSample ? "" : ", not your upload"}.</div><div class="prose">${md(ex)}</div>` : `<div class="out-empty">No example for this mode.</div>`;
+  } else {
+    if (OUT.status === "idle") body = `<div class="out-empty">Nothing generated yet. Pick a mode, then click Generate.</div>`;
+    else if (OUT.status === "thinking") body = `<div class="thinking"><i></i>Claude is reading the audit…</div>`;
+    else body = `<div class="prose">${md(OUT.text)}</div>`;
+    if (OUT.status === "streaming" || OUT.status === "thinking") actions = `<button class="pill ghost" type="button" id="stopBtn">Stop</button>`;
+    else if (OUT.text) actions = `<button class="pill" type="button" id="copyOut">Copy</button><button class="pill ghost" type="button" id="regen">Try another version</button>`;
+    if (OUT.truncated) actions += `<span class="msg">The answer was cut short. Ask for less at a time.</span>`;
+    if (OUT.msg) actions += `<span class="msg err">${esc(OUT.msg)}</span>`;
+    actions += `<span class="msg" id="copyMsg" role="status"></span>`;
+  }
+  const wt = `${m.name}${AUDIT && AUDIT.N ? ` · ${AUDIT.N} pages` : ""}`;
+  w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${esc(wt)}</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === OUT.tab}" data-otab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="outBody">${body}</div>${actions ? `<div class="out-actions">${actions}</div>` : ""}</div>`;
+}
+
+/* ---------------- render: table, clusters, rules ---------------- */
+const COLS = [
+  ["verdict", "Verdict"], ["path", "Page"], ["cluster", "Cluster"], ["sessions", "Sessions"], ["change", "Change"], ["conversions", "Conv."],
+  ["backlinks", "Links"], ["age", "Updated"], ["score", "Value"], ["reason", "Why"], ["target", "Merge or redirect to"]
+];
+const VORDER = { Refresh: 0, Merge: 1, Retire: 2, Keep: 3 };
+function filtered() {
+  if (!AUDIT) return [];
+  const q = S.q.trim().toLowerCase();
+  return AUDIT.pages.filter(p => (S.vf === "all" || p.verdict === S.vf) && (!S.cf || p.cluster === S.cf) && (!q || `${p.url} ${p.title} ${p.reason} ${p.cluster}`.toLowerCase().includes(q)));
+}
+function sorted(list) {
+  const k = S.sort, d = S.dir;
+  const val = p => k === "verdict" ? VORDER[p.verdict] * 1e9 - p.value : k === "target" ? (p.target ? p.target.path : "") : k === "age" ? (p.age ?? 1e9) : p[k] ?? -1e9;
+  return list.slice().sort((a, b) => { const x = val(a), y = val(b); return (typeof x === "string" ? x.localeCompare(y) : x - y) * d; });
+}
+function renderTable() {
+  if (!AUDIT || !AUDIT.N) { $("#vSeg").innerHTML = ""; $("#clFilter").innerHTML = ""; $("#tbl").innerHTML = `<tr><td class="out-empty">Load an inventory on the Audit tab first.</td></tr>`; $("#moreRows").hidden = true; return; }
+  const cnt = v => AUDIT.pages.filter(p => v === "all" || p.verdict === v).length;
+  $("#vSeg").innerHTML = [["all", "All"], ...VERDICTS.map(v => [v, v])].map(([k, l]) => `<button type="button" aria-pressed="${k === S.vf}" data-vf="${k}">${l}<span class="c">${cnt(k)}</span></button>`).join("");
+  const cls = [...new Set(AUDIT.pages.map(p => p.cluster))].sort();
+  if (S.cf && !cls.includes(S.cf)) S.cf = "";
+  $("#clFilter").innerHTML = `<option value="">All clusters</option>` + cls.map(c => `<option${c === S.cf ? " selected" : ""}>${esc(c)}</option>`).join("");
+  if ($("#tblSearch").value !== S.q) $("#tblSearch").value = S.q;
+  const rows = sorted(filtered());
+  const head = `<thead><tr>${COLS.map(([k, l]) => `<th><button type="button" data-sort="${k}" aria-sort="${S.sort === k ? (S.dir > 0 ? "ascending" : "descending") : "none"}">${l}${S.sort === k ? (S.dir > 0 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead>`;
+  const body = rows.slice(0, SHOWN).map(p => `<tr><td><span class="badge ${p.verdict}">${p.verdict}</span><div class="hint" style="margin-top:4px">${esc(p.rule)}</div></td>
+    <td style="min-width:200px"><strong>${esc(p.title)}</strong><span class="u">${esc(p.path)}</span></td><td>${esc(p.cluster)}</td>
+    <td class="nc">${fmt(p.sessions)}</td><td class="nc ${p.change == null ? "" : p.change < 0 ? "down" : "up"}">${p.change == null ? "–" : `${p.change >= 0 ? "+" : ""}${Math.round(p.change * 100)}%`}</td>
+    <td class="nc">${fmt(p.conversions)}</td><td class="nc">${p.backlinks == null ? "–" : fmt(p.backlinks)}</td><td class="nc">${esc(ymd(p.updated || p.published) || "–")}</td><td class="nc">${p.score}</td>
+    <td class="why">${esc(p.reason)}</td><td class="to">${p.target ? esc(p.target.path) : p.targetUrl ? esc(p.targetUrl) : ""}</td></tr>`).join("");
+  $("#tbl").innerHTML = head + `<tbody>${body || `<tr><td colspan="${COLS.length}" class="out-empty">No pages match.</td></tr>`}</tbody>`;
+  $("#moreRows").hidden = rows.length <= SHOWN; $("#moreRows").textContent = `Show more (${fmt(rows.length - SHOWN)} left)`;
+}
+function renderClusters() {
+  if (!AUDIT || !AUDIT.N) { $("#clList").innerHTML = `<div class="out-empty">Load an inventory on the Audit tab first.</div>`; $("#clNote").textContent = ""; return; }
+  const by = {}; AUDIT.pages.forEach(p => (by[p.cluster] = by[p.cluster] || []).push(p));
+  const list = Object.entries(by).sort((a, b) => b[1].reduce((s, p) => s + p.sessions, 0) - a[1].reduce((s, p) => s + p.sessions, 0));
+  $("#clNote").textContent = `${list.length} clusters, ${AUDIT.T.hasTopic ? "taken from your topic column" : "guessed from words the titles share. Map a topic column for cleaner clusters"}. The hub is the strongest page that stays; merges and redirects in the cluster point at it or a closer sibling.`;
+  $("#clList").innerHTML = list.map(([k, ps]) => {
+    const s = ps.reduce((a, p) => a + p.sessions, 0) || 1, c = ps.reduce((a, p) => a + p.conversions, 0), hub = AUDIT.hubs[k];
+    const act = ps.filter(p => p.verdict !== "Keep").sort((a, b) => VORDER[a.verdict] - VORDER[b.verdict] || b.value - a.value);
+    return `<div class="cl"><h3>${esc(k)}</h3><div class="stats">${ps.length} pages · ${fmt(s)} sessions · ${fmt(c)} conversions</div>
+      <div class="vbar">${VERDICTS.map(v => `<span class="${v}" style="width:${100 * ps.filter(p => p.verdict === v).length / ps.length}%"></span>`).join("")}</div>
+      <div class="legend">${VERDICTS.map(v => { const n = ps.filter(p => p.verdict === v).length; return n ? `<span><i class="sw ${v}"></i>${n} ${v.toLowerCase()}</span>` : ""; }).join("")}</div>
+      ${hub ? `<div class="hub"><span class="mono-label">Hub</span><br><strong>${esc(hub.path)}</strong> <span class="muted">${fmt(hub.sessions)} sessions, ${fmt(hub.conversions)} conversions</span></div>` : ""}
+      ${act.length ? `<ul>${act.slice(0, 8).map(p => `<li><span class="badge ${p.verdict}">${p.verdict}</span> ${esc(p.path)}${p.target ? ` <span class="muted">→ ${esc(p.target.path)}</span>` : ""}</li>`).join("")}${act.length > 8 ? `<li class="muted">and ${act.length - 8} more</li>` : ""}</ul>` : `<div class="muted" style="font-size:13px">Nothing to do here.</div>`}
+      <div><button class="pill ghost" type="button" style="padding:6px 12px;font-size:10px" data-gocluster="${esc(k)}">See pages</button></div></div>`;
+  }).join("");
+}
+const RULE_HELP = {
+  protect: "Paths that always get Keep. Review these by hand.",
+  newMonths: "Pages published more recently than this are too new to judge.",
+  staleMonths: "A page not updated in this many months counts as old.",
+  highTrafficPercentile: "Sessions at or above this percentile of your inventory count as high traffic.",
+  lowTrafficPercentile: "Sessions at or below this percentile count as low traffic.",
+  minSessions: "Pages under this many sessions are always low traffic.",
+  declineShare: "Sessions down by at least this share vs. the previous period count as declining.",
+  weakConversionShare: "A conversion rate under this share of the median counts as weak.",
+  thinWords: "Pages shorter than this count as thin (needs a word-count column).",
+  retireMaxConversions: "Retire only pages with at most this many conversions.",
+  retireMaxBacklinks: "Retire only pages with fewer backlinks than this; above it, merge to keep the links.",
+  mergeSimilarity: "Title similarity at or above this marks a near-duplicate.",
+  sameFolderBonus: "Added to the similarity when both pages share a URL folder.",
+  conversionWeight: "How much one conversion counts toward a page's value, in sessions.",
+  backlinkWeight: "How much one backlink counts toward a page's value, in sessions.",
+  fallbackRedirect: "Redirect target when nothing related survives.",
+  ignoreWords: "Words ignored when comparing titles.",
+  briefCount: "How many refresh candidates get a brief."
+};
+function renderRules() {
+  $("#ruleList").innerHTML = Object.keys(RULES).map(k => `<div class="rule"><strong>${esc(k)}</strong><code>${esc(Array.isArray(RULES[k]) ? RULES[k].join(", ") : RULES[k])}</code><p>${esc(RULE_HELP[k] || "")}</p></div>`).join("");
+  $("#ruleNote").textContent = AUDIT && AUDIT.N ? `On this inventory: high traffic is ${fmt(AUDIT.T.high)}+ sessions, low traffic is ${fmt(AUDIT.T.low)} or fewer, and the median conversion rate is ${(AUDIT.T.medCvr * 100).toFixed(2)}%. To change a rule, edit the RULES block at the top of the page's script, or ask Claude to.` : "To change a rule, edit the RULES block at the top of the page's script, or ask Claude to.";
+}
+
+/* ---------------- loading ---------------- */
+function loadText(text, name, isSample) {
+  const { header, rows } = parseCSV(text);
+  if (!header.length || !rows.length) { DATA.msg = "That file has no rows we could read. Check it's a CSV with a header row."; renderSteps(); return; }
+  DATA = { name, header, rows, map: guessMap(header), asOf: isSample ? SAMPLE_AS_OF : ymd(new Date()), isSample, msg: "" };
+  rescore();
+}
+function rescore() {
+  const req = COLUMNS.filter(c => c.need === "required").every(c => DATA.map[c.key] != null);
+  AUDIT = req ? score() : null; SHOWN = 100;
+  if (!OUT.text) OUT.status = "idle";
+  renderSteps(); renderTable(); renderClusters(); renderRules();
+}
+
+/* ---------------- generation ---------------- */
+async function generate(fresh) {
+  if (!SAMPLE) { OUT.built = true; OUT.tab = "prompt"; renderOutput(); $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+  CTL?.abort(); CTL = new AbortController();
+  OUT = { tab: "out", text: "", status: "thinking", msg: "", truncated: false }; renderOutput();
+  $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  try {
+    const r = await SAMPLE(buildPrompt(), { signal: CTL.signal, cache: fresh ? false : undefined, onText: ({ text }) => { OUT.text = text; OUT.status = "streaming"; const b = $("#outBody"); if (b && OUT.tab === "out") b.innerHTML = `<div class="prose">${md(text)}</div>`; else renderOutput(); } });
+    OUT.text = r.text; OUT.truncated = r.truncated; OUT.status = "done";
+  } catch (e) {
+    OUT.text = e && e.code !== "refused" ? (e.text || "") : "";
+    OUT.status = OUT.text ? "done" : "idle";
+    const copy = { not_granted: "Claude isn't allowed for this page. Allow it from the page's permissions, or copy the prompt instead.", sampling_disabled: "Claude isn't available on this account. Copy the prompt instead.", rate_limited: "You've hit a usage limit. Try again in a little while.", session_expired: "Sign in to Claude again, then retry.", refused: "Claude declined this request. Change the context and try again.", prompt_too_large: "The inventory is too large for one request. Filter it down or raise the traffic thresholds, then try again.", empty_completion: "Claude returned nothing. Try again.", cancelled: "" };
+    OUT.msg = e && e.code in copy ? copy[e.code] : "Something interrupted the answer. Try again.";
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled")) { SAMPLE = null; setChip(); renderSteps(); return; }
+  }
+  renderOutput();
+}
+
+/* ---------------- wiring ---------------- */
+function save() { store.set("state", { mode: S.mode, view: S.view, vf: S.vf, sort: S.sort, dir: S.dir, context: S.context }); }
+function setChip() {
+  $("#modeChip").classList.toggle("live", !!SAMPLE);
+  $("#modeChipText").textContent = SAMPLE ? "Live · with Claude" : "Demo · scores in your browser";
+  $("#brandTag").textContent = SAMPLE ? "Content audit" : (CONFIG.brand?.tag || "");
+}
+function showView(v) {
+  if (!["audit", "pages", "clusters", "rules"].includes(v)) v = "audit";
+  S.view = v; save();
+  document.querySelectorAll("nav.views button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  ["audit", "pages", "clusters", "rules"].forEach(k => $("#" + k).hidden = k !== v);
+}
+function copyText(text, msgEl) {
+  const done = () => { if (msgEl) msgEl.textContent = "Copied."; };
+  const fallback = () => {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;top:0";
+    document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove();
+    if (msgEl) msgEl.textContent = ok ? "Copied." : "Couldn't reach the clipboard. Try again from claude.ai.";
+  };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+function boot() {
+  const tw = CONFIG.title.split(" ");
+  $("#title").innerHTML = tw.length > 2 ? `${esc(tw.slice(0, -2).join(" "))} <span class="hl">${esc(tw.slice(-2).join(" "))}</span>` : `<span class="hl">${esc(CONFIG.title)}</span>`;
+  $("#eyebrow").textContent = `For ${CONFIG.company}`;
+  $("#lede").textContent = "Score every page in your content inventory as Keep, Refresh, Merge or Retire, with the reason and a redirect target for each. Then have Claude turn it into a plan.";
+  document.title = CONFIG.title;
+  const br = CONFIG.brand; $("#brandbar").hidden = !br;
+  if (br) { const [w1, ...rest] = br.name.split(" "); $("#brandLink").innerHTML = rest.length ? `${esc(w1)} <span>${esc(rest.join(" "))}</span>` : `<span>${esc(w1)}</span>`; $("#brandLink").href = br.url || "#"; }
+  $("#siteFooter").hidden = !CONFIG.footer; $("#footerText").textContent = CONFIG.footer || "";
+  $("#cta").hidden = !CONFIG.ctaUrl; if (CONFIG.ctaUrl) $("#ctaLink").href = CONFIG.ctaUrl;
+  setChip(); SRC = "sample"; loadText(SAMPLE_CSV, "the sample inventory", true); showView(S.view);
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.view) { showView(t.dataset.view); if (t.closest("#results")) window.scrollTo({ top: 0 }); return; }
+  if (t.dataset.src) {
+    const s = t.dataset.src;
+    if (s === "upload") { $("#fileIn").value = ""; $("#fileIn").click(); return; }
+    SRC = s; document.querySelectorAll(".opt[data-src]").forEach(b => b.setAttribute("aria-pressed", b.dataset.src === SRC));
+    $("#pasteBox").hidden = s !== "paste";
+    if (s === "sample") loadText(SAMPLE_CSV, "the sample inventory", true); else $("#pasteIn").focus();
+    return;
+  }
+  if (t.id === "usePaste") { const v = $("#pasteIn").value; if (!v.trim()) { DATA.msg = "Paste some CSV rows first, header row included."; $("#loadStatus").innerHTML = loadStatus(); DATA.msg = ""; return; } SRC = "paste"; loadText(v, "pasted rows", false); const p = $("#pasteIn"); if (p) p.value = v; return; }
+  if (t.dataset.mode) { S.mode = t.dataset.mode; save(); OUT = { tab: OUT.tab, text: "", status: "idle", msg: "", built: OUT.built }; document.querySelectorAll(".mode").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === S.mode)); renderOutput(); return; }
+  if (t.dataset.goverdict) { S.vf = t.dataset.goverdict; S.cf = ""; S.q = ""; save(); renderTable(); showView("pages"); window.scrollTo({ top: 0 }); return; }
+  if (t.dataset.gocluster != null) { S.cf = t.dataset.gocluster; S.vf = "all"; S.q = ""; renderTable(); showView("pages"); window.scrollTo({ top: 0 }); return; }
+  if (t.dataset.vf) { S.vf = t.dataset.vf; SHOWN = 100; save(); renderTable(); return; }
+  if (t.dataset.sort) { const k = t.dataset.sort; if (S.sort === k) S.dir = -S.dir; else { S.sort = k; S.dir = ["sessions", "change", "conversions", "backlinks", "score"].includes(k) ? -1 : 1; } save(); renderTable(); return; }
+  if (t.id === "moreRows") { SHOWN += 200; renderTable(); return; }
+  if (t.dataset.copy) { if (!AUDIT || !AUDIT.N) return; const txt = t.dataset.copy === "csv" ? auditCSV(S.view === "pages" ? sorted(filtered()) : sorted(AUDIT.pages)) : redirectCSV(); return copyText(txt, t.parentElement.querySelector("[data-msg]")); }
+  if (t.dataset.otab) { OUT.tab = t.dataset.otab; renderOutput(); return; }
+  if (t.id === "genBtn") return generate(false);
+  if (t.id === "regen") return generate(true);
+  if (t.id === "stopBtn") { CTL?.abort(); return; }
+  if (t.id === "copyPrompt") return copyText(buildPrompt(), $("#copyMsg"));
+  if (t.id === "copyOut") return copyText(OUT.text, $("#copyMsg"));
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.id === "fileIn" && t.files && t.files[0]) {
+    const f = t.files[0];
+    if (f.size > 15 * 1024 * 1024) { DATA.msg = "That file is over 15 MB. Export fewer columns or split it."; $("#loadStatus").innerHTML = loadStatus(); DATA.msg = ""; return; }
+    const r = new FileReader();
+    r.onload = () => { SRC = "upload"; $("#pasteBox") && ($("#pasteBox").hidden = true); loadText(String(r.result || ""), f.name, false); };
+    r.onerror = () => { DATA.msg = "Couldn't read that file. Try saving it as CSV (UTF-8) first."; $("#loadStatus").innerHTML = loadStatus(); DATA.msg = ""; };
+    r.readAsText(f); return;
+  }
+  if (t.dataset.map) { const v = t.value; if (v === "") delete DATA.map[t.dataset.map]; else { Object.keys(DATA.map).forEach(k => { if (DATA.map[k] === +v) delete DATA.map[k]; }); DATA.map[t.dataset.map] = +v; } rescore(); return; }
+  if (t.id === "asOf") { DATA.asOf = t.value; rescore(); return; }
+  if (t.id === "clFilter") { S.cf = t.value; SHOWN = 100; renderTable(); return; }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "ctx") { S.context = e.target.value; save(); }
+  if (e.target.id === "tblSearch") { S.q = e.target.value; SHOWN = 100; renderTable(); }
+});
+
+boot();
+(async () => {
+  try { SAMPLE = window.claude ? await window.claude.use("sample") : null; } catch (e) { SAMPLE = null; }
+  setChip();
+  if (SAMPLE) { OUT.tab = "out"; renderSteps(); }
+})();
+</script>
+
+
+</body>
+</html>
