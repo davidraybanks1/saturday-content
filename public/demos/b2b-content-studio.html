@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Live demo of the B2B content studio, a free Claude skill from saturday content. Messaging for a fictional company.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>B2B Content Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paper page, one working column; each step is a numbered rail; picks scroll sideways as card rows; output sits in an outlined "window". */
+:root{
+  --bg:#efede8; --surface:#f5f4f0; --surface-2:#e6e3dc; --ink:#141413; --muted:#55534d; --faint:#8d8a82; --line:#d3d0c8; --dot:#b9b5ab;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#fbe6ad; --bad:#b4442c; --bad-soft:#f3dcd3; --good:#2f7a4d;
+  --shadow-c:#141413;
+  --f-body:"Host Grotesk","Helvetica Neue",Arial,sans-serif; --f-mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(30px,4.4vw,44px);letter-spacing:-.04em;line-height:1.05}
+h2{font-size:22px;letter-spacing:-.03em}
+h3{font-size:16px;letter-spacing:-.02em;font-weight:600}
+.hl{background:var(--hl);color:var(--hl-ink);padding:0 .12em;border-radius:3px}
+.mono-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.brandbar{border-bottom:1px solid var(--line)}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-block:12px}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.03em;text-decoration:none}
+.logo span{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--hl)}
+
+header.head .wrap{padding-block:36px 8px;display:grid;gap:12px}
+.head-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.lede{font-size:18px;line-height:1.4;letter-spacing:-.01em;color:var(--muted);max-width:60ch;margin:0}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:6px;padding:5px 10px;font-family:var(--f-mono);font-size:12px;background:var(--bg)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.chip.live .dot{background:var(--hl);box-shadow:0 0 0 1.5px var(--ink)}
+nav.views{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px}
+nav.views button{border:0;background:none;padding:12px 0 9px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+nav.views button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+nav.views button:hover{color:var(--ink)}
+
+main{padding-block:28px 64px}
+.q{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.04em;font-weight:700;margin:0 0 18px}
+.modes{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.mode{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 14px 16px;display:grid;gap:8px;align-content:start}
+.mode:hover{border-color:var(--ink)}
+.mode[aria-pressed=true]{border:1.5px solid var(--ink);background:var(--hl);color:var(--hl-ink);box-shadow:4px 4px 0 var(--shadow-c)}
+.mode[aria-pressed=true] .mdesc{color:var(--hl-ink)}
+.mode .ic{width:26px;height:26px}
+.mode .mname{font-weight:700;font-size:19px;letter-spacing:-.03em}
+.mode .mdesc{font-size:13px;color:var(--muted);line-height:1.4}
+.mode .tick{position:absolute;right:12px;top:12px;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--faint)}
+.mode[aria-pressed=true] .tick{border-color:var(--hl-ink);background:var(--hl-ink);box-shadow:inset 0 0 0 3px var(--hl)}
+
+.steps{list-style:none;margin:30px 0 0;padding:0;display:grid}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:30px}
+.step::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:1.5px;background:var(--line)}
+.step:last-child::before{display:none}
+.num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;background:var(--bg);position:relative}
+.step.done .num{background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.step-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;min-height:34px;padding-top:4px}
+.step-h h3{font-size:19px;letter-spacing:-.03em;font-weight:700}
+.step-h .sub{display:block;margin-top:2px}
+.opt-note{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.step-b{grid-column:2;margin-top:12px;min-width:0}
+.rowwrap{position:relative}
+.cards{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);padding-right:40px!important;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 6px 10px 2px;scrollbar-width:thin}
+.opt{scroll-snap-align:start;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-height:132px;position:relative}
+.opt:hover{border-color:var(--ink)}
+.opt .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.opt .ib svg{width:20px;height:20px}
+.opt .on{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.opt .od{font-size:13px;color:var(--muted);line-height:1.35}
+.opt[aria-pressed=true]{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.opt[aria-pressed=true] .ib{background:var(--hl);color:var(--hl-ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt[aria-pressed=true]::after{content:"Selected";position:absolute;right:10px;top:10px;font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:2px 5px;border-radius:3px}
+.funnel .opt{min-height:0}
+textarea.box{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;line-height:1.5}
+textarea.box:focus{outline:none;border-color:var(--ink)}
+.hint{font-size:12px;color:var(--faint);margin-top:6px}
+.hint.req{color:var(--bad)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;padding:12px 20px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+.pill:hover:not(:disabled){background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.pill.ghost{background:transparent;color:var(--ink)}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.gen-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.gen-note{font-size:13px;color:var(--muted);max-width:60ch}
+.summary-line{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:10px}
+.summary-line b{font-weight:500;color:var(--ink);background:var(--hl-soft);padding:0 3px}
+
+.window{background:var(--bg);border:1.5px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--shadow-c);overflow:hidden;margin-right:6px}
+.window-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1.5px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap}
+.window-bar i{flex:none;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}
+.window-bar .wt{margin-left:4px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.otabs{display:flex;gap:4px}
+.otabs button{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.otabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out-body{padding:20px 22px;max-height:640px;overflow:auto}
+.out-empty{color:var(--muted);text-align:center;padding:28px}
+.out-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.out-actions .pill{padding:8px 14px;font-size:11px}
+.prose{max-width:70ch}
+.prose h1,.prose h2,.prose h3,.prose h4{margin:18px 0 6px;letter-spacing:-.02em}
+.prose h1{font-size:24px}.prose h2{font-size:20px}.prose h3{font-size:17px}.prose h4{font-size:15px}
+.prose > :first-child{margin-top:0}
+.prose p{margin:0 0 10px}
+.prose ul,.prose ol{margin:0 0 12px;padding-left:22px}
+.prose li{margin:3px 0}
+.prose blockquote{margin:0 0 12px;padding:4px 12px;border-left:3px solid var(--hl);color:var(--muted)}
+.prose code{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+.prose hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+pre.prompt{font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;margin:0;line-height:1.55}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.thinking i{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--hl);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation-duration:3s}}
+.msg{font-size:13px}
+.msg.err{color:var(--bad)}
+.ex-note{border-left:3px solid var(--hl);background:var(--surface);padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* library */
+.lib-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.lib-tools input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-width:min(100%,260px)}
+.seg{display:flex;gap:16px}
+.seg button{border:0;background:none;padding:4px 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+.seg button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.lib{display:grid;gap:10px}
+details.aud{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.aud[open]{border-color:var(--ink);background:var(--bg)}
+details.aud summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+details.aud summary::-webkit-details-marker{display:none}
+details.aud .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+details.aud .ib svg{width:20px;height:20px}
+.dim{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px}
+.aud-body{padding:0 14px 16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.fld h4{margin:0 0 4px;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld p,.fld li{margin:0;font-size:14px;line-height:1.45}
+.fld ul{margin:0;padding-left:18px}
+.fld.wide{grid-column:1 / -1}
+.lib-note{margin-top:18px;font-size:13px;color:var(--muted);max-width:70ch}
+
+.cta{margin-top:36px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:18px;background-color:var(--surface-2);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px}
+.cta > div{background:var(--bg);padding:8px 12px;border-radius:6px}
+footer.site{border-top:1px solid var(--line)}
+footer.site .wrap{padding-block:22px}
+</style>
+
+<div class="brandbar" id="brandbar"><div class="wrap"><a class="logo" id="brandLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">saturday <span>content</span></a><span class="tag" id="brandTag">B2B content studio · demo</span></div></div>
+
+<header class="head">
+  <div class="wrap">
+    <div class="head-row">
+      <div style="display:grid;gap:10px;min-width:0">
+        <span class="mono-label" id="eyebrow"></span>
+        <h1 id="title">B2B <span class="hl">content studio</span></h1>
+      </div>
+      <span class="chip" id="modeChip"><span class="dot"></span><span id="modeChipText">Checking for Claude…</span></span>
+    </div>
+    <p class="lede" id="lede"></p>
+    <nav class="views" role="tablist">
+      <button type="button" role="tab" id="v-studio" aria-selected="true" data-view="studio">Studio</button>
+      <button type="button" role="tab" id="v-library" aria-selected="false" data-view="library">Messaging library</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="studio" role="tabpanel" aria-labelledby="v-studio">
+    <h2 class="q">What are we up to?</h2>
+    <div class="modes" id="modes" role="group" aria-label="Mode"></div>
+    <ol class="steps" id="steps"></ol>
+  </section>
+  <section id="library" role="tabpanel" aria-labelledby="v-library" hidden>
+    <div class="lib-tools">
+      <div class="seg" id="libSeg" role="group" aria-label="Filter"></div>
+      <input type="search" id="libSearch" placeholder="Search audiences, pains, objections…" aria-label="Search the library">
+    </div>
+    <div class="lib" id="libList"></div>
+    <p class="lib-note" id="libNote"></p>
+  </section>
+  <div class="cta" id="cta">
+    <div><strong>Get the B2B content studio skill</strong><div class="muted" style="font-size:14px">Claude builds this studio around your own messaging, then drafts, remixes, critiques and brainstorms with it.</div></div>
+    <a class="pill" id="ctaLink" href="https://saturdaycontent.co/templates/b2b-content-studio-claude" target="_blank" rel="noopener">Get the free skill →</a>
+  </div>
+</main>
+<footer class="site" id="siteFooter"><div class="wrap mono-label" id="footerText"></div></footer>
+
+<script>
+/* =====================================================================
+   CONFIG — who the studio writes for. See CUSTOMIZE.md.
+   ===================================================================== */
+const CONFIG = {
+  title: "B2B content studio",
+  company: "Fieldbook",
+  about: "Fieldbook is a content operations platform for B2B marketing teams. It puts briefs, the editorial calendar, reviews and approvals, a searchable content library, and content performance in one workspace.",
+  voice: "Plainspoken, specific and a little wry. Short sentences. Concrete examples over abstractions. Never hypey; no exclamation points; no 'revolutionize', 'unlock' or 'game-changer'.",
+  ctaDefault: "Start a free Fieldbook trial",
+  demoNote: "Fieldbook is a fictional company. Its messaging library is invented so you can see how the studio works.",
+  brand: { name: "saturday content", url: "https://saturdaycontent.co", tag: "B2B content studio · demo" },
+  footer: "saturday content — tools for content teams",
+  ctaUrl: "https://saturdaycontent.co/templates/b2b-content-studio-claude"
+};
+
+/* =====================================================================
+   LIBRARY — the messaging the studio writes from. One entry per audience.
+   dimension: "persona" | "vertical". Fields are described in
+   references/library-schema.md. Replace these with your own.
+   ===================================================================== */
+const LIBRARY = [
+  { id: "content-lead", dimension: "persona", name: "Content lead", icon: "target", blurb: "Ship more without more meetings",
+    titles: "Head of Content, Content Marketing Manager, Managing Editor",
+    goal: "Position Fieldbook as the operating system for a content team: one place where ideas become briefs, drafts move through review, and finished work stays findable and measurable.",
+    tone: "Peer to peer. Speak like a fellow editor who has run a messy calendar and knows where the time goes.",
+    emphasize: "Fewer status meetings; briefs everyone follows; approvals that don't stall; a library that stops duplicate work; showing leadership what content did.",
+    avoid: "Don't call it a project management tool. Don't imply it writes the content for them. Don't lead with AI.",
+    proof: "Brief templates with required fields; calendar and kanban views of the same work; approval steps with owners and due dates; content library with tags and usage; performance pulled into each asset.",
+    pains: "Work lives across docs, spreadsheets and Slack. Reviews stall in someone's inbox. Writers redo work that already exists. Leadership asks what content is driving and the answer takes a week.",
+    objections: [
+      { o: "We already have a project management tool.", r: "Keep it. Fieldbook covers the content-specific parts PM tools don't: briefs, review rounds, the library and per-asset performance." },
+      { o: "My team won't adopt another tool.", r: "Start with briefs and the calendar only. Most teams move reviews in within a month because it saves them time." }
+    ],
+    value: "Fewer meetings, faster reviews, no duplicate work, and a straight answer when someone asks what content is doing.",
+    metrics: "Assets shipped per month; time from brief to publish; pipeline influenced by content" },
+  { id: "demand-gen", dimension: "persona", name: "Demand gen marketer", icon: "megaphone", blurb: "Content that fills pipeline",
+    titles: "Demand Generation Manager, Growth Marketer, Campaign Manager",
+    goal: "Show that Fieldbook gets campaign content out on time and makes it obvious which assets drive pipeline.",
+    tone: "Direct and numbers-aware. This reader is measured on pipeline, not output.",
+    emphasize: "Campaign launch dates hit; every asset tied to a campaign; seeing which content converts; repurposing winners quickly.",
+    avoid: "Don't talk about 'storytelling' in the abstract. Don't promise attribution magic.",
+    proof: "Campaign field on every brief; calendar filtered by campaign; performance per asset (sessions, sign-ups, demo requests); one-click repurpose brief from an existing asset.",
+    pains: "Campaigns slip because content is late. Can't tell which assets actually drive demos. Good content gets used once.",
+    objections: [
+      { o: "Our attribution lives in the CRM.", r: "Fieldbook doesn't replace it. It shows per-asset performance next to the work so the content team can act on it." }
+    ],
+    value: "Campaigns launch on time and the best-performing content gets reused instead of forgotten.",
+    metrics: "Content-influenced pipeline; MQLs from content; campaign on-time rate" },
+  { id: "pmm", dimension: "persona", name: "Product marketer", icon: "rocket", blurb: "Launches that land",
+    titles: "Product Marketing Manager, Director of Product Marketing",
+    goal: "Position Fieldbook as how launches stay coordinated: messaging, assets, owners and dates in one view.",
+    tone: "Crisp and strategic. Respect that this reader owns positioning and is protective of it.",
+    emphasize: "Launch checklists; messaging that stays consistent across every asset; sales enablement content that's findable.",
+    avoid: "Don't suggest anyone else should own positioning. Don't oversell AI writing.",
+    proof: "Launch templates; messaging library linked to briefs; enablement collection in the content library.",
+    pains: "Launch assets drift from the approved messaging. Sales can't find the latest deck or one-pager.",
+    objections: [{ o: "We run launches in a spreadsheet.", r: "Import it. The difference is that each row becomes a brief with an owner, a review step and the final asset attached." }],
+    value: "Every launch asset says the same thing, ships on time, and is easy for sales to find.",
+    metrics: "Launch assets on time; enablement content usage; win-rate influence" },
+  { id: "ops", dimension: "persona", name: "Marketing ops", icon: "gear", blurb: "Workflows that run themselves",
+    titles: "Marketing Operations Manager, Marketing Systems Lead",
+    goal: "Show Fieldbook as a well-structured system: clean fields, permissions, integrations, and reporting ops can trust.",
+    tone: "Practical and precise. Lead with how it works, not how it feels.",
+    emphasize: "Required fields and templates; roles and permissions; integrations with CMS, analytics and CRM; clean data for reporting.",
+    avoid: "Don't wave hands about 'seamless' integrations. Be specific or say nothing.",
+    proof: "Custom fields and templates; role-based permissions; CMS and analytics integrations; export and API.",
+    pains: "Every team tracks content differently. Reporting means stitching spreadsheets. Tool sprawl.",
+    objections: [{ o: "Another tool to maintain.", r: "It replaces several spreadsheets and a shared drive structure, and admins control fields and templates centrally." }],
+    value: "One consistent structure for content work, with data clean enough to report on.",
+    metrics: "Tools consolidated; reporting time saved; data completeness" },
+  { id: "creator", dimension: "persona", name: "Writer and creator", icon: "pen", blurb: "Write more, chase less",
+    titles: "Content Writer, Content Designer, Freelance Writer, Video Producer",
+    goal: "Show the individual contributor that Fieldbook removes the chasing: clear briefs, one place for feedback, and fewer surprise rewrites.",
+    tone: "Warm and candid. Writer to writer.",
+    emphasize: "Briefs with everything you need up front; feedback in one place; knowing what's next; finding past work to build on.",
+    avoid: "Don't talk about productivity metrics or 'output'. Don't imply surveillance.",
+    proof: "Brief template with audience, angle, sources and examples; inline review comments; personal queue; library search.",
+    pains: "Vague briefs. Feedback scattered across email, docs and DMs. Late-stage rewrites from a stakeholder nobody mentioned.",
+    objections: [{ o: "I write in Google Docs and that's not changing.", r: "Keep writing there. Link the doc to the brief and reviews happen in one place." }],
+    value: "Clear direction, one feedback thread, and more time actually writing.",
+    metrics: "Revision rounds per asset; time to first draft" },
+  { id: "exec", dimension: "persona", name: "Executive buyer", icon: "building", blurb: "Content ROI the board believes",
+    titles: "CMO, VP Marketing, VP Demand",
+    goal: "Show leadership that Fieldbook turns content from a cost center into a measurable, well-run program.",
+    tone: "Brief, confident and outcome-first. No feature tours.",
+    emphasize: "Visibility into what content exists, what it costs to make, and what it drives; a program that scales without adding headcount.",
+    avoid: "Don't bury the outcome under features. Don't use team-level jargon.",
+    proof: "Program dashboard; content-influenced pipeline by asset; throughput and cycle-time reporting.",
+    pains: "Can't defend the content budget with numbers. Hiring to scale content output.",
+    objections: [{ o: "We have BI for reporting.", r: "Fieldbook feeds it, and gives the content team the per-asset view BI doesn't." }],
+    value: "A content program leadership can see, measure and grow without proportional headcount.",
+    metrics: "Content-influenced pipeline; cost per asset; output per head" },
+
+  { id: "saas", dimension: "vertical", name: "B2B software", icon: "code", blurb: "Launch velocity for fast product teams",
+    goal: "Speak to content teams keeping pace with weekly product releases and product-led growth.",
+    tone: "Fast, fluent in SaaS language.",
+    emphasize: "Launch and release content at speed; docs-to-marketing handoffs; product-led content like templates and comparison pages.",
+    avoid: "Don't explain SaaS basics.",
+    proof: "Release-driven content templates; integrations with product and docs tools.",
+    pains: "Product ships faster than content can explain it. Comparison and template pages go stale.",
+    objections: [], value: "Content that keeps up with the product.", metrics: "Launch content cycle time; organic sign-ups from content" },
+  { id: "health", dimension: "vertical", name: "Healthcare", icon: "pulse", blurb: "Compliant content, faster reviews",
+    goal: "Show healthcare marketers a review process that satisfies medical, legal and regulatory review without months of delay.",
+    tone: "Careful, credible and calm. No hype, no health claims.",
+    emphasize: "MLR-style review steps with clear owners; version history; approved-claims library.",
+    avoid: "Never make clinical or outcome claims. Don't trivialize compliance.",
+    proof: "Multi-step approvals with required reviewers; full version history; approved language snippets.",
+    pains: "Medical and legal review takes weeks. Approved claims get reworded and sent back.",
+    objections: [{ o: "Is this compliant for us?", r: "Fieldbook supports your review process and keeps the audit trail. Your compliance team still sets the rules." }],
+    value: "Faster compliant reviews and reusable approved language.", metrics: "Review cycle time; rework rate" },
+  { id: "fin", dimension: "vertical", name: "Financial services", icon: "chart", blurb: "Approvals with an audit trail",
+    goal: "Position Fieldbook as the governed way to produce marketing content in a regulated industry.",
+    tone: "Measured and precise. Trust is the product.",
+    emphasize: "Audit trail for every change and approval; disclosures attached to briefs; permissioned access.",
+    avoid: "No performance or return claims. Don't call compliance 'red tape'.",
+    proof: "Approval logs; required disclosure fields; role-based access.",
+    pains: "Compliance reviews are slow and opaque. Hard to prove who approved what, when.",
+    objections: [], value: "Governed content production with a clean record of every approval.", metrics: "Approval cycle time; audit requests answered" },
+  { id: "mfg", dimension: "vertical", name: "Manufacturing", icon: "factory", blurb: "Technical content buyers trust",
+    goal: "Help manufacturing marketers turn engineering knowledge into content that technical buyers and distributors use.",
+    tone: "Plain and technical. Respect expertise; skip the buzzwords.",
+    emphasize: "Capturing SME knowledge; spec sheets and application notes; content for distributors and channel partners.",
+    avoid: "Don't use consumer-marketing language.",
+    proof: "SME interview brief template; channel partner collection in the library.",
+    pains: "Engineers are the experts but have no time. Distributors use outdated sheets.",
+    objections: [], value: "Accurate technical content, produced without burning out the engineers.", metrics: "SME hours per asset; distributor content usage" },
+  { id: "prof", dimension: "vertical", name: "Professional services", icon: "briefcase", blurb: "Expertise that wins clients",
+    goal: "Show firms how to turn partner expertise into thought leadership on a steady schedule.",
+    tone: "Polished and authoritative.",
+    emphasize: "Thought leadership pipelines; partner bylines; proposals and case studies from the library.",
+    avoid: "Don't make it sound like a content mill.",
+    proof: "Byline and SME fields; case study template; proposal content collection.",
+    pains: "Partners' ideas never get written. Case studies are hard to find for proposals.",
+    objections: [], value: "A steady stream of expert content and a library that helps win pitches.", metrics: "Published pieces per partner; proposal content reuse" },
+  { id: "edu", dimension: "vertical", name: "Education", icon: "cap", blurb: "Content for every campus audience",
+    goal: "Help education marketers coordinate content across departments, programs and audiences.",
+    tone: "Warm, clear and inclusive.",
+    emphasize: "Coordinating many contributors; program-level calendars; accessibility checks.",
+    avoid: "Don't treat students like leads in a funnel.",
+    proof: "Department workspaces; program calendars; accessibility checklist in review.",
+    pains: "Dozens of departments publish on their own. Brand and accessibility standards slip.",
+    objections: [], value: "Consistent, accessible content across every department.", metrics: "On-brand rate; accessibility issues caught in review" }
+];
+
+/* ---------------- formats, funnel, modes ---------------- */
+const FORMATS = [
+  { id: "linkedin", name: "LinkedIn post", icon: "chat", blurb: "Authority and engagement",
+    play: "150–250 words. Hook in the first two lines (before 'see more'). One idea, a concrete example, a takeaway. Short paragraphs. End with a question or a light CTA. 3 or fewer hashtags, at the end." },
+  { id: "blog", name: "Blog post", icon: "doc", blurb: "Organic reach through education",
+    play: "1,000–1,500 words. Search-friendly H1, a 2–3 sentence intro that names the problem, 4–6 H2 sections, at least one example or framework, a short conclusion and one CTA. Suggest a meta description." },
+  { id: "ebook", name: "Ebook", icon: "book", blurb: "In-depth guide that earns leads",
+    play: "Gated guide. Title and subtitle, who it's for, 5–7 chapters with a one-paragraph summary each, one worksheet or checklist, and a landing-page blurb for the download." },
+  { id: "webinar", name: "Webinar", icon: "video", blurb: "Live sessions that build trust",
+    play: "Title, 3-bullet promise, speaker roles, a 45-minute run of show (intro, three segments, demo or case, Q&A), 5 seeded audience questions, and a registration-page blurb." },
+  { id: "product", name: "Product page", icon: "cube", blurb: "Value, proof, conversion",
+    play: "Hero headline and subhead, 3 value pillars with a proof point each, a how-it-works section, objection-handling FAQ (3–5), and a primary and secondary CTA." },
+  { id: "web", name: "Web page", icon: "globe", blurb: "Orient and guide visitors",
+    play: "Clear H1, one-paragraph orientation, 3–5 sections that route visitors to the right next page, and a closing CTA. Scannable and short." }
+];
+const FUNNEL = [
+  { id: "tofu", name: "Top of funnel", short: "TOFU", level: 0, blurb: "Spark problem awareness",
+    play: "The reader doesn't know they need a product yet. Lead with the problem and a useful idea. Mention the product lightly or not at all. CTA: read more, subscribe, follow." },
+  { id: "mofu", name: "Middle of funnel", short: "MOFU", level: 1, blurb: "Prove expertise, build trust",
+    play: "The reader is exploring approaches. Teach a method, compare options fairly, show how the product fits. CTA: download, webinar, see how it works." },
+  { id: "bofu", name: "Bottom of funnel", short: "BOFU", level: 2, blurb: "Equip buyers to decide",
+    play: "The reader is choosing. Be specific about value, proof, pricing logic and objections. CTA: trial, demo, talk to sales." }
+];
+const MODES = [
+  { id: "draft", name: "Draft", icon: "pen", blurb: "Get a proposal and rough draft for your next piece of content.", verb: "Draft a…",
+    task: "Write a short proposal for the piece (working title options, the angle, why it fits this audience, an outline), then a complete first draft in the requested format." },
+  { id: "remix", name: "Remix", icon: "shuffle", blurb: "Turn something you already have into something new.", verb: "Remix into a…", source: "Drop in the content you want to remix",
+    task: "Turn the source content into the requested format for the requested audience. Keep the strongest ideas and any facts from the source; cut what doesn't serve the new reader; add only what the format needs. Then list what you changed and why in 3–5 bullets." },
+  { id: "critique", name: "Critique", icon: "search", blurb: "Get feedback on something you're working on.", verb: "Critique a…", source: "Drop in the content you want critiqued",
+    task: "Critique the source content as an experienced B2B content editor. Give: a one-line verdict; a score out of 10 for audience fit, clarity, message alignment and CTA strength; the 3 biggest strengths; the 3–5 most important fixes in priority order, each with a concrete suggested rewrite; and a rewritten opening." },
+  { id: "brainstorm", name: "Brainstorm", icon: "bulb", blurb: "Identify ideas, topics and whitespace for your content.", verb: "Brainstorm a…",
+    task: "Brainstorm 10 distinct content ideas. For each: a working title, the angle in one sentence, the hook, and why this audience would care now. Then name 2–3 whitespace opportunities (questions this audience has that most competitors don't answer) and recommend the 3 strongest ideas with a one-line reason each." }
+];
+
+/* ---------------- worked examples (shown in the demo, when Claude isn't available) ---------------- */
+const EXAMPLES = {
+  draft: { picks: { format: "linkedin", persona: "content-lead", vertical: "saas", funnel: "tofu" }, text:
+`## Proposal
+
+**Working titles**
+- Your content calendar isn't the problem. Your briefs are.
+- The 20-minute brief that saved us three review rounds
+
+**Angle:** Most content teams blame the calendar when work slips. The real cause is usually a thin brief, which pushes every hard decision into review.
+
+**Why it fits:** Content leads at fast-moving software companies live this every week, and it's a problem they can fix on Monday without buying anything.
+
+**Outline:** hook → the pattern (thin brief → long review) → the five fields that fix it → a takeaway question.
+
+---
+
+## Draft
+
+Your content calendar isn't why things slip.
+Your briefs are.
+
+Last quarter we tracked every piece that missed its date. Almost none were late because of the writing. They were late because the review turned into the brief: who's this for, what's the one point, what should they do next.
+
+So we added five required fields to every brief:
+
+1. Who it's for, by role, not by persona name
+2. The one thing they should believe after reading
+3. What they already think, and why it's wrong
+4. The proof we'll use
+5. The single next step
+
+Briefs now take 20 minutes longer. Reviews take two rounds instead of four.
+
+Which of those five does your team skip most?
+
+#ContentOps #ContentMarketing` },
+  remix: { picks: { format: "linkedin", persona: "exec", vertical: "", funnel: "mofu" }, source: "(a 1,200-word blog post about measuring content performance by page)", text:
+`## Remix: LinkedIn post for executive buyers
+
+Most content reports answer the wrong question.
+
+"How much did we publish?" tells you the team is busy. It doesn't tell you whether to fund it.
+
+Three numbers we show leadership instead:
+
+- **Pipeline touched by content**, counted only when the page came before the demo request
+- **Cost per asset**, including review time, not just writing time
+- **Which 20% of pages do 80% of the work**, so next quarter's budget follows them
+
+None of this needs a new BI project. It needs the content team to see performance next to the work.
+
+What does your content report lead with today?
+
+---
+
+**What changed**
+- Cut the how-to setup steps; executives want the decision, not the method
+- Led with the reporting problem instead of the tooling
+- Reduced eight metrics to three that tie to budget
+- Swapped the "start a trial" CTA for a question that suits the top of a feed` },
+  critique: { picks: { format: "product", persona: "ops", vertical: "", funnel: "bofu" }, source: "(a draft product page headed 'The all-in-one content platform')", text:
+`**Verdict:** Clear structure, but it sells a vision to an audience that wants specifics.
+
+| | Score |
+|---|---|
+| Audience fit | 5/10 |
+| Clarity | 7/10 |
+| Message alignment | 6/10 |
+| CTA strength | 4/10 |
+
+**Strengths**
+1. The how-it-works section is easy to follow.
+2. Proof points are real features, not adjectives.
+3. Short paragraphs; it scans well.
+
+**Fixes, in order**
+1. **Replace "all-in-one."** Ops buyers read it as "does nothing well." Try: *"One structure for every brief, review and asset, with the fields and permissions you control."*
+2. **Name the integrations.** "Seamless integrations" says nothing. List the CMS, analytics and CRM connections, or link the list.
+3. **Answer the maintenance objection on the page.** Add an FAQ: *"Who maintains this?"* — admins manage fields and templates centrally.
+4. **Make the CTA specific.** "Get started" → *"See the admin settings in a 20-minute walkthrough."*
+
+**Rewritten opening**
+> Every team tracks content differently, and reporting pays the price. Fieldbook gives marketing one structure for briefs, reviews and assets, with fields, roles and integrations that ops controls.` },
+  brainstorm: { picks: { format: "blog", persona: "demand-gen", vertical: "", funnel: "mofu" }, text:
+`## 10 ideas
+
+1. **Which content actually comes before the demo?** — Sequential attribution in plain English. *Hook:* "Your best-performing blog post might be a bystander."
+2. **The repurposing ladder** — One webinar → 12 assets, in order of effort. *Hook:* stop making new things.
+3. **Campaign content that ships on time** — A two-week backwards plan. *Hook:* the launch date is set; the content isn't.
+4. **Front doors that leak** — Finding high-traffic pages that never convert. *Hook:* traffic is a vanity metric until it isn't.
+5. **Content scoring for demand gen** — Five verdicts every page can get.
+6. **What sales actually uses** — Surveying reps about content. *Hook:* the deck they use isn't the one you made.
+7. **Gated or ungated in 2026** — A decision table, not an opinion.
+8. **Writing briefs for pipeline** — The CTA field most briefs forget.
+9. **The quarterly content cull** — Retire, refresh or redirect.
+10. **Pipeline per asset** — Building the report leadership asks for.
+
+## Whitespace
+- How to attribute content without a data team — most guides assume one.
+- Content for the evaluation committee, not just the champion.
+
+## Strongest three
+1. **Which content comes before the demo?** It's the question every demand gen marketer is asked and few can answer.
+2. **Front doors that leak.** Practical, with a clear before and after.
+3. **The repurposing ladder.** Quick wins with content they already have.` }
+};
+
+/* ---------------- icons ---------------- */
+const ICON = {
+  pen: '<path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/><path d="M14 7l3 3"/>',
+  shuffle: '<path d="M3 7h4l10 10h4M3 17h4l3-3M14 10l3-3h4M18 4l3 3-3 3M18 14l3 3-3 3"/>',
+  search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>',
+  book: '<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
+  cube: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8"/>',
+  megaphone: '<path d="M3 10v4h3l8 5V5L6 10z"/><path d="M18 9a4 4 0 0 1 0 6"/>',
+  rocket: '<path d="M12 2c4 3 5 8 3 13H9C7 10 8 5 12 2z"/><path d="M9 15l-3 4M15 15l3 4"/><circle cx="12" cy="9" r="1.5"/>',
+  gear: '<circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  building: '<path d="M4 21V5l8-3v19M12 9h8v12M7 8h2M7 12h2M7 16h2M15 13h2M15 17h2M2 21h20"/>',
+  code: '<path d="M8 8l-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>',
+  pulse: '<path d="M12 20s-8-5-8-11a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 6-8 11-8 11z"/><path d="M7 12h3l1-2 2 4 1-2h3"/>',
+  chart: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  factory: '<path d="M3 21V10l6 4V10l6 4V6h6v15z"/>',
+  briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 13h18"/>',
+  cap: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5M22 9v6"/>'
+};
+const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.doc}</svg>`;
+const funnelSvg = (lvl) => `<svg viewBox="0 0 24 24" aria-hidden="true">${[[3,4,21,4,18,9,6,9],[6.5,10,17.5,10,15,15,9,15],[9.5,16,14.5,16,13,21,11,21]].map((p,i)=>`<path d="M${p[0]} ${p[1]}L${p[2]} ${p[3]}L${p[4]} ${p[5]}L${p[6]} ${p[7]}Z" fill="${i===lvl?'currentColor':'none'}" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`).join("")}</svg>`;
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("bcs:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("bcs:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const byId = (list, id) => list.find(x => x.id === id);
+const PERSONAS = LIBRARY.filter(x => x.dimension === "persona"), VERTICALS = LIBRARY.filter(x => x.dimension === "vertical");
+
+const S = Object.assign({ mode: "draft", format: "", persona: "", vertical: "", funnel: "", context: "", source: "", view: "studio", libDim: "all" }, store.get("state", {}));
+let SAMPLE = null, CTL = null, OUT = { tab: "example", text: "", status: "idle", msg: "", truncated: false };
+
+/* ---------------- markdown-lite ---------------- */
+function md(src) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const lines = String(src).replace(/\r/g, "").split("\n"); let html = "", list = null, para = [], table = null;
+  const flushP = () => { if (para.length) { html += `<p>${inline(para.join(" "))}</p>`; para = []; } };
+  const flushL = () => { if (list) { html += `</${list}>`; list = null; } };
+  const flushT = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()); html += `<div style="overflow-x:auto"><table style="border-collapse:collapse;margin:0 0 12px">${[h, ...rows].map((r, i) => `<tr>${cells(r).map(c => `<${i ? "td" : "th"} style="border-bottom:1px solid var(--line);padding:4px 12px 4px 0;text-align:left">${inline(c)}</${i ? "td" : "th"}>`).join("")}</tr>`).join("")}</table></div>`; table = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^\s*\|.*\|\s*$/.test(l)) { flushP(); flushL(); (table = table || []).push(l.trim()); continue; } else flushT();
+    let m;
+    if (!l.trim()) { flushP(); flushL(); continue; }
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { flushP(); flushL(); html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(l.trim())) { flushP(); flushL(); html += "<hr>"; continue; }
+    if ((m = l.match(/^>\s?(.*)/))) { flushP(); flushL(); html += `<blockquote>${inline(m[1])}</blockquote>`; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (list !== "ul") { flushL(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (list !== "ol") { flushL(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    flushL(); para.push(l.trim());
+  }
+  flushP(); flushL(); flushT();
+  return html;
+}
+
+/* ---------------- prompt ---------------- */
+function audienceBlock(a) {
+  if (!a) return "";
+  return [
+    `${a.dimension === "persona" ? "PERSONA" : "VERTICAL"}: ${a.name}`,
+    a.titles && `Typical titles: ${a.titles}`,
+    a.goal && `Messaging goal: ${a.goal}`,
+    a.tone && `Tone for this audience: ${a.tone}`,
+    a.pains && `Their pains: ${a.pains}`,
+    a.emphasize && `Emphasize: ${a.emphasize}`,
+    a.avoid && `Avoid: ${a.avoid}`,
+    a.proof && `Proof points you may use: ${a.proof}`,
+    a.objections && a.objections.length && `Objections and answers: ${a.objections.map(o => `"${o.o}" → ${o.r}`).join(" | ")}`,
+    a.value && `Value to land: ${a.value}`,
+    a.metrics && `What success looks like for them: ${a.metrics}`
+  ].filter(Boolean).join("\n");
+}
+function buildPrompt() {
+  const m = byId(MODES, S.mode), f = byId(FORMATS, S.format), p = byId(LIBRARY, S.persona), v = byId(LIBRARY, S.vertical), fu = byId(FUNNEL, S.funnel);
+  const parts = [
+    `You are a senior B2B content strategist and writer working for ${CONFIG.company}.`,
+    `\nABOUT ${CONFIG.company.toUpperCase()}\n${CONFIG.about}`,
+    `\nHOUSE VOICE\n${CONFIG.voice}`,
+    `\nTASK (${m.name.toUpperCase()})\n${m.task}`,
+    f ? `\nFORMAT: ${f.name}\n${f.play}` : `\nFORMAT: not specified. ${m.id === "brainstorm" ? "Suggest a mix of formats." : "Choose the best-fitting format and say which you chose."}`,
+    p ? `\n${audienceBlock(p)}` : "",
+    v ? `\n${audienceBlock(v)}` : "",
+    fu ? `\nFUNNEL STAGE: ${fu.name} (${fu.short})\n${fu.play}` : "",
+    S.context.trim() ? `\nEXTRA CONTEXT FROM THE USER\n${S.context.trim()}` : "",
+    m.source && S.source.trim() ? `\nSOURCE CONTENT\n"""\n${S.source.trim().slice(0, 60000)}\n"""` : "",
+    `\nRULES\n- Use only the proof points above or in the context. Never invent statistics, customer names or quotes; write [placeholder: what's needed] instead.\n- Respect every "Avoid" line.\n- If no CTA fits the funnel stage, use: ${CONFIG.ctaDefault}.\n- Write in Markdown with clear headings. No preamble; start with the output.`
+  ];
+  return parts.filter(Boolean).join("\n");
+}
+
+/* ---------------- render studio ---------------- */
+function card(kind, item, selected, iconHtml) {
+  return `<button type="button" class="opt" aria-pressed="${selected}" data-kind="${kind}" data-id="${item.id}"><span class="ib">${iconHtml}</span><span class="on">${esc(item.name)}</span><span class="od">${esc(item.blurb)}</span></button>`;
+}
+function stepHtml(n, done, title, sub, note, body) {
+  return `<li class="step${done ? " done" : ""}"><span class="num">${n}</span><div class="step-h"><div><h3>${esc(title)}</h3>${sub ? `<span class="mono-label sub">${esc(sub)}</span>` : ""}</div>${note ? `<span class="opt-note">${esc(note)}</span>` : ""}</div><div class="step-b">${body}</div></li>`;
+}
+function renderModes() {
+  $("#modes").innerHTML = MODES.map(m => `<button type="button" class="mode" aria-pressed="${m.id === S.mode}" data-mode="${m.id}"><span class="tick"></span><span class="ic">${svg(m.icon)}</span><span class="mname">${m.name}</span><span class="mdesc">${esc(m.blurb)}</span></button>`).join("");
+}
+function renderSteps() {
+  const m = byId(MODES, S.mode); let n = 0; const out = [];
+  if (m.source) out.push(stepHtml(++n, !!S.source.trim(), m.source, "", "", `<textarea class="box" id="src" placeholder="Paste the draft, post, page copy or notes…">${esc(S.source)}</textarea><div class="hint${S.source.trim() ? "" : " req"}" id="srcHint">${S.source.trim() ? `${S.source.trim().split(/\s+/).length} words` : "Required before you can generate"}</div>`));
+  out.push(stepHtml(++n, !!S.format, m.verb, "Format", "Optional · pick one", `<div class="cards">${FORMATS.map(f => card("format", f, f.id === S.format, svg(f.icon))).join("")}</div>`));
+  out.push(stepHtml(++n, !!S.persona, "For…", "Persona", "Optional · pick one", `<div class="cards">${PERSONAS.map(p => card("persona", p, p.id === S.persona, svg(p.icon))).join("")}</div>`));
+  out.push(stepHtml(++n, !!S.vertical, "In…", "Industry", "Optional · pick one", `<div class="cards">${VERTICALS.map(p => card("vertical", p, p.id === S.vertical, svg(p.icon))).join("")}</div>`));
+  out.push(stepHtml(++n, !!S.funnel, "At…", "Stage of funnel", "Optional · pick one", `<div class="cards funnel">${FUNNEL.map(f => card("funnel", f, f.id === S.funnel, funnelSvg(f.level))).join("")}</div>`));
+  out.push(stepHtml(++n, !!S.context.trim(), "Add context", "Anything Claude should know", "Optional", `<textarea class="box" id="ctx" style="min-height:110px" placeholder="Background, examples, brand notes, competitor copy, the point you want to make…">${esc(S.context)}</textarea>`));
+  const ready = !m.source || S.source.trim();
+  out.push(stepHtml(++n, false, "Generate", "", "", `<div class="gen-row"><button class="pill" id="genBtn" type="button" ${ready ? "" : "disabled"}>${SAMPLE ? "Generate with Claude" : "Build my prompt"}</button><span class="gen-note" id="genNote">${SAMPLE ? "Uses your Claude account. You'll be asked to allow it the first time." : "Claude isn't connected here, so the studio writes the full prompt for you to paste into Claude, and shows a worked example."}</span></div><div class="summary-line" id="summaryLine">${summaryLine()}</div>`));
+  out.push(stepHtml(++n, OUT.status === "done", "Output", "", "", `<div id="outWrap"></div>`));
+  $("#steps").innerHTML = out.join("");
+  renderOutput();
+}
+function summaryLine() {
+  const m = byId(MODES, S.mode), bits = [byId(FORMATS, S.format)?.name, byId(LIBRARY, S.persona)?.name, byId(LIBRARY, S.vertical)?.name, byId(FUNNEL, S.funnel)?.short].filter(Boolean);
+  return `${m.name}${bits.length ? ": " + bits.map(b => `<b>${esc(b)}</b>`).join(" · ") : " · no targets picked yet"}`;
+}
+function renderOutput() {
+  const w = $("#outWrap"); if (!w) return;
+  const ex = EXAMPLES[S.mode];
+  const exLabel = ex ? [byId(FORMATS, ex.picks.format)?.name, byId(LIBRARY, ex.picks.persona)?.name, byId(LIBRARY, ex.picks.vertical)?.name, byId(FUNNEL, ex.picks.funnel)?.short].filter(Boolean).join(" · ") : "";
+  const tabs = SAMPLE ? [["out", "Output"], ["prompt", "Prompt"]] : [["prompt", "Your prompt"], ["example", "Example output"]];
+  if (!tabs.find(t => t[0] === OUT.tab)) OUT.tab = tabs[0][0];
+  let body = "", actions = "";
+  if (OUT.tab === "prompt") {
+    body = OUT.status === "idle" && !SAMPLE && !OUT.built ? `<div class="out-empty">Pick a mode and any targets, then click “Build my prompt.”</div>` : `<pre class="prompt" id="promptText">${esc(buildPrompt())}</pre>`;
+    actions = `<button class="pill" type="button" id="copyPrompt">Copy prompt</button><a class="pill ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "example") {
+    body = ex ? `<div class="ex-note">Worked example for ${esc(byId(MODES, S.mode).name)}: ${esc(exLabel)}${ex.source ? `, from ${esc(ex.source)}` : ""}. Written from the ${esc(CONFIG.company)} messaging library.</div><div class="prose">${md(ex.text)}</div>` : `<div class="out-empty">No example for this mode.</div>`;
+  } else {
+    if (OUT.status === "idle") body = `<div class="out-empty">Nothing generated yet. Pick a mode and any targets, then click Generate.</div>`;
+    else if (OUT.status === "thinking") body = `<div class="thinking"><i></i>Claude is thinking…</div>`;
+    else body = `<div class="prose">${md(OUT.text)}</div>`;
+    if (OUT.status === "streaming" || OUT.status === "thinking") actions = `<button class="pill ghost" type="button" id="stopBtn">Stop</button>`;
+    else if (OUT.text) actions = `<button class="pill" type="button" id="copyOut">Copy</button><button class="pill ghost" type="button" id="regen">Try another version</button>`;
+    if (OUT.truncated) actions += `<span class="msg">The answer was cut short. Ask for less at a time.</span>`;
+    if (OUT.msg) actions += `<span class="msg err">${esc(OUT.msg)}</span>`;
+    actions += `<span class="msg" id="copyMsg" role="status"></span>`;
+  }
+  w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${esc(summaryLine().replace(/<[^>]+>/g, ""))}</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === OUT.tab}" data-otab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="outBody">${body}</div>${actions ? `<div class="out-actions">${actions}</div>` : ""}</div>`;
+}
+function save() { store.set("state", { mode: S.mode, format: S.format, persona: S.persona, vertical: S.vertical, funnel: S.funnel, context: S.context, view: S.view, libDim: S.libDim }); }
+
+/* ---------------- generation ---------------- */
+async function generate(fresh) {
+  if (!SAMPLE) { OUT.built = true; OUT.tab = "prompt"; renderOutput(); $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+  CTL?.abort(); CTL = new AbortController();
+  OUT = { tab: "out", text: "", status: "thinking", msg: "", truncated: false }; renderOutput();
+  $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  try {
+    const r = await SAMPLE(buildPrompt(), { signal: CTL.signal, cache: fresh ? false : undefined, onText: ({ text }) => { OUT.text = text; OUT.status = "streaming"; const b = $("#outBody"); if (b && OUT.tab === "out") b.innerHTML = `<div class="prose">${md(text)}</div>`; else renderOutput(); } });
+    OUT.text = r.text; OUT.truncated = r.truncated; OUT.status = "done";
+  } catch (e) {
+    OUT.text = e && e.code !== "refused" ? (e.text || "") : "";
+    OUT.status = OUT.text ? "done" : "idle";
+    const copy = { not_granted: "Claude isn't allowed for this page. Allow it from the page's permissions, or copy the prompt instead.", sampling_disabled: "Claude isn't available on this account. Copy the prompt instead.", rate_limited: "You've hit a usage limit. Try again in a little while.", session_expired: "Sign in to Claude again, then retry.", refused: "Claude declined this request. Change the context or source and try again.", prompt_too_large: "The source is too long. Paste a shorter excerpt.", empty_completion: "Claude returned nothing. Try fewer constraints.", cancelled: "" };
+    OUT.msg = e && e.code in copy ? copy[e.code] : "Something interrupted the answer. Try again.";
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled")) { SAMPLE = null; setChip(); renderSteps(); return; }
+  }
+  renderOutput();
+}
+
+/* ---------------- library ---------------- */
+function renderLibrary() {
+  const segs = [["all", "All"], ["persona", "Personas"], ["vertical", "Industries"]];
+  $("#libSeg").innerHTML = segs.map(([k, l]) => `<button type="button" aria-pressed="${k === S.libDim}" data-dim="${k}">${l}</button>`).join("");
+  const q = $("#libSearch").value.trim().toLowerCase();
+  const rows = LIBRARY.filter(a => (S.libDim === "all" || a.dimension === S.libDim) && (!q || JSON.stringify(a).toLowerCase().includes(q)));
+  const fld = (h, v, wide) => v ? `<div class="fld${wide ? " wide" : ""}"><h4>${h}</h4><p>${esc(v)}</p></div>` : "";
+  $("#libList").innerHTML = rows.length ? rows.map(a => `<details class="aud"><summary><span class="ib">${svg(a.icon)}</span><span><strong>${esc(a.name)}</strong><br><span class="muted" style="font-size:13px">${esc(a.blurb)}</span></span><span class="dim">${a.dimension === "persona" ? "Persona" : "Industry"}</span></summary><div class="aud-body">
+    ${fld("Messaging goal", a.goal, true)}${fld("Typical titles", a.titles)}${fld("Tone", a.tone)}${fld("Pains", a.pains)}${fld("Emphasize", a.emphasize)}${fld("Avoid", a.avoid)}${fld("Proof points", a.proof)}
+    ${a.objections && a.objections.length ? `<div class="fld wide"><h4>Objections</h4><ul>${a.objections.map(o => `<li><strong>${esc(o.o)}</strong> ${esc(o.r)}</li>`).join("")}</ul></div>` : ""}
+    ${fld("Value to land", a.value)}${fld("Success metrics", a.metrics)}</div></details>`).join("") : `<div class="out-empty">No audiences match “${esc(q)}”.</div>`;
+  $("#libNote").textContent = `${LIBRARY.length} audiences: ${PERSONAS.length} personas and ${VERTICALS.length} industries. Every generation pulls the matching entries into the prompt. ${SAMPLE ? "To change the library, ask Claude to update it and republish this page." : CONFIG.demoNote}`;
+}
+
+/* ---------------- wiring ---------------- */
+function setChip() {
+  $("#modeChip").classList.toggle("live", !!SAMPLE);
+  $("#modeChipText").textContent = SAMPLE ? "Live · writing with Claude" : "Demo · prompt builder";
+  $("#brandTag").textContent = SAMPLE ? "B2B content studio" : (CONFIG.brand?.tag || "");
+}
+function boot() {
+  const tw = CONFIG.title.split(" ");
+  $("#title").innerHTML = tw.length > 2 ? `${esc(tw.slice(0, -2).join(" "))} <span class="hl">${esc(tw.slice(-2).join(" "))}</span>` : `<span class="hl">${esc(CONFIG.title)}</span>`;
+  $("#eyebrow").textContent = `For ${CONFIG.company}`;
+  $("#lede").textContent = "Draft, remix, critique and brainstorm B2B content that speaks to the right persona, industry and funnel stage, using your own messaging.";
+  document.title = CONFIG.title;
+  const br = CONFIG.brand; $("#brandbar").hidden = !br;
+  if (br) { const [w1, ...rest] = br.name.split(" "); $("#brandLink").innerHTML = rest.length ? `${esc(w1)} <span>${esc(rest.join(" "))}</span>` : `<span>${esc(w1)}</span>`; $("#brandLink").href = br.url || "#"; }
+  $("#siteFooter").hidden = !CONFIG.footer; $("#footerText").textContent = CONFIG.footer || "";
+  $("#cta").hidden = !CONFIG.ctaUrl; if (CONFIG.ctaUrl) $("#ctaLink").href = CONFIG.ctaUrl;
+  setChip(); renderModes(); renderSteps(); renderLibrary(); showView(S.view);
+}
+function showView(v) {
+  S.view = v; save();
+  document.querySelectorAll("nav.views button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  $("#studio").hidden = v !== "studio"; $("#library").hidden = v !== "library";
+}
+function copyText(text, msgEl) {
+  const done = () => { if (msgEl) msgEl.textContent = "Copied."; };
+  const fallback = () => { const pre = $("#promptText") || $("#outBody"); if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } if (msgEl) msgEl.textContent = "Selected. Press Ctrl+C or ⌘C."; };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.view) return showView(t.dataset.view);
+  if (t.dataset.mode) { S.mode = t.dataset.mode; save(); OUT = { tab: OUT.tab, text: "", status: "idle", msg: "" }; renderModes(); renderSteps(); return; }
+  if (t.dataset.kind) { const k = t.dataset.kind; S[k] = S[k] === t.dataset.id ? "" : t.dataset.id; save(); document.querySelectorAll(`.opt[data-kind="${k}"]`).forEach(b => b.setAttribute("aria-pressed", b.dataset.id === S[k])); t.closest(".step").classList.toggle("done", !!S[k]); const sl = $("#summaryLine"); if (sl) sl.innerHTML = summaryLine(); if (OUT.tab !== "out" || OUT.status === "idle") renderOutput(); return; }
+  if (t.dataset.otab) { OUT.tab = t.dataset.otab; renderOutput(); return; }
+  if (t.dataset.dim) { S.libDim = t.dataset.dim; save(); renderLibrary(); return; }
+  if (t.id === "genBtn") return generate(false);
+  if (t.id === "regen") return generate(true);
+  if (t.id === "stopBtn") { CTL?.abort(); return; }
+  if (t.id === "copyPrompt") return copyText(buildPrompt(), $("#copyMsg"));
+  if (t.id === "copyOut") return copyText(OUT.text, $("#copyMsg"));
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "src") { S.source = e.target.value; const h = $("#srcHint"); const ok = !!S.source.trim(); h.textContent = ok ? `${S.source.trim().split(/\s+/).length} words` : "Required before you can generate"; h.classList.toggle("req", !ok); $("#genBtn").disabled = !ok; e.target.closest(".step").classList.toggle("done", ok); }
+  if (e.target.id === "ctx") { S.context = e.target.value; save(); e.target.closest(".step").classList.toggle("done", !!S.context.trim()); }
+  if (e.target.id === "libSearch") renderLibrary();
+});
+
+boot();
+(async () => {
+  try { SAMPLE = window.claude ? await window.claude.use("sample") : null; } catch (e) { SAMPLE = null; }
+  if (SAMPLE) { OUT.tab = "out"; setChip(); renderSteps(); renderLibrary(); }
+  else { setChip(); }
+})();
+</script>
+
+</body>
+</html>

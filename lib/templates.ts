@@ -17,6 +17,11 @@ export type Template = {
   download?: { label: string; href: string };
   /** step-by-step build walkthrough, shown on the page and in the PDF */
   walkthrough?: { title: string; body: string }[];
+  /** walkthrough wording: label (mono label + PDF heading) and lead (page heading before the step count) */
+  walkthroughLabel?: string;
+  walkthroughLead?: string;
+  /** getting-started steps for this template, when they differ from the tool's defaults */
+  steps?: { have: string[]; dont: string[] };
   /** setup-guide PDF pro tip; defaults to the desktop-first tip */
   tip?: string;
   /** extra screenshots, shown on the page and in the PDF */
@@ -203,6 +208,8 @@ export const templates: Template[] = [
     templateUrl: "https://saturdaycontent.co/demos/content-performance-hub.html",
     templateLabel: "Try the live demo",
     download: { label: "Download the skill (.zip)", href: "/downloads/content-performance-hub-skill.zip" },
+    walkthroughLabel: "Build it on your data",
+    walkthroughLead: "From demo to your own hub in",
     walkthrough: [
       {
         title: "Try the demo",
@@ -241,6 +248,95 @@ export const templates: Template[] = [
     packet: "/packets/content-performance-hub-claude.pdf",
     featured: true,
     pinned: true,
+  },
+  {
+    slug: "b2b-content-studio-claude",
+    name: "B2B content studio",
+    tool: "Claude",
+    image: "/images/b2b-content-studio-claude.png",
+    hook: "On-message B2B content for every persona, industry and funnel stage, without starting from a blank page.",
+    summary:
+      "A Claude skill that turns your messaging into a content studio. Pick a format, persona, industry and funnel stage, then draft, remix, critique or brainstorm with Claude, grounded in what you actually say about your product.",
+    features: [
+      {
+        title: "Four ways to work",
+        body: "Draft a new piece, remix one you already have, get a scored critique with rewrites, or brainstorm ideas and whitespace.",
+      },
+      {
+        title: "A library that does the briefing",
+        body: "Each persona and industry carries its goal, pains, proof points, objections and what to avoid, so every request starts fully briefed.",
+      },
+      {
+        title: "Picks that change the writing",
+        body: "Format, persona, industry and funnel stage each bring their own playbook. A top-of-funnel LinkedIn post and a bottom-of-funnel product page come out very differently.",
+      },
+      {
+        title: "No made-up proof",
+        body: "The studio only cites proof points from your library. Where evidence is missing, it leaves a clear placeholder instead of inventing a stat.",
+      },
+      {
+        title: "In chat or as a team page",
+        body: "Ask Claude directly, or publish a studio page your team can use. On the page, Claude writes on each person’s own account.",
+      },
+      {
+        title: "Built from what you have",
+        body: "Claude builds the messaging library from your positioning docs, persona one-pagers and sales decks, or interviews you if there’s nothing written down.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/b2b-content-studio.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/b2b-content-studio-skill.zip" },
+    walkthroughLabel: "Build it on your messaging",
+    walkthroughLead: "From demo to your own studio in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Pick a mode and targets in the live demo. It builds the full prompt for you to paste into Claude and shows a worked example for each mode.",
+      },
+      {
+        title: "Add the skill to Claude",
+        body: "Download the skill and upload the .zip as a custom skill in Claude.",
+      },
+      {
+        title: "Build your messaging library",
+        body: "Ask Claude to build your library and attach any positioning, persona or sales docs. No docs? Claude interviews you instead.",
+      },
+      {
+        title: "Publish your studio",
+        body: "Ask Claude to publish your studio page, then share it with your team. Each person writes with their own Claude account.",
+      },
+      {
+        title: "Write on message",
+        body: "Draft, remix, critique and brainstorm. When your messaging changes, ask Claude to update the library and republish.",
+      },
+    ],
+    steps: {
+      have: [
+        "Download the skill and upload the .zip as a custom skill in Claude.",
+        "Start a chat and ask Claude to build your messaging library. Attach any positioning or persona docs you have.",
+        "Ask Claude to publish your studio page, then share it with your team.",
+      ],
+      dont: [
+        "Sign up at claude.ai and check that your plan includes skills.",
+        "Try the live demo first. Pick a mode and targets, then paste the prompt it builds into any Claude chat.",
+        "When you want your own messaging in it, follow the steps on the left.",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/b2b-content-studio-claude-studio.png",
+        alt: "The B2B content studio with mode cards and format, persona and industry picks",
+        caption: "Studio: pick a mode and targets",
+      },
+      {
+        src: "/images/b2b-content-studio-claude-library.png",
+        alt: "The messaging library with one persona expanded",
+        caption: "Messaging library: what every draft is written from",
+      },
+    ],
+    tip: "Put real proof points in your library. The studio never invents numbers or customer names, so the proof field is what makes drafts publishable.",
+    packet: "/packets/b2b-content-studio-claude.pdf",
+    featured: true,
   },
 ];
 

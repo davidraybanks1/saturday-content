@@ -119,7 +119,7 @@ def walk_page(t, top2, foot):
 <section class="page">
   {top2}
   <div class="section" style="border-bottom:0">
-    <h2>Build it on <span class="hl">your data</span>.</h2>
+    <h2>{e(" ".join((t.get("walkthroughLabel") or "Build it").split()[:-2]))} <span class="hl">{e(" ".join((t.get("walkthroughLabel") or "Build it").split()[-2:]))}</span>.</h2>
     <ol class="walk">{steps}</ol>
     {dl}
   </div>
@@ -129,7 +129,7 @@ def walk_page(t, top2, foot):
 
 
 def guide_html(t, n):
-    tool, s = t["tool"], steps[t["tool"]]
+    tool, s = t["tool"], t.get("steps") or steps[t["tool"]]
     verb = "Open the base" if tool == "Airtable" else "Open the template"
     cta_label = t.get("templateLabel") or f"{verb} in {tool}"
     cta_note = "Free · Download the skill at saturdaycontent.co" if t.get("download") else "Free · Duplicate it into your workspace"
@@ -148,7 +148,7 @@ def guide_html(t, n):
                  f'Rename sections, cut what you don’t need, and add what your team does differently.</p></div>')
     credit = f'<p class="credit">{e(t["credit"])}</p>' if t.get("credit") else ""
     lis = lambda xs: "".join(f"<li>{e(x)}</li>" for x in xs)
-    have_svg, new_svg = DIAGRAMS[tool]
+    have_svg, new_svg = DIAGRAMS.get(t["slug"]) or DIAGRAMS[tool]
     top2 = f'<div class="top"><span class="logo">saturday <span>content</span></span><span class="mono">{e(t["name"])} · {e(tool)}</span></div>'
     foot = f'<div class="foot"><span class="mono">saturday content — tools for content teams</span><a class="mono" href="https://saturdaycontent.co/templates/{e(t["slug"])}">saturdaycontent.co</a></div>'
     know = f'''<div class="section">
