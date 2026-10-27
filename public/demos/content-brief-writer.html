@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Live demo of the Content brief writer, a free Claude skill from saturday content. Invented data for a fictional company.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Content Brief Writer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paper page, one working column; each step is a numbered rail; picks scroll sideways as card rows; output sits in an outlined "window". */
+:root{
+  --bg:#efede8; --surface:#f5f4f0; --surface-2:#e6e3dc; --ink:#141413; --muted:#55534d; --faint:#8d8a82; --line:#d3d0c8; --dot:#b9b5ab;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#fbe6ad; --bad:#b4442c; --bad-soft:#f3dcd3; --good:#2f7a4d;
+  --shadow-c:#141413;
+  --f-body:"Host Grotesk","Helvetica Neue",Arial,sans-serif; --f-mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12; --bad:#f08a6e; --bad-soft:#3a201a; --good:#7fc79b; --shadow-c:#000000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(30px,4.4vw,44px);letter-spacing:-.04em;line-height:1.05}
+h2{font-size:22px;letter-spacing:-.03em}
+h3{font-size:16px;letter-spacing:-.02em;font-weight:600}
+.hl{background:var(--hl);color:var(--hl-ink);padding:0 .12em;border-radius:3px}
+.mono-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.brandbar{border-bottom:1px solid var(--line)}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-block:12px}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.03em;text-decoration:none}
+.logo span{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--hl)}
+
+header.head .wrap{padding-block:36px 8px;display:grid;gap:12px}
+.head-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.lede{font-size:18px;line-height:1.4;letter-spacing:-.01em;color:var(--muted);max-width:60ch;margin:0}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:6px;padding:5px 10px;font-family:var(--f-mono);font-size:12px;background:var(--bg)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.chip.live .dot{background:var(--hl);box-shadow:0 0 0 1.5px var(--ink)}
+nav.views{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px}
+nav.views button{border:0;background:none;padding:12px 0 9px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+nav.views button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+nav.views button:hover{color:var(--ink)}
+
+main{padding-block:28px 64px}
+.q{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.04em;font-weight:700;margin:0 0 18px}
+.modes{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.mode{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 14px 16px;display:grid;gap:8px;align-content:start}
+.mode:hover{border-color:var(--ink)}
+.mode[aria-pressed=true]{border:1.5px solid var(--ink);background:var(--hl);color:var(--hl-ink);box-shadow:4px 4px 0 var(--shadow-c)}
+.mode[aria-pressed=true] .mdesc{color:var(--hl-ink)}
+.mode .ic{width:26px;height:26px}
+.mode .mname{font-weight:700;font-size:19px;letter-spacing:-.03em}
+.mode .mdesc{font-size:13px;color:var(--muted);line-height:1.4}
+.mode .tick{position:absolute;right:12px;top:12px;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--faint)}
+.mode[aria-pressed=true] .tick{border-color:var(--hl-ink);background:var(--hl-ink);box-shadow:inset 0 0 0 3px var(--hl)}
+
+.steps{list-style:none;margin:30px 0 0;padding:0;display:grid}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:30px}
+.step::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:1.5px;background:var(--line)}
+.step:last-child::before{display:none}
+.num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;background:var(--bg);position:relative}
+.step.done .num{background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.step-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;min-height:34px;padding-top:4px}
+.step-h h3{font-size:19px;letter-spacing:-.03em;font-weight:700}
+.step-h .sub{display:block;margin-top:2px}
+.opt-note{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.step-b{grid-column:2;margin-top:12px;min-width:0}
+.rowwrap{position:relative}
+.cards{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);padding-right:40px!important;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 6px 10px 2px;scrollbar-width:thin}
+.opt{scroll-snap-align:start;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-height:132px;position:relative}
+.opt:hover{border-color:var(--ink)}
+.opt .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.opt .ib svg{width:20px;height:20px}
+.opt .on{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.opt .od{font-size:13px;color:var(--muted);line-height:1.35}
+.opt[aria-pressed=true]{border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.opt[aria-pressed=true] .ib{background:var(--hl);color:var(--hl-ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt[aria-pressed=true]::after{content:"Selected";position:absolute;right:10px;top:10px;font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:2px 5px;border-radius:3px}
+.funnel .opt{min-height:0}
+textarea.box{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;line-height:1.5}
+textarea.box:focus{outline:none;border-color:var(--ink)}
+.hint{font-size:12px;color:var(--faint);margin-top:6px}
+.hint.req{color:var(--bad)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;padding:12px 20px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+.pill:hover:not(:disabled){background:var(--hl);color:var(--hl-ink);border-color:var(--ink)}
+.pill.ghost{background:transparent;color:var(--ink)}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.gen-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.gen-note{font-size:13px;color:var(--muted);max-width:60ch}
+.summary-line{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:10px}
+.summary-line b{font-weight:500;color:var(--ink);background:var(--hl-soft);padding:0 3px}
+
+.window{background:var(--bg);border:1.5px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--shadow-c);overflow:hidden;margin-right:6px}
+.window-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1.5px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap}
+.window-bar i{flex:none;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}
+.window-bar .wt{margin-left:4px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.otabs{display:flex;gap:4px}
+.otabs button{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.otabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out-body{padding:20px 22px;max-height:640px;overflow:auto}
+.out-empty{color:var(--muted);text-align:center;padding:28px}
+.out-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.out-actions .pill{padding:8px 14px;font-size:11px}
+.prose{max-width:70ch}
+.prose h1,.prose h2,.prose h3,.prose h4{margin:18px 0 6px;letter-spacing:-.02em}
+.prose h1{font-size:24px}.prose h2{font-size:20px}.prose h3{font-size:17px}.prose h4{font-size:15px}
+.prose > :first-child{margin-top:0}
+.prose p{margin:0 0 10px}
+.prose ul,.prose ol{margin:0 0 12px;padding-left:22px}
+.prose li{margin:3px 0}
+.prose blockquote{margin:0 0 12px;padding:4px 12px;border-left:3px solid var(--hl);color:var(--muted)}
+.prose code{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+.prose hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+pre.prompt{font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;margin:0;line-height:1.55}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.thinking i{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--hl);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation-duration:3s}}
+.msg{font-size:13px}
+.msg.err{color:var(--bad)}
+.ex-note{border-left:3px solid var(--hl);background:var(--surface);padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* library */
+.lib-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.lib-tools input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-width:min(100%,260px)}
+.seg{display:flex;gap:16px}
+.seg button{border:0;background:none;padding:4px 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent}
+.seg button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.lib{display:grid;gap:10px}
+details.aud{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.aud[open]{border-color:var(--ink);background:var(--bg)}
+details.aud summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+details.aud summary::-webkit-details-marker{display:none}
+details.aud .ib{width:38px;height:38px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+details.aud .ib svg{width:20px;height:20px}
+.dim{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px}
+.aud-body{padding:0 14px 16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.fld h4{margin:0 0 4px;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld p,.fld li{margin:0;font-size:14px;line-height:1.45}
+.fld ul{margin:0;padding-left:18px}
+.fld.wide{grid-column:1 / -1}
+.lib-note{margin-top:18px;font-size:13px;color:var(--muted);max-width:70ch}
+
+.cta{margin-top:36px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:18px;background-color:var(--surface-2);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px}
+.cta > div{background:var(--bg);padding:8px 12px;border-radius:6px}
+footer.site{border-top:1px solid var(--line)}
+footer.site .wrap{padding-block:22px}
+
+/* Brief writer additions: form fields, toggle chips, completeness meter, placeholder marks, heading scan table. */
+.fields{display:grid;gap:12px 14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.fields .wide{grid-column:1 / -1}
+label.f{display:grid;gap:5px;min-width:0}
+label.f > span{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+label.f > span em{font-style:normal;color:var(--bad)}
+.in{width:100%;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;line-height:1.4}
+.in:focus,textarea.box:focus{outline:none;border-color:var(--ink)}
+textarea.box.sm{min-height:84px}
+.togs{display:flex;flex-wrap:wrap;gap:8px}
+.tog{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px}
+.tog:hover{border-color:var(--ink)}
+.tog[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ex-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:18px}
+.pill.sm{padding:8px 14px;font-size:11px}
+.meter{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;margin-bottom:18px;display:grid;gap:10px}
+.meter-top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.meter-top strong{font-size:26px;letter-spacing:-.04em;line-height:1}
+.verdict{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:4px;padding:2px 6px}
+.verdict.v0{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.verdict.v2{background:var(--hl);color:var(--hl-ink)}
+.bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--hl);transition:width .25s}
+.secs{display:flex;flex-wrap:wrap;gap:6px}
+.sec{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:999px;padding:3px 9px;border:1px solid var(--line);background:var(--bg)}
+.sec::before{content:"";width:7px;height:7px;border-radius:50%;border:1.5px solid currentColor;flex:none}
+.sec.s2{border-color:var(--ink)}
+.sec.s2::before{background:var(--good);border-color:var(--good)}
+.sec.s1{border-style:dashed;border-color:var(--ink)}
+.sec.s1::before{background:linear-gradient(90deg,var(--hl) 50%,transparent 50%);border-color:var(--ink)}
+.sec.s0.req{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.sec.s0{color:var(--faint)}
+.sec.na{color:var(--faint);text-decoration:line-through}
+.sec.na::before{display:none}
+.meter-key{font-size:12px;color:var(--faint)}
+.ph{background:var(--bad-soft);color:var(--bad);border-radius:3px;padding:0 4px;font-size:.92em}
+.scan{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px}
+.scan th,.scan td{text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.scan th{font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.scan td.st{white-space:nowrap}
+.qs{margin:0;padding-left:20px}
+.qs li{margin:6px 0}
+.qs .who{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-left:6px}
+</style>
+
+<div class="brandbar" id="brandbar"><div class="wrap"><a class="logo" id="brandLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">saturday <span>content</span></a><span class="tag" id="brandTag">Content brief writer · demo</span></div></div>
+
+<header class="head">
+  <div class="wrap">
+    <div class="head-row">
+      <div style="display:grid;gap:10px;min-width:0">
+        <span class="mono-label" id="eyebrow"></span>
+        <h1 id="title">Content <span class="hl">brief writer</span></h1>
+      </div>
+      <span class="chip" id="modeChip"><span class="dot"></span><span id="modeChipText">Checking for Claude…</span></span>
+    </div>
+    <p class="lede" id="lede"></p>
+    <nav class="views" role="tablist">
+      <button type="button" role="tab" id="v-studio" aria-selected="true" data-view="studio">Brief</button>
+      <button type="button" role="tab" id="v-library" aria-selected="false" data-view="library">Brief template</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="studio" role="tabpanel" aria-labelledby="v-studio">
+    <h2 class="q">What are we up to?</h2>
+    <div class="modes" id="modes" role="group" aria-label="Mode"></div>
+    <div class="ex-row" id="exRow"></div>
+    <ol class="steps" id="steps"></ol>
+  </section>
+  <section id="library" role="tabpanel" aria-labelledby="v-library" hidden>
+    <div class="lib-tools">
+      <div class="seg" id="libSeg" role="group" aria-label="Filter"></div>
+      <input type="search" id="libSearch" placeholder="Search sections and guidance…" aria-label="Search the template">
+    </div>
+    <div class="lib" id="libList"></div>
+    <p class="lib-note" id="libNote"></p>
+  </section>
+  <div class="cta" id="cta">
+    <div><strong>Get the content brief writer skill</strong><div class="muted" style="font-size:14px">Claude interviews requesters, writes complete briefs from your template, and checks the briefs you already have.</div></div>
+    <a class="pill" id="ctaLink" href="https://saturdaycontent.co/templates/content-brief-writer-claude" target="_blank" rel="noopener">Get the free skill →</a>
+  </div>
+</main>
+<footer class="site" id="siteFooter"><div class="wrap mono-label" id="footerText"></div></footer>
+
+<script>
+/* =====================================================================
+   CONFIG — who the briefs are for. See CUSTOMIZE.md.
+   ===================================================================== */
+const CONFIG = {
+  title: "Content brief writer",
+  company: "Fieldbook",
+  about: "Fieldbook is a content operations platform for B2B marketing teams. It puts briefs, the editorial calendar, reviews and approvals, a searchable content library, and content performance in one workspace.",
+  voice: "Plainspoken, specific and a little wry. Short sentences. Concrete examples over abstractions. Never hypey; no exclamation points; no 'revolutionize', 'unlock' or 'game-changer'.",
+  demoNote: "Fieldbook is a fictional company. Its people, posts and dates are invented so you can see how the brief writer works.",
+  brand: { name: "saturday content", url: "https://saturdaycontent.co", tag: "Content brief writer · demo" },
+  footer: "saturday content — tools for content teams",
+  ctaUrl: "https://saturdaycontent.co/templates/content-brief-writer-claude"
+};
+
+/* =====================================================================
+   BRIEF_TEMPLATE — the sections every brief has, in order.
+   required: true | false | "search" (required only for content types with search: true).
+   guidance: what the section holds (goes into the prompt).
+   good: a one-line example of a complete section.
+   ask: the question to put to the requester when it's missing or thin.
+   who: who can usually answer that question.
+   aliases: heading words the Check mode's scan looks for (lowercase).
+   Mirrors references/brief-template.md. Edit both together.
+   ===================================================================== */
+const BRIEF_TEMPLATE = [
+  { id: "overview", name: "Overview", required: true,
+    guidance: "Content type, working title, a one- or two-sentence summary, the requester, and the writer if known.",
+    good: "Blog post. 'Why content reviews stall.' A practical post for content leads on cutting review rounds. Requested by the content lead.",
+    ask: "What is this piece, in one sentence, and what's the working title?", who: "Requester",
+    aliases: ["overview", "summary", "topic", "about", "description", "working title", "title", "content type", "format", "what"] },
+  { id: "objective", name: "Objective and success metric", required: true,
+    guidance: "One business goal, the metric that shows it worked, a target if one exists, and when you'll check. Match the metric to the funnel stage.",
+    good: "Earn newsletter sign-ups from content leads. Metric: sign-ups from the post in 30 days. Check January 4.",
+    ask: "What should this piece do for the business, and what number will you look at after it ships?", who: "Requester",
+    aliases: ["objective", "objectives", "goal", "goals", "purpose", "success metric", "success metrics", "success", "kpi", "kpis", "metric", "metrics", "why"] },
+  { id: "audience", name: "Audience", required: true,
+    guidance: "The persona (role and typical titles), the funnel stage, and what they believe now: the assumption the piece has to move.",
+    good: "Content leads at B2B software companies, middle of funnel. They think reviews are slow because reviewers are busy.",
+    ask: "Who exactly is reading, and what do they believe right now that this piece should change?", who: "Requester",
+    aliases: ["audience", "target audience", "persona", "personas", "reader", "readers", "who", "who it's for", "funnel stage", "stage", "icp"] },
+  { id: "message", name: "Key message and supporting points", required: true,
+    guidance: "One sentence the reader should believe afterwards, then 3–5 supporting points that earn it. If it needs 'and', it's two messages.",
+    good: "Most review rounds are the brief being written late. Fix the brief and reviews get shorter.",
+    ask: "What's the one thing the reader should believe after reading?", who: "Requester",
+    aliases: ["key message", "message", "messaging", "main message", "core message", "takeaway", "key takeaway", "main point", "supporting points", "thesis"] },
+  { id: "angle", name: "Angle and outline", required: true,
+    guidance: "The specific take that makes this piece different, then a section-by-section outline with a line on what each section does.",
+    good: "Don't blame the reviewers: most review comments are brief questions in disguise. Hook, pattern, five fields, audit, close.",
+    ask: "What's our take on this that a competitor couldn't publish word for word?", who: "Requester or writer",
+    aliases: ["angle", "outline", "structure", "sections", "approach", "point of view", "pov", "hook"] },
+  { id: "search", name: "Search intent and keywords", required: "search",
+    guidance: "Primary query, the intent behind it (learn, compare, buy, do), 3–5 secondary terms or questions, and what ranks now. Never invent search volumes.",
+    good: "Primary query: content review process. Intent: learn. Secondary: content approval workflow, too many review rounds.",
+    ask: "Should this rank in search? If so, which query should it win?", who: "Requester or SEO lead",
+    aliases: ["search intent", "search", "seo", "keywords", "keyword", "primary keyword", "primary query", "query", "target keyword"] },
+  { id: "sources", name: "Sources and proof", required: true,
+    guidance: "Research, product docs, data, customer stories and past content to build on; the subject-matter expert and what they'll provide; claims that need sign-off.",
+    good: "Product docs on brief templates; past post 'The 20-minute brief'; 30-minute interview with the product manager for reviews.",
+    ask: "What can we use as proof, and who's the subject-matter expert we can talk to?", who: "Requester or SME",
+    aliases: ["sources", "sources and proof", "proof", "proof points", "research", "references", "resources", "data", "evidence", "sme", "subject matter expert", "expert", "experts"] },
+  { id: "stakeholders", name: "Stakeholders and approvals", required: true,
+    guidance: "Requester, writer, subject-matter expert, reviewers in order, and one final approver. Ask who else will see it before it goes live.",
+    good: "Requester: content lead. SME: product manager. Reviewer: content lead. Final approver: head of marketing.",
+    ask: "Who reviews this, in what order, and who gives the final yes?", who: "Requester",
+    aliases: ["stakeholders", "approvals", "approval", "approver", "approvers", "reviewers", "reviewer", "review", "owners", "owner", "team", "speakers", "speaker", "requester", "writer", "raci"] },
+  { id: "distribution", name: "Distribution", required: false,
+    guidance: "Channels, the owner of each, any paid support, and repurposing plans.",
+    good: "Blog (writer), newsletter lead story (content lead), LinkedIn post plus two follow-ups (social team).",
+    ask: "Where does this go after it's published, and who posts it in each place?", who: "Requester",
+    aliases: ["distribution", "promotion", "promo", "channels", "channel", "amplification", "where it goes", "repurposing"] },
+  { id: "deadline", name: "Deadline and milestones", required: true,
+    guidance: "Publish date, plus dates for outline, first draft, review and final approval. Note any fixed date it's tied to.",
+    good: "Publish Thu Dec 3. Outline Nov 19, draft Nov 24, review Nov 27, approval Dec 1.",
+    ask: "What's the publish date, and is it tied to a launch or event?", who: "Requester",
+    aliases: ["deadline", "deadlines", "due date", "due", "date", "dates", "publish date", "timeline", "timing", "milestones", "schedule", "launch date", "event date"] },
+  { id: "cta", name: "CTA", required: true,
+    guidance: "The one action the reader should take next, where it links, and a fallback. Match it to the funnel stage.",
+    good: "Subscribe to the newsletter. Link: sign-up page. Fallback: brief template download.",
+    ask: "What's the one thing the reader should do next, and where does it link?", who: "Requester",
+    aliases: ["cta", "call to action", "next step", "next steps", "conversion"] }
+];
+
+/* =====================================================================
+   SCORING — how completeness is scored. Mirrors references/completeness-rubric.md.
+   Each section scores 2 (complete), 1 (thin) or 0 (missing). Required sections
+   count double. "Hard stop" sections at 0 make the verdict "Not ready".
+   ===================================================================== */
+const SCORING = {
+  weights: { required: 2, optional: 1 },
+  verdicts: [ { min: 85, label: "Ready to write", level: 2 }, { min: 60, label: "Nearly there", level: 1 }, { min: 0, label: "Not ready", level: 0 } ],
+  hardStop: ["objective", "audience", "message"],
+  thinWords: 4,
+  vague: /\b(tbd|tbc|tk|todo|n\/a)\b|\?\?|\[placeholder|\[to check\]/i,
+  rubric: "Score each section 2 (complete: a writer could act on it without asking), 1 (thin: present but vague, partial or a placeholder like 'TBD', 'the usual reviewers', 'drive awareness') or 0 (missing). Required sections count double, optional once. Overall = points earned / points possible, as a percentage. 85–100% Ready to write; 60–84% Nearly there; under 60% Not ready. If Objective, Audience or Key message scores 0, the verdict is Not ready whatever the percentage."
+};
+
+/* =====================================================================
+   CONTENT_TYPES — what you brief. search: whether the Search intent section
+   is required. lead: days before publish for each milestone. outline: the
+   usual shape, used for the suggested outline.
+   ===================================================================== */
+const CONTENT_TYPES = [
+  { id: "blog", name: "Blog post", icon: "doc", blurb: "Search-friendly education", length: "1,200–1,500 words", search: true,
+    lead: { outline: 14, draft: 9, review: 5, approval: 2 }, outline: ["Hook: a scene or problem the reader recognizes", "The pattern or cause", "The method or framework, one section per step", "An example or a way to try it on their own work", "Close and CTA"] },
+  { id: "guide", name: "Guide or ebook", icon: "book", blurb: "In-depth, often gated", length: "3,000–6,000 words, 5–7 chapters", search: true,
+    lead: { outline: 28, draft: 18, review: 10, approval: 4 }, outline: ["Who it's for and what they'll get", "Chapters, one idea each, with a one-line summary", "A worksheet or checklist", "Landing page blurb"] },
+  { id: "case", name: "Case study", icon: "briefcase", blurb: "Proof for buyers deciding", length: "800–1,200 words", search: false,
+    lead: { outline: 21, draft: 12, review: 6, approval: 3 }, outline: ["Customer snapshot", "The challenge, in their words", "What they changed", "Results they've approved for publication", "A quote they've approved", "CTA"] },
+  { id: "webinar", name: "Webinar", icon: "video", blurb: "Live session and promo", length: "45 minutes plus promo copy", search: false,
+    lead: { outline: 21, draft: 14, review: 7, approval: 3 }, outline: ["Title and three-bullet promise", "Speakers and roles", "Run of show: intro, three segments, demo or story, Q&A", "Seeded audience questions", "Registration page and promo emails"] },
+  { id: "linkedin", name: "LinkedIn post", icon: "chat", blurb: "One idea, short", length: "150–250 words", search: false,
+    lead: { outline: 7, draft: 4, review: 2, approval: 1 }, outline: ["Hook in the first two lines", "One idea and a concrete example", "Takeaway", "Question or light CTA"] },
+  { id: "landing", name: "Landing page", icon: "globe", blurb: "Value, proof, conversion", length: "400–800 words", search: true,
+    lead: { outline: 14, draft: 9, review: 5, approval: 2 }, outline: ["Headline and subhead", "Three value points with proof", "How it works", "FAQ for objections", "Primary and secondary CTA"] }
+];
+
+/* ---------------- funnel stages, channels, persona suggestions, modes ---------------- */
+const FUNNEL = [
+  { id: "tofu", name: "Top of funnel", short: "TOFU", level: 0, blurb: "Feels the problem, isn't shopping",
+    play: "Lead with the problem and one useful idea. Light or no product mention.", cta: "Read more or subscribe", metric: "Engaged reading time, newsletter sign-ups, follows" },
+  { id: "mofu", name: "Middle of funnel", short: "MOFU", level: 1, blurb: "Exploring approaches",
+    play: "Teach a method, compare options fairly, show where the product fits.", cta: "Download, register or see how it works", metric: "Downloads, registrations, return visits" },
+  { id: "bofu", name: "Bottom of funnel", short: "BOFU", level: 2, blurb: "Choosing a vendor",
+    play: "Be specific about value, proof and objections. The product is central.", cta: "Start a trial or book a demo", metric: "Demo requests, trials, use by sales" }
+];
+const CHANNELS = ["Blog", "Newsletter", "LinkedIn", "Paid social", "Email nurture", "Sales enablement", "Partners", "Events", "Website"];
+const PERSONAS = ["Content lead", "Demand gen marketer", "Product marketer", "Marketing ops", "Writer and creator", "Executive buyer"];
+const MODES = [
+  { id: "write", name: "Write a brief", icon: "pen", blurb: "Turn a rough request into a complete brief a writer can start from." },
+  { id: "check", name: "Check a brief", icon: "check", blurb: "Score an existing brief, find the gaps, and get the questions to ask." }
+];
+
+/* =====================================================================
+   EXAMPLES — worked examples shown when Claude isn't connected.
+   write.form fills the form; check.source fills the paste box.
+   ===================================================================== */
+const EXAMPLES = {
+  write: {
+    form: { type: "blog", title: "Why content reviews stall, and the five brief fields that fix it",
+      summary: "A practical post for content leads that traces slow reviews back to thin briefs and shows the five fields that fix them.",
+      angle: "Don't blame the reviewers. Most review comments are brief questions in disguise.",
+      goal: "Earn newsletter sign-ups from content leads who don't know Fieldbook yet", metric: "",
+      persona: "Content lead", belief: "Reviews are slow because reviewers are busy, so the fix is chasing harder", funnel: "mofu",
+      key: "Most review rounds are the brief being written late. Fix the brief and reviews get shorter.",
+      points: "Late reviews reopen questions the brief should have answered\nFive required fields catch most of those questions before drafting\nA longer brief costs minutes; a late rewrite costs days",
+      sources: "Fieldbook product docs: brief templates and approval steps\nPast post: The 20-minute brief",
+      sme: "Dana Kim, product manager for briefs and reviews", requester: "Priya Raman, content lead", approver: "",
+      deadline: "2026-12-03", query: "", cta: "Subscribe to the Fieldbook newsletter", channels: ["Blog", "Newsletter", "LinkedIn"] },
+    text:
+`# Content brief: Why content reviews stall, and the five brief fields that fix it
+
+## Overview
+- **Content type:** Blog post, 1,200–1,500 words
+- **Summary:** A practical post for content leads that traces slow reviews back to thin briefs and shows the five fields that fix them.
+- **Requester:** Priya Raman, content lead
+
+## Objective and success metric
+- **Goal:** Earn newsletter sign-ups from content leads who don't know Fieldbook yet.
+- **Success metric (suggested):** newsletter sign-ups from the post in its first 30 days.
+- **Target:** [placeholder: last quarter's average sign-ups per post]
+
+## Audience
+- **Persona:** Content lead (Head of Content, Managing Editor), middle of funnel.
+- **What they believe now:** reviews are slow because reviewers are busy, so the fix is chasing harder.
+
+## Key message and supporting points
+**Most review rounds are the brief being written late. Fix the brief and reviews get shorter.**
+1. Late reviews reopen questions the brief should have answered.
+2. Five required fields catch most of those questions before drafting.
+3. A longer brief costs minutes; a late rewrite costs days.
+4. Reviewers give sharper feedback when they can check a draft against an agreed brief. (suggested)
+
+## Angle and outline
+**Angle:** Don't blame the reviewers. Most review comments are brief questions in disguise.
+1. **Hook:** the review that turned into a kickoff meeting.
+2. **The pattern:** sort review comments into "the draft" and "the brief".
+3. **The five fields:** reader and belief, one message, proof, approver, CTA.
+4. **Try it:** a five-minute audit of your last five review threads.
+5. **Close and CTA.**
+
+## Search intent and keywords
+- **Primary query (suggested):** content review process [to check]
+- **Intent:** learn. They want a better process, not a tool yet.
+- **Secondary (suggested):** content approval workflow, how to speed up content reviews, too many review rounds
+
+## Sources and proof
+- Fieldbook product docs: brief templates and approval steps
+- Past post to link: *The 20-minute brief*
+- **SME:** Dana Kim. Suggest a 30-minute interview, then a fact check on the draft.
+- **Needs sign-off:** any number about review rounds or time saved.
+
+## Stakeholders and approvals
+| Role | Name |
+|---|---|
+| Requester and reviewer | Priya Raman |
+| SME | Dana Kim |
+| Final approver | [placeholder: final approver] |
+
+## Distribution
+- Blog, newsletter lead story, LinkedIn post on publish day. [placeholder: owner per channel]
+
+## Deadline and milestones
+| Milestone | Date |
+|---|---|
+| Outline approved | Thu Nov 19 |
+| First draft | Tue Nov 24 |
+| Review complete | Fri Nov 27 |
+| Final approval | Tue Dec 1 |
+| Publish | Thu Dec 3 |
+
+## CTA
+- Subscribe to the Fieldbook newsletter. [placeholder: sign-up page link]
+
+## Open questions
+1. Who gives final approval? *(Priya)*
+2. What sign-up target counts as a win? *(Priya)*
+3. Is "content review process" the query we want to win? *(SEO lead)*
+
+## Completeness
+**81% · Nearly there.** Answer the three open questions and this is ready to write.` },
+  check: {
+    type: "webinar",
+    source:
+`Webinar brief: Approvals 2.0 launch
+
+Goal: Drive awareness for the new approvals features.
+
+Audience: Marketers
+
+Topic: How Fieldbook Approvals 2.0 helps teams get content approved faster. Live demo plus Q&A.
+
+Speakers: Dana Kim (product) and a customer, TBD
+
+Date: Late January, before the sales kickoff
+
+Promotion: Email and LinkedIn
+
+CTA: Learn more`,
+    text:
+`**39% · Not ready.** There's a topic and a rough date, but no key message, and the goal can't be measured. A writer would have to guess what this webinar is for.
+
+| Section | Score | Why |
+|---|---|---|
+| Overview | 1 | Topic and type are clear; no requester or owner |
+| Objective and success metric | 1 | "Drive awareness" with no metric |
+| Audience | 1 | "Marketers" with no role, stage or current belief |
+| Key message | 0 | Missing |
+| Angle and outline | 1 | "Demo plus Q&A" is a format, not a take |
+| Search intent | n/a | Not needed for a webinar |
+| Sources and proof | 0 | Missing |
+| Stakeholders | 1 | Speakers named; customer TBD; no approver |
+| Distribution | 1 | Channels, no owners |
+| Deadline | 1 | "Late January" with no date |
+| CTA | 1 | "Learn more" doesn't suit a launch webinar |
+
+## Gaps, most important first
+1. **Key message.** Hard stop: nothing tells the speakers what to land.
+2. **Objective.** Awareness of what, measured how?
+3. **Audience.** Which marketers, and what do they believe about approvals today?
+4. **Sources and proof.** The customer story is the proof, and it's unconfirmed.
+5. **Deadline, stakeholders, distribution, CTA:** need dates, an approver and owners.
+
+## Questions to ask
+**Requester**
+1. After this webinar, what should attendees believe about approvals that they don't now?
+2. Is the goal registrations, attendance or demo requests afterwards? What number counts as good?
+3. Which roles are we inviting: content leads, marketing ops, or both? Suggested: content leads.
+4. What's the event date, and who gives final approval on the deck?
+5. Who owns the email and LinkedIn promotion?
+
+**Product (Dana Kim)**
+6. Which customer is confirmed, and what can they say on the record?
+
+## Quick fixes
+- Change the CTA to *Register for the session* in promo, and *Book a walkthrough of Approvals 2.0* at the end.
+- Add a working title that names the outcome, not the feature. [placeholder: title]` }
+};
+
+/* ---------------- icons ---------------- */
+const ICON = {
+  pen: '<path d="M4 20l1.2-4.6L16 4.6l3.4 3.4L8.6 18.8z"/><path d="M14 7l3 3"/>',
+  check: '<path d="M4 6l2 2 3-3M4 13l2 2 3-3M12 7h8M12 14h8M4 20h16"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>',
+  book: '<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 13h18"/>'
+};
+const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.doc}</svg>`;
+const funnelSvg = (lvl) => `<svg viewBox="0 0 24 24" aria-hidden="true">${[[3,4,21,4,18,9,6,9],[6.5,10,17.5,10,15,15,9,15],[9.5,16,14.5,16,13,21,11,21]].map((p,i)=>`<path d="M${p[0]} ${p[1]}L${p[2]} ${p[3]}L${p[4]} ${p[5]}L${p[6]} ${p[7]}Z" fill="${i===lvl?'currentColor':'none'}" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`).join("")}</svg>`;
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("cbw:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("cbw:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const byId = (list, id) => list.find(x => x.id === id);
+const EMPTY_FORM = () => ({ type: "", title: "", summary: "", angle: "", goal: "", metric: "", persona: "", belief: "", funnel: "", key: "", points: "", sources: "", sme: "", requester: "", approver: "", deadline: "", query: "", cta: "", channels: [] });
+const saved = store.get("state", {});
+const S = { mode: saved.mode === "check" ? "check" : "write", view: saved.view === "library" ? "library" : "studio", libDim: saved.libDim || "all",
+  f: Object.assign(EMPTY_FORM(), saved.f || {}), checkType: saved.checkType || "", source: "" };
+if (!Array.isArray(S.f.channels)) S.f.channels = [];
+let SAMPLE = null, CTL = null, OUT = { tab: "", text: "", status: "idle", msg: "", truncated: false, built: false };
+
+/* ---------------- markdown-lite ---------------- */
+function md(src) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\[(placeholder|missing)[^\]]*\]|\[to check\]/g, m => `<span class="ph">${m}</span>`);
+  const lines = String(src).replace(/\r/g, "").split("\n"); let html = "", list = null, para = [], table = null;
+  const flushP = () => { if (para.length) { html += `<p>${inline(para.join(" "))}</p>`; para = []; } };
+  const flushL = () => { if (list) { html += `</${list}>`; list = null; } };
+  const flushT = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()); html += `<div style="overflow-x:auto"><table style="border-collapse:collapse;margin:0 0 12px">${[h, ...rows].map((r, i) => `<tr>${cells(r).map(c => `<${i ? "td" : "th"} style="border-bottom:1px solid var(--line);padding:4px 12px 4px 0;text-align:left">${inline(c)}</${i ? "td" : "th"}>`).join("")}</tr>`).join("")}</table></div>`; table = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^\s*\|.*\|\s*$/.test(l)) { flushP(); flushL(); (table = table || []).push(l.trim()); continue; } else flushT();
+    let m;
+    if (!l.trim()) { flushP(); flushL(); continue; }
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { flushP(); flushL(); html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(l.trim())) { flushP(); flushL(); html += "<hr>"; continue; }
+    if ((m = l.match(/^>\s?(.*)/))) { flushP(); flushL(); html += `<blockquote>${inline(m[1])}</blockquote>`; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (list !== "ul") { flushL(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (list !== "ol") { flushL(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; continue; }
+    flushL(); para.push(l.trim());
+  }
+  flushP(); flushL(); flushT();
+  return html;
+}
+
+/* ---------------- dates and milestones ---------------- */
+function parseDate(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+function offDay(d, days) { const x = new Date(d); x.setDate(x.getDate() - days); while (x.getDay() === 0 || x.getDay() === 6) x.setDate(x.getDate() - 1); return x; }
+const fmtDate = (d, year) => d.toLocaleDateString("en-US", Object.assign({ weekday: "short", month: "short", day: "numeric" }, year ? { year: "numeric" } : {})).replace(/,/g, "");
+function milestones(f) {
+  const d = parseDate(f.deadline), t = byId(CONTENT_TYPES, f.type); if (!d) return null;
+  const lead = (t || CONTENT_TYPES[0]).lead;
+  return [["Outline approved", offDay(d, lead.outline)], ["First draft", offDay(d, lead.draft)], ["Review complete", offDay(d, lead.review)], ["Final approval", offDay(d, lead.approval)], ["Publish", d]];
+}
+
+/* ---------------- completeness: Write mode (scored from the form) ---------------- */
+const has = v => !!String(v || "").trim();
+const words = v => String(v || "").trim().split(/\s+/).filter(Boolean).length;
+function sectionRequired(sec, typeId) {
+  if (sec.required === "search") { const t = byId(CONTENT_TYPES, typeId); return t ? (t.search ? true : null) : false; }
+  return sec.required;
+}
+function formScores(f) {
+  const two = (a, b) => a && b ? 2 : (a || b ? 1 : 0);
+  return {
+    overview: two(has(f.type), has(f.title)),
+    objective: two(has(f.goal), has(f.metric)),
+    audience: has(f.persona) && has(f.belief) && has(f.funnel) ? 2 : (has(f.persona) || has(f.belief) || has(f.funnel) ? 1 : 0),
+    message: two(has(f.key), has(f.points)),
+    angle: has(f.angle) ? 2 : (has(f.type) ? 1 : 0),
+    search: has(f.query) ? 2 : 0,
+    sources: two(has(f.sources), has(f.sme)),
+    stakeholders: two(has(f.requester), has(f.approver)),
+    distribution: f.channels.length ? 2 : 0,
+    deadline: has(f.deadline) ? 2 : 0,
+    cta: has(f.cta) ? 2 : (has(f.funnel) ? 1 : 0)
+  };
+}
+function overall(scores, typeId) {
+  let got = 0, max = 0; const rows = [];
+  for (const sec of BRIEF_TEMPLATE) {
+    const req = sectionRequired(sec, typeId), s = scores[sec.id];
+    if (req === null) { rows.push({ sec, req, s: null }); continue; }
+    const w = req ? SCORING.weights.required : SCORING.weights.optional;
+    got += (s || 0) * w; max += 2 * w; rows.push({ sec, req, s: s || 0 });
+  }
+  const pct = max ? Math.round(got / max * 100) : 0;
+  const stop = SCORING.hardStop.some(id => scores[id] === 0);
+  const v = stop ? SCORING.verdicts[SCORING.verdicts.length - 1] : SCORING.verdicts.find(x => pct >= x.min);
+  const missingReq = rows.filter(r => r.req && r.s === 0).length;
+  return { pct, verdict: v, stop, rows, missingReq };
+}
+function meterHtml(res, note) {
+  const label = s => s === 2 ? "complete" : s === 1 ? "thin" : s === 0 ? "missing" : "not needed";
+  return `<div class="meter" aria-label="Completeness"><div class="meter-top"><strong>${res.pct}%</strong><span class="verdict v${res.verdict.level}">${esc(res.verdict.label)}</span><span class="muted" style="font-size:13px">${res.missingReq ? `${res.missingReq} required section${res.missingReq > 1 ? "s" : ""} missing` : "All required sections present"}${res.stop ? " · objective, audience and key message are a hard stop" : ""}</span></div>
+    <div class="bar"><i style="width:${res.pct}%"></i></div>
+    <div class="secs">${res.rows.map(r => `<span class="sec ${r.s === null ? "na" : "s" + r.s}${r.req ? " req" : ""}" title="${esc(r.sec.name)}: ${label(r.s)}${r.req ? " (required)" : r.req === false ? " (optional)" : ""}">${esc(r.sec.name)}</span>`).join("")}</div>
+    <div class="meter-key">${note}</div></div>`;
+}
+
+/* ---------------- live preview: Write mode ---------------- */
+const ph = what => `[placeholder: ${what}]`;
+const lines = v => String(v || "").split("\n").map(x => x.trim().replace(/^[-*•]\s*/, "")).filter(Boolean);
+function previewMd(f) {
+  const t = byId(CONTENT_TYPES, f.type), fu = byId(FUNNEL, f.funnel), ms = milestones(f), out = [];
+  out.push(`# Content brief: ${f.title.trim() || ph("working title")}`);
+  out.push(`## Overview\n- **Content type:** ${t ? `${t.name}, ${t.length}` : ph("content type")}\n- **Summary:** ${f.summary.trim() || ph("one or two sentences on what this is")}\n- **Requester:** ${f.requester.trim() || ph("requester")}`);
+  out.push(`## Objective and success metric\n- **Goal:** ${f.goal.trim() || ph("one business goal")}\n- **Success metric:** ${f.metric.trim() || (fu ? `${ph("metric")} Usual for ${fu.short}: ${fu.metric.toLowerCase()}` : ph("the number you'll check after it ships"))}`);
+  out.push(`## Audience\n- **Persona:** ${f.persona.trim() || ph("role and typical titles")}\n- **Funnel stage:** ${fu ? `${fu.name}. ${fu.play}` : ph("funnel stage")}\n- **What they believe now:** ${f.belief.trim() || ph("the assumption this piece has to move")}`);
+  const pts = lines(f.points);
+  out.push(`## Key message and supporting points\n**${f.key.trim() || ph("one sentence the reader should believe afterwards")}**\n\n${pts.length ? pts.map((p, i) => `${i + 1}. ${p}`).join("\n") : `- ${ph("3–5 supporting points")}`}`);
+  out.push(`## Angle and outline\n**Angle:** ${f.angle.trim() || ph("the take that makes this different")}\n\n${t ? `Usual shape for a ${t.name.toLowerCase()}:\n${t.outline.map((o, i) => `${i + 1}. ${o}`).join("\n")}` : `- ${ph("pick a content type for a suggested outline")}`}`);
+  out.push(`## Search intent and keywords\n${t && !t.search && !has(f.query) ? `- Not needed for a ${t.name.toLowerCase()}.` : `- **Primary query:** ${f.query.trim() || ph("the query this should win")}\n- **Intent and secondary terms:** ${ph("learn, compare, buy or do; 3–5 related questions")}`}`);
+  const src = lines(f.sources);
+  out.push(`## Sources and proof\n${src.length ? src.map(s => `- ${s}`).join("\n") : `- ${ph("research, product facts, customer stories, past content")}`}\n- **SME:** ${f.sme.trim() || ph("subject-matter expert")}`);
+  out.push(`## Stakeholders and approvals\n| Role | Name |\n|---|---|\n| Requester | ${f.requester.trim() || ph("requester")} |\n| SME | ${f.sme.trim() || ph("SME")} |\n| Final approver | ${f.approver.trim() || ph("final approver")} |`);
+  out.push(`## Distribution\n${f.channels.length ? f.channels.map(c => `- ${c}: ${ph("owner")}`).join("\n") : `- ${ph("channels and an owner for each")}`}`);
+  out.push(`## Deadline and milestones\n${ms ? `| Milestone | Date |\n|---|---|\n${ms.map(([k, d]) => `| ${k} | ${fmtDate(d, k === "Publish")} |`).join("\n")}` : `- ${ph("publish date")}`}`);
+  out.push(`## CTA\n- ${f.cta.trim() || (fu ? `${fu.cta} (suggested for ${fu.short})` : ph("one next step and its link"))}`);
+  return out.join("\n\n");
+}
+
+/* ---------------- heading scan: Check mode ---------------- */
+const norm = s => s.toLowerCase().replace(/[*_#`>]/g, "").replace(/[^a-z0-9&/' ]+/g, " ").replace(/\s+/g, " ").trim();
+function matchSection(label) {
+  const l = norm(label); if (!l || l.split(" ").length > 6) return null;
+  let best = null, bestLen = 0;
+  for (const sec of BRIEF_TEMPLATE) for (const a of sec.aliases) {
+    if ((l === a || l.startsWith(a + " ") || l.startsWith(a + "s")) && a.length > bestLen) { best = sec.id; bestLen = a.length; }
+  }
+  return best;
+}
+function scanBrief(text) {
+  const found = {}; let cur = null;
+  for (const raw of String(text).replace(/\r/g, "").split("\n")) {
+    const line = raw.trim(); if (!line) continue;
+    const stripped = line.replace(/^#{1,6}\s+/, "").replace(/^[-*•]\s+/, "").replace(/^\d+[.)]\s+/, "").replace(/^\*\*(.+?)\*\*/, "$1");
+    const colon = stripped.indexOf(":");
+    let id = null, rest = "";
+    if (colon > 0 && colon < 50) { id = matchSection(stripped.slice(0, colon)); rest = stripped.slice(colon + 1).trim(); }
+    if (!id && stripped.length < 60) { id = matchSection(stripped.replace(/[:.]$/, "")); rest = ""; }
+    if (id) { cur = id; (found[id] = found[id] || { labels: [], body: [] }).labels.push(stripped.slice(0, colon > 0 && colon < 50 ? colon : undefined).replace(/\*\*/g, "").trim()); if (rest) found[id].body.push(rest); continue; }
+    if (cur) found[cur].body.push(line);
+  }
+  const scores = {};
+  for (const sec of BRIEF_TEMPLATE) {
+    const x = found[sec.id]; if (!x) { scores[sec.id] = 0; continue; }
+    const body = x.body.join(" ");
+    scores[sec.id] = words(body) < SCORING.thinWords || SCORING.vague.test(body) ? 1 : 2;
+  }
+  return { found, scores };
+}
+function scanHtml() {
+  if (!S.source.trim()) return `<div class="out-empty">Paste a brief in step 1. The scan runs as you type.</div>`;
+  const { found, scores } = scanBrief(S.source), res = overall(scores, S.checkType);
+  const st = s => s === 2 ? "Present" : s === 1 ? "Thin" : s === 0 ? "Missing" : "Not needed";
+  const gaps = res.rows.filter(r => r.s !== null && r.s < 2).sort((a, b) => (SCORING.hardStop.includes(b.sec.id) - SCORING.hardStop.includes(a.sec.id)) || ((b.req ? 1 : 0) - (a.req ? 1 : 0)) || a.s - b.s);
+  return meterHtml(res, "Heading scan: checks which sections are present and how much is under each. It can't judge quality. Claude does that.") +
+    `<div style="overflow-x:auto"><table class="scan"><tr><th>Section</th><th>Status</th><th>Found under</th></tr>${res.rows.map(r => `<tr><td>${esc(r.sec.name)}${r.req ? "" : r.req === false ? ` <span class="muted" style="font-size:12px">optional</span>` : ""}</td><td class="st"><span class="sec ${r.s === null ? "na" : "s" + r.s}${r.req ? " req" : ""}">${st(r.s)}</span></td><td class="muted">${found[r.sec.id] ? esc(found[r.sec.id].labels.join(", ")) : "—"}</td></tr>`).join("")}</table></div>` +
+    (gaps.length ? `<h3 style="margin:4px 0 8px">Questions to ask the requester</h3><ol class="qs">${gaps.map(r => `<li>${esc(r.sec.ask)}<span class="who">${esc(r.sec.who)}</span></li>`).join("")}</ol>` : `<p>Every section is present. Ask Claude to judge the quality.</p>`);
+}
+function scanText() {
+  const { scores } = scanBrief(S.source), res = overall(scores, S.checkType);
+  const gaps = res.rows.filter(r => r.s !== null && r.s < 2);
+  return `Brief check: ${res.pct}% · ${res.verdict.label}\n\n${res.rows.map(r => `- ${r.sec.name}: ${r.s === null ? "not needed" : ["missing", "thin", "present"][r.s]}`).join("\n")}\n\nQuestions to ask:\n${gaps.map((r, i) => `${i + 1}. ${r.sec.ask} (${r.sec.who})`).join("\n")}`;
+}
+
+/* ---------------- prompts ---------------- */
+function templateBlock(typeId) {
+  return BRIEF_TEMPLATE.map((s, i) => { const r = sectionRequired(s, typeId); return `${i + 1}. ${s.name} (${r === null ? "not needed for this content type" : r ? "required" : s.required === "search" ? "required only if the piece should rank in search" : "recommended"}): ${s.guidance}`; }).join("\n");
+}
+function header() {
+  return `You are a senior content strategist at ${CONFIG.company}.\n\nABOUT ${CONFIG.company.toUpperCase()}\n${CONFIG.about}\n\nHOUSE VOICE\n${CONFIG.voice}`;
+}
+const RULES = `RULES\n- Never invent statistics, customer names, people, quotes, search volumes or dates. Write [placeholder: what's needed] instead.\n- Plain, specific, active voice. No hype.\n- Markdown with clear headings. No preamble; start with the output.`;
+function buildWritePrompt() {
+  const f = S.f, t = byId(CONTENT_TYPES, f.type), fu = byId(FUNNEL, f.funnel), ms = milestones(f);
+  const v = (label, val) => `${label}: ${String(val || "").trim() || "not provided"}`;
+  return [
+    header(),
+    `\nTASK\nTurn this rough content request into a complete brief a writer can start from today. Use the requester's words where they're specific and tighten them where they're vague. Where you draft something they didn't give you (angle, outline, supporting points, search terms, metric), mark it "(suggested)". Where only the requester can know (names, dates, targets, approvals, owners), write [placeholder: what's needed].`,
+    `\nBRIEF TEMPLATE (sections in order)\n${templateBlock(f.type)}`,
+    t ? `\nCONTENT TYPE: ${t.name}\nTypical length: ${t.length}. Usual shape: ${t.outline.join("; ")}.` : `\nCONTENT TYPE: not provided. Infer it from the request and say which you chose.`,
+    fu ? `\nFUNNEL STAGE: ${fu.name} (${fu.short})\n${fu.play} Usual metrics: ${fu.metric}. Usual CTA: ${fu.cta}.` : "",
+    `\nTHE REQUEST\n${[v("Working title", f.title), v("Summary or notes", f.summary), v("Angle", f.angle), v("Goal", f.goal), v("Success metric", f.metric), v("Persona", f.persona), v("What they believe now", f.belief), v("Key message", f.key), v("Supporting points", lines(f.points).join("; ")), v("Target search query", f.query), v("Sources", lines(f.sources).join("; ")), v("Subject-matter expert", f.sme), v("Requester", f.requester), v("Final approver", f.approver), v("Publish date", f.deadline), v("CTA", f.cta), v("Distribution channels", f.channels.join(", "))].join("\n")}`,
+    ms ? `\nMILESTONES (worked back from the publish date, weekends moved earlier; use these)\n${ms.map(([k, d]) => `${k}: ${fmtDate(d, true)}`).join("\n")}` : "",
+    `\nOUTPUT FORMAT\n- Start with "# Content brief: <working title>".\n- One H2 per template section, in order. Short bullets and tables; a writer should scan it in two minutes.\n- Then "## Open questions": each gap as a numbered question, with who can answer it in italics.\n- Then "## Completeness": the score and verdict for the request as given, using this rubric: ${SCORING.rubric}`,
+    `\n${RULES}`
+  ].filter(Boolean).join("\n");
+}
+function buildCheckPrompt() {
+  const t = byId(CONTENT_TYPES, S.checkType), { scores } = scanBrief(S.source);
+  return [
+    header(),
+    `\nTASK\nCheck this content brief before a writer starts. Score what's on the page, not what the requester probably meant. A section can sit under a different heading ("Goals" for Objective, "Reviewers" for Stakeholders): score the content, not the heading.`,
+    `\nBRIEF TEMPLATE (sections in order)\n${templateBlock(S.checkType)}`,
+    t ? `\nCONTENT TYPE: ${t.name}` : `\nCONTENT TYPE: not given. Infer it from the brief.`,
+    `\nRUBRIC\n${SCORING.rubric}`,
+    `\nAUTOMATIC HEADING SCAN (a rough first pass; it may be wrong)\n${BRIEF_TEMPLATE.map(s => `${s.name}: ${["missing", "thin", "present"][scores[s.id]]}`).join("; ")}`,
+    `\nTHE BRIEF\n"""\n${S.source.trim().slice(0, 60000)}\n"""`,
+    `\nOUTPUT FORMAT\n1. One bold line: score and verdict, then one sentence on the main problem.\n2. A table: Section | Score (0–2, or n/a) | Why (one line).\n3. "## Gaps, most important first": Objective, Audience and Key message before everything else.\n4. "## Questions to ask": one question per gap, answerable in a sentence, grouped by who can answer (requester, SME, approver). Offer a default where you can, labeled "Suggested".\n5. "## Quick fixes": anything you can fix without asking.`,
+    `\n${RULES}`
+  ].filter(Boolean).join("\n");
+}
+const buildPrompt = () => S.mode === "write" ? buildWritePrompt() : buildCheckPrompt();
+const ready = () => S.mode === "write" ? has(S.f.type) && (has(S.f.title) || has(S.f.summary)) : has(S.source);
+
+/* ---------------- render studio ---------------- */
+function card(kind, item, selected, iconHtml) {
+  return `<button type="button" class="opt" aria-pressed="${selected}" data-kind="${kind}" data-id="${item.id}"><span class="ib">${iconHtml}</span><span class="on">${esc(item.name)}</span><span class="od">${esc(item.blurb)}</span></button>`;
+}
+function stepHtml(n, done, title, sub, note, body, key) {
+  return `<li class="step${done ? " done" : ""}"${key ? ` data-step="${key}"` : ""}><span class="num">${n}</span><div class="step-h"><div><h3>${esc(title)}</h3>${sub ? `<span class="mono-label sub">${esc(sub)}</span>` : ""}</div>${note ? `<span class="opt-note">${esc(note)}</span>` : ""}</div><div class="step-b">${body}</div></li>`;
+}
+const fin = (k, label, opts = {}) => `<label class="f${opts.wide ? " wide" : ""}"><span>${esc(label)}${opts.req ? " <em>· required</em>" : ""}</span>${opts.area ? `<textarea class="box sm" data-f="${k}" placeholder="${esc(opts.ph || "")}">${esc(S.f[k])}</textarea>` : `<input class="in" data-f="${k}" type="${opts.type || "text"}" value="${esc(S.f[k])}" placeholder="${esc(opts.ph || "")}"${opts.list ? ` list="${opts.list}"` : ""}>`}</label>`;
+const STEP_DONE = {
+  type: f => has(f.type), idea: f => has(f.title), goal: f => has(f.goal) && has(f.metric), audience: f => has(f.persona) && has(f.belief) && has(f.funnel),
+  message: f => has(f.key), people: f => has(f.sources) && has(f.approver), timing: f => has(f.deadline) && has(f.cta)
+};
+function renderModes() {
+  $("#modes").innerHTML = MODES.map(m => `<button type="button" class="mode" aria-pressed="${m.id === S.mode}" data-mode="${m.id}"><span class="tick"></span><span class="ic">${svg(m.icon)}</span><span class="mname">${m.name}</span><span class="mdesc">${esc(m.blurb)}</span></button>`).join("");
+  $("#exRow").innerHTML = S.mode === "write"
+    ? `<button class="pill ghost sm" type="button" id="loadEx">Fill in the ${esc(CONFIG.company)} example</button><button class="pill ghost sm" type="button" id="clearForm">Clear the form</button><span class="gen-note">Every field is optional except the content type and a title. The preview fills in as you type.</span>`
+    : `<button class="pill ghost sm" type="button" id="loadEx">Paste the ${esc(CONFIG.company)} example</button><span class="gen-note">The heading scan runs in your browser as you paste.</span>`;
+}
+function renderSteps() {
+  const f = S.f; let n = 0; const out = [];
+  if (S.mode === "write") {
+    const t = byId(CONTENT_TYPES, f.type);
+    out.push(stepHtml(++n, STEP_DONE.type(f), "Brief a…", "Content type", "Required · pick one", `<div class="cards">${CONTENT_TYPES.map(c => card("type", c, c.id === f.type, svg(c.icon))).join("")}</div>`, "type"));
+    out.push(stepHtml(++n, STEP_DONE.idea(f), "About…", "The idea", "", `<div class="fields">${fin("title", "Working title or idea", { req: true, wide: true, ph: "Why content reviews stall" })}${fin("summary", "Summary or notes", { area: true, ph: "What it is, why now, anything the requester said" })}${fin("angle", "Angle", { area: true, ph: "The take that makes it different from the ten other posts on this" })}</div>`, "idea"));
+    out.push(stepHtml(++n, STEP_DONE.goal(f), "To…", "Goal and success metric", "Optional", `<div class="fields">${fin("goal", "Goal", { ph: "Earn newsletter sign-ups from content leads" })}${fin("metric", "Success metric", { ph: "Sign-ups from the post in 30 days" })}</div>`, "goal"));
+    out.push(stepHtml(++n, STEP_DONE.audience(f), "For…", "Audience and funnel stage", "Optional", `<div class="fields">${fin("persona", "Persona", { list: "personaList", ph: "Content lead" })}${fin("belief", "What they believe now", { ph: "Reviews are slow because reviewers are busy" })}</div><datalist id="personaList">${PERSONAS.map(p => `<option value="${esc(p)}">`).join("")}</datalist><div class="cards funnel" style="margin-top:12px">${FUNNEL.map(x => card("funnel", x, x.id === f.funnel, funnelSvg(x.level))).join("")}</div>`, "audience"));
+    out.push(stepHtml(++n, STEP_DONE.message(f), "Saying…", "Key message", "Optional", `<div class="fields">${fin("key", "Key message", { wide: true, ph: "The one thing the reader should believe afterwards" })}${fin("points", "Supporting points, one per line", { area: true, wide: true, ph: "Late reviews reopen questions the brief should have answered" })}</div>`, "message"));
+    out.push(stepHtml(++n, STEP_DONE.people(f), "Backed by…", "Sources and people", "Optional", `<div class="fields">${fin("sources", "Sources and proof, one per line", { area: true, wide: true, ph: "Product docs, research, past posts, customer stories you can name" })}${fin("sme", "Subject-matter expert", { ph: "Name and role" })}${fin("requester", "Requester", { ph: "Name and role" })}${fin("approver", "Final approver", { ph: "Name and role" })}</div>`, "people"));
+    out.push(stepHtml(++n, STEP_DONE.timing(f), "Live by…", "Deadline, CTA and reach", "Optional", `<div class="fields">${fin("deadline", "Publish date", { type: "date" })}${fin("cta", "Call to action", { ph: byId(FUNNEL, f.funnel)?.cta || "One next step" })}${fin("query", t && !t.search ? "Search query (not needed for this type)" : "Target search query", { wide: true, ph: "content review process" })}</div><div class="mono-label" style="margin:14px 0 8px;font-size:10px">Distribution channels</div><div class="togs">${CHANNELS.map(c => `<button type="button" class="tog" data-ch="${esc(c)}" aria-pressed="${f.channels.includes(c)}">${esc(c)}</button>`).join("")}</div>`, "timing"));
+  } else {
+    out.push(stepHtml(++n, has(S.source), "Paste your brief", "Any format", "Required", `<textarea class="box" id="src" style="min-height:220px" placeholder="Paste the brief: headings, bullets, a doc or a Slack message all work…">${esc(S.source)}</textarea><div class="hint${has(S.source) ? "" : " req"}" id="srcHint">${has(S.source) ? `${words(S.source)} words` : "Required before you can check"}</div>`, "src"));
+    out.push(stepHtml(++n, has(S.checkType), "It's a…", "Content type", "Optional · decides whether search is required", `<div class="cards">${CONTENT_TYPES.map(c => card("checkType", c, c.id === S.checkType, svg(c.icon))).join("")}</div>`, "ctype"));
+  }
+  const isW = S.mode === "write";
+  out.push(stepHtml(++n, false, isW ? "Write it" : "Check it", "", "", `<div class="gen-row"><button class="pill" id="genBtn" type="button" ${ready() ? "" : "disabled"}>${SAMPLE ? (isW ? "Write the brief with Claude" : "Check it with Claude") : "Build my prompt"}</button><span class="gen-note" id="genNote">${SAMPLE ? "Uses your Claude account. You'll be asked to allow it the first time." : `Claude isn't connected here. The ${isW ? "preview and completeness meter" : "heading scan"} still work, and the page writes the full prompt for you to paste into Claude.`}</span></div><div class="summary-line" id="summaryLine">${summaryLine()}</div>`));
+  out.push(stepHtml(++n, OUT.status === "done", "Output", "", "", `<div id="outWrap"></div>`));
+  $("#steps").innerHTML = out.join("");
+  renderOutput();
+}
+function summaryLine() {
+  if (S.mode === "write") {
+    const res = overall(formScores(S.f), S.f.type), bits = [byId(CONTENT_TYPES, S.f.type)?.name, S.f.persona.trim(), byId(FUNNEL, S.f.funnel)?.short].filter(Boolean);
+    return `Write a brief${bits.length ? ": " + bits.map(b => `<b>${esc(b)}</b>`).join(" · ") : ""} · ${res.pct}% complete`;
+  }
+  if (!has(S.source)) return "Check a brief · nothing pasted yet";
+  const res = overall(scanBrief(S.source).scores, S.checkType);
+  return `Check a brief${S.checkType ? `: <b>${esc(byId(CONTENT_TYPES, S.checkType).name)}</b>` : ""} · scan ${res.pct}% · ${esc(res.verdict.label)}`;
+}
+function tabsFor() {
+  const first = S.mode === "write" ? ["preview", "Live preview"] : ["scan", "Heading scan"];
+  return SAMPLE ? [first, ["out", S.mode === "write" ? "Claude's brief" : "Claude's check"], ["prompt", "Prompt"]] : [first, ["prompt", "Your prompt"], ["example", "Example output"]];
+}
+function renderOutput() {
+  const w = $("#outWrap"); if (!w) return;
+  const tabs = tabsFor();
+  if (!tabs.find(t => t[0] === OUT.tab)) OUT.tab = tabs[0][0];
+  const ex = EXAMPLES[S.mode];
+  let body = "", actions = "";
+  if (OUT.tab === "preview") {
+    body = meterHtml(overall(formScores(S.f), S.f.type), "Scored from the form. Solid dot: complete. Half dot: thin. Red: a required section is missing.") + `<div class="prose">${md(previewMd(S.f))}</div>`;
+    actions = `<button class="pill" type="button" id="copyPreview">Copy brief</button><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "scan") {
+    body = scanHtml();
+    if (has(S.source)) actions = `<button class="pill" type="button" id="copyScan">Copy check</button><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "prompt") {
+    body = !ready() ? `<div class="out-empty">${S.mode === "write" ? "Pick a content type and add a title" : "Paste a brief"}, then click “${SAMPLE ? (S.mode === "write" ? "Write the brief with Claude" : "Check it with Claude") : "Build my prompt"}.”</div>`
+      : (!SAMPLE && !OUT.built) ? `<div class="out-empty">Click “Build my prompt” to see the full prompt.</div>` : `<pre class="prompt" id="promptText">${esc(buildPrompt())}</pre>`;
+    if (ready() && (SAMPLE || OUT.built)) actions = `<button class="pill" type="button" id="copyPrompt">Copy prompt</button><a class="pill ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><span class="msg" id="copyMsg" role="status"></span>`;
+  } else if (OUT.tab === "example") {
+    body = `<div class="ex-note">Worked example: ${S.mode === "write" ? `the brief Claude writes from the ${esc(CONFIG.company)} example form` : `Claude's check of the ${esc(CONFIG.company)} webinar brief`}. ${esc(CONFIG.demoNote)}</div><div class="prose">${md(ex.text)}</div>`;
+  } else {
+    if (OUT.status === "idle") body = `<div class="out-empty">Nothing generated yet. ${S.mode === "write" ? "Fill in what you know" : "Paste a brief"}, then click the button above.</div>`;
+    else if (OUT.status === "thinking") body = `<div class="thinking"><i></i>Claude is thinking…</div>`;
+    else body = `<div class="prose">${md(OUT.text)}</div>`;
+    if (OUT.status === "streaming" || OUT.status === "thinking") actions = `<button class="pill ghost" type="button" id="stopBtn">Stop</button>`;
+    else if (OUT.text) actions = `<button class="pill" type="button" id="copyOut">Copy</button><button class="pill ghost" type="button" id="regen">Try another version</button>`;
+    if (OUT.truncated) actions += `<span class="msg">The answer was cut short. Ask for less at a time.</span>`;
+    if (OUT.msg) actions += `<span class="msg err">${esc(OUT.msg)}</span>`;
+    actions += `<span class="msg" id="copyMsg" role="status"></span>`;
+  }
+  w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${esc(summaryLine().replace(/<[^>]+>/g, ""))}</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === OUT.tab}" data-otab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="outBody">${body}</div>${actions ? `<div class="out-actions">${actions}</div>` : ""}</div>`;
+}
+function refresh() {
+  document.querySelectorAll(".step[data-step]").forEach(el => { const k = el.dataset.step; const fn = STEP_DONE[k]; if (fn) el.classList.toggle("done", fn(S.f)); if (k === "ctype") el.classList.toggle("done", has(S.checkType)); });
+  const g = $("#genBtn"); if (g) g.disabled = !ready();
+  const sl = $("#summaryLine"); if (sl) sl.innerHTML = summaryLine();
+  if (OUT.tab !== "out" || OUT.status === "idle") renderOutput();
+  else { const wt = document.querySelector(".window-bar .wt"); if (wt) wt.textContent = summaryLine().replace(/<[^>]+>/g, ""); }
+}
+function save() { store.set("state", { mode: S.mode, view: S.view, libDim: S.libDim, f: S.f, checkType: S.checkType }); }
+
+/* ---------------- generation ---------------- */
+async function generate(fresh) {
+  if (!ready()) return;
+  if (!SAMPLE) { OUT.built = true; OUT.tab = "prompt"; renderOutput(); $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+  CTL?.abort(); CTL = new AbortController();
+  OUT = { tab: "out", text: "", status: "thinking", msg: "", truncated: false, built: true }; renderOutput();
+  $("#outWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  try {
+    const r = await SAMPLE(buildPrompt(), { signal: CTL.signal, cache: fresh ? false : undefined, onText: ({ text }) => { OUT.text = text; OUT.status = "streaming"; const b = $("#outBody"); if (b && OUT.tab === "out") b.innerHTML = `<div class="prose">${md(text)}</div>`; else renderOutput(); } });
+    OUT.text = r.text; OUT.truncated = r.truncated; OUT.status = "done";
+  } catch (e) {
+    OUT.text = e && e.code !== "refused" ? (e.text || "") : "";
+    OUT.status = OUT.text ? "done" : "idle";
+    const copy = { not_granted: "Claude isn't allowed for this page. Allow it from the page's permissions, or copy the prompt instead.", sampling_disabled: "Claude isn't available on this account. Copy the prompt instead.", rate_limited: "You've hit a usage limit. Try again in a little while.", session_expired: "Sign in to Claude again, then retry.", refused: "Claude declined this request. Change the inputs and try again.", prompt_too_large: "The brief is too long. Paste a shorter version.", empty_completion: "Claude returned nothing. Try again.", cancelled: "" };
+    OUT.msg = e && e.code in copy ? copy[e.code] : "Something interrupted the answer. Try again.";
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled")) { SAMPLE = null; setChip(); renderSteps(); return; }
+  }
+  renderOutput();
+}
+
+/* ---------------- template view ---------------- */
+function renderLibrary() {
+  const segs = [["all", "All"], ["required", "Required"], ["other", "Conditional and optional"]];
+  $("#libSeg").innerHTML = segs.map(([k, l]) => `<button type="button" aria-pressed="${k === S.libDim}" data-dim="${k}">${l}</button>`).join("");
+  const q = $("#libSearch").value.trim().toLowerCase();
+  const rows = BRIEF_TEMPLATE.map((s, i) => Object.assign({ n: i + 1 }, s)).filter(s => (S.libDim === "all" || (S.libDim === "required" ? s.required === true : s.required !== true)) && (!q || JSON.stringify(s).toLowerCase().includes(q)));
+  const fld = (h, v, wide) => v ? `<div class="fld${wide ? " wide" : ""}"><h4>${h}</h4><p>${esc(v)}</p></div>` : "";
+  $("#libList").innerHTML = rows.length ? rows.map(s => `<details class="aud"><summary><span class="ib" style="font-family:var(--f-mono);font-size:13px">${String(s.n).padStart(2, "0")}</span><span><strong>${esc(s.name)}</strong><br><span class="muted" style="font-size:13px">${esc(s.guidance.split(". ")[0].replace(/\.$/, ""))}</span></span><span class="dim">${s.required === true ? "Required" : s.required === "search" ? "If it should rank" : "Recommended"}</span></summary><div class="aud-body">
+    ${fld("What goes here", s.guidance, true)}${fld("Complete looks like", s.good)}${fld("Ask the requester", `${s.ask} (${s.who})`)}${fld("Headings the scan recognizes", s.aliases.join(", "), true)}</div></details>`).join("") : `<div class="out-empty">No sections match “${esc(q)}”.</div>`;
+  $("#libNote").textContent = `${BRIEF_TEMPLATE.length} sections, ${BRIEF_TEMPLATE.filter(s => s.required === true).length} required for every piece. Both modes use this template and the same scoring: required sections count double, and a missing objective, audience or key message means the brief isn't ready. ${SAMPLE ? "To change the template, ask Claude to update it and republish this page." : CONFIG.demoNote}`;
+}
+
+/* ---------------- wiring ---------------- */
+function setChip() {
+  $("#modeChip").classList.toggle("live", !!SAMPLE);
+  $("#modeChipText").textContent = SAMPLE ? "Live · writing with Claude" : "Demo · prompt builder";
+  $("#brandTag").textContent = SAMPLE ? CONFIG.title : (CONFIG.brand?.tag || "");
+}
+function boot() {
+  const tw = CONFIG.title.split(" ");
+  $("#title").innerHTML = tw.length > 2 ? `${esc(tw.slice(0, -2).join(" "))} <span class="hl">${esc(tw.slice(-2).join(" "))}</span>` : `<span class="hl">${esc(CONFIG.title)}</span>`;
+  $("#eyebrow").textContent = `For ${CONFIG.company}`;
+  $("#lede").textContent = "Turn a rough content request into a complete brief before a writer starts, or check the brief you already have for gaps and the questions to ask.";
+  document.title = CONFIG.title;
+  const br = CONFIG.brand; $("#brandbar").hidden = !br;
+  if (br) { const [w1, ...rest] = br.name.split(" "); $("#brandLink").innerHTML = rest.length ? `${esc(w1)} <span>${esc(rest.join(" "))}</span>` : `<span>${esc(w1)}</span>`; $("#brandLink").href = br.url || "#"; }
+  $("#siteFooter").hidden = !CONFIG.footer; $("#footerText").textContent = CONFIG.footer || "";
+  $("#cta").hidden = !CONFIG.ctaUrl; if (CONFIG.ctaUrl) $("#ctaLink").href = CONFIG.ctaUrl;
+  setChip(); renderModes(); renderSteps(); renderLibrary(); showView(S.view);
+}
+function showView(v) {
+  S.view = v; save();
+  document.querySelectorAll("nav.views button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  $("#studio").hidden = v !== "studio"; $("#library").hidden = v !== "library";
+}
+function copyText(text, msgEl) {
+  const done = () => { if (msgEl) msgEl.textContent = "Copied."; };
+  const fallback = () => { const pre = $("#promptText") || $("#outBody"); if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } if (msgEl) msgEl.textContent = "Selected. Press Ctrl+C or ⌘C."; };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.view) return showView(t.dataset.view);
+  if (t.dataset.mode) { if (S.mode === t.dataset.mode) return; S.mode = t.dataset.mode; save(); CTL?.abort(); OUT = { tab: "", text: "", status: "idle", msg: "", built: false }; renderModes(); renderSteps(); return; }
+  if (t.dataset.kind) {
+    const k = t.dataset.kind, id = t.dataset.id;
+    if (k === "checkType") S.checkType = S.checkType === id ? "" : id; else S.f[k] = S.f[k] === id ? "" : id;
+    const cur = k === "checkType" ? S.checkType : S.f[k];
+    document.querySelectorAll(`.opt[data-kind="${k}"]`).forEach(b => b.setAttribute("aria-pressed", b.dataset.id === cur));
+    save();
+    if (k === "type" || k === "funnel") { const q = document.querySelector('[data-f="query"]'); if (q) { const ty = byId(CONTENT_TYPES, S.f.type); q.previousElementSibling.textContent = ty && !ty.search ? "Search query (not needed for this type)" : "Target search query"; } const c = document.querySelector('[data-f="cta"]'); if (c) c.placeholder = byId(FUNNEL, S.f.funnel)?.cta || "One next step"; }
+    return refresh();
+  }
+  if (t.dataset.ch) { const c = t.dataset.ch, i = S.f.channels.indexOf(c); if (i < 0) S.f.channels.push(c); else S.f.channels.splice(i, 1); t.setAttribute("aria-pressed", i < 0); save(); return refresh(); }
+  if (t.dataset.otab) { OUT.tab = t.dataset.otab; renderOutput(); return; }
+  if (t.dataset.dim) { S.libDim = t.dataset.dim; save(); renderLibrary(); return; }
+  if (t.id === "loadEx") { if (S.mode === "write") S.f = Object.assign(EMPTY_FORM(), JSON.parse(JSON.stringify(EXAMPLES.write.form))); else { S.source = EXAMPLES.check.source; S.checkType = EXAMPLES.check.type; } save(); if (OUT.status !== "streaming" && OUT.status !== "thinking") OUT.tab = S.mode === "write" ? "preview" : "scan"; renderSteps(); return; }
+  if (t.id === "clearForm") { S.f = EMPTY_FORM(); save(); renderSteps(); return; }
+  if (t.id === "genBtn") return generate(false);
+  if (t.id === "regen") return generate(true);
+  if (t.id === "stopBtn") { CTL?.abort(); return; }
+  if (t.id === "copyPrompt") return copyText(buildPrompt(), $("#copyMsg"));
+  if (t.id === "copyOut") return copyText(OUT.text, $("#copyMsg"));
+  if (t.id === "copyPreview") return copyText(previewMd(S.f), $("#copyMsg"));
+  if (t.id === "copyScan") return copyText(scanText(), $("#copyMsg"));
+});
+document.addEventListener("input", e => {
+  const k = e.target.dataset && e.target.dataset.f;
+  if (k) { S.f[k] = e.target.value; save(); return refresh(); }
+  if (e.target.id === "src") { S.source = e.target.value; const h = $("#srcHint"); const ok = has(S.source); h.textContent = ok ? `${words(S.source)} words` : "Required before you can check"; h.classList.toggle("req", !ok); e.target.closest(".step").classList.toggle("done", ok); return refresh(); }
+  if (e.target.id === "libSearch") renderLibrary();
+});
+
+boot();
+(async () => {
+  try { SAMPLE = window.claude ? await window.claude.use("sample") : null; } catch (e) { SAMPLE = null; }
+  setChip();
+  if (SAMPLE) { renderSteps(); renderLibrary(); }
+})();
+</script>
+
+</body>
+</html>

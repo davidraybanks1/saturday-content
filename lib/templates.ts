@@ -427,6 +427,94 @@ export const templates: Template[] = [
     tip: "Ask each expert to edit their own podium sentence; the words they change tell you more about their voice than an hour of interview.",
     packet: "/packets/thought-leader-profiler-claude.pdf",
   },
+  {
+    slug: "content-brief-writer-claude",
+    name: "Content brief writer",
+    tool: "Claude",
+    image: "/images/content-brief-writer-claude.png",
+    hook: "Most review rounds are the brief being written late. Get a complete brief before the writer starts.",
+    summary:
+      "Turns a rough content request into a complete brief with open questions, or scores an existing brief and gives you the questions to ask the requester.",
+    features: [
+      {
+        title: "Two modes",
+        body: "Write a brief from a short form or a chat request, or check a brief someone already wrote.",
+      },
+      {
+        title: "Live brief preview",
+        body: "The brief fills in as you type, with placeholders marking what's still missing. It works without Claude.",
+      },
+      {
+        title: "Completeness meter",
+        body: "Every section is scored complete, thin or missing. Required sections count double, and a missing objective, audience or key message means not ready.",
+      },
+      {
+        title: "Heading scan",
+        body: "Paste any brief and see which sections are present, which are thin, and the question to ask for each gap.",
+      },
+      {
+        title: "Intake interview",
+        body: "In chat, Claude asks requesters two or three short rounds of questions, each with a default, instead of a long form.",
+      },
+      {
+        title: "Milestones worked back",
+        body: "Give a publish date and the brief gets outline, draft, review and approval dates from the content type's lead times, moved off weekends.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/content-brief-writer.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/content-brief-writer-skill.zip" },
+    walkthroughLabel: "Build it on your own template",
+    walkthroughLead: "From demo to your own brief writer in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Fill in the Fieldbook example to watch the brief and meter build, then switch to Check and paste the example webinar brief.",
+      },
+      {
+        title: "Add the skill",
+        body: "Add the content-brief-writer folder as a skill in Claude and check that it shows in your skills list.",
+      },
+      {
+        title: "Set up your template",
+        body: "Ask Claude to set up your brief template, and attach your current template or a few past briefs. Confirm the section table.",
+      },
+      {
+        title: "Publish your page",
+        body: "Ask Claude to publish your brief writer page. It adds your sections, content types, lead times and company details.",
+      },
+      {
+        title: "Share it with requesters",
+        body: "Share the page from its Share menu. Requesters brief their own work, and writers check what lands before they start.",
+      },
+    ],
+    steps: {
+      have: [
+        "Add the content-brief-writer skill in Claude",
+        "Say: set up our brief template, and attach a past brief",
+        "Say: publish our brief writer page",
+      ],
+      dont: [
+        "Sign up for Claude and open Settings",
+        "Upload the skill .zip under Skills",
+        "Start a chat and say: write a brief for my next blog post",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/content-brief-writer-claude-screen-1.png",
+        alt: "Content brief writer page in Write mode with the Fieldbook blog post example selected and the form filling in",
+        caption: "Write a brief from a short form",
+      },
+      {
+        src: "/images/content-brief-writer-claude-screen-2.png",
+        alt: "Check mode heading scan of a webinar brief showing 50% Not ready, with present, thin and missing sections",
+        caption: "Check a brief for gaps",
+      },
+    ],
+    tip: "Add the headings your old briefs use to each section's aliases, so the Check scan recognizes them on day one.",
+    packet: "/packets/content-brief-writer-claude.pdf",
+  },
 ];
 
 export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];

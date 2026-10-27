@@ -17,5 +17,22 @@
       ],
       "button": "Build my prompt"
     }
+  },
+  "content-brief-writer-claude": {
+    "skill": "content-brief-writer",
+    "diagram": {
+      "title": "Content brief writer",
+      "modes": [
+        "Write a brief",
+        "Check a brief"
+      ],
+      "picks": [
+        "Blog post",
+        "Content lead",
+        "MOFU",
+        "Dec 3"
+      ],
+      "button": "Build my prompt"
+    }
   }
 }
