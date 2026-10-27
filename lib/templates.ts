@@ -515,6 +515,94 @@ export const templates: Template[] = [
     tip: "Add the headings your old briefs use to each section's aliases, so the Check scan recognizes them on day one.",
     packet: "/packets/content-brief-writer-claude.pdf",
   },
+  {
+    slug: "style-guide-checker-claude",
+    name: "Style guide checker",
+    tool: "Claude",
+    image: "/images/style-guide-checker-claude.png",
+    hook: "Edits that cite the rule they apply, so writers learn your style guide instead of arguing with it.",
+    summary:
+      "Paste a draft and get line edits against your team's style guide, each tagged with a rule ID and severity, plus a clean revised version. It also rewrites drafts to style and explains any rule with do and don't examples.",
+    features: [
+      {
+        title: "Line edits with rule IDs",
+        body: "Every edit shows the line, the rule it applies and its severity, then the before and after. Writers see why, not just what.",
+      },
+      {
+        title: "Three modes",
+        body: "Check a draft for a full edit, rewrite to style for just the clean version, or explain a rule when someone asks why.",
+      },
+      {
+        title: "A quick check in the browser",
+        body: "Avoid-list words, exclamation points, Title Case headings, long sentences, likely passive voice and vague link text are highlighted as you type, with no Claude usage.",
+      },
+      {
+        title: "Your guide, imported",
+        body: "Paste your style doc and Claude splits it into numbered rules with severity, examples and a word list of terms to use and avoid.",
+      },
+      {
+        title: "Focus and strictness",
+        body: "Narrow a pass to one category, such as accessibility, or to must-fix issues only when the deadline is close.",
+      },
+      {
+        title: "A page your team can share",
+        body: "Publish the checker as a private page. Each teammate edits with Claude on their own account, and everyone checks against the same guide.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/style-guide-checker.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/style-guide-checker-skill.zip" },
+    walkthroughLabel: "Build it on your style guide",
+    walkthroughLead: "From demo to your own house style checker in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the checker and look at the sample Fieldbook draft. The quick check highlights its style breaks, and the worked examples show a full edit, a rewrite and a rule explained.",
+      },
+      {
+        title: "Add the skill",
+        body: "Download the style-guide-checker skill and add it to Claude from your skills settings.",
+      },
+      {
+        title: "Import your guide",
+        body: "Start a chat, say \"Import our style guide\", and paste or attach it. No guide yet? Claude interviews you and drafts one.",
+      },
+      {
+        title: "Check the rules",
+        body: "Claude shows every rule with its ID, severity and whether the quick check covers it, plus your word list. Correct anything before you say yes.",
+      },
+      {
+        title: "Publish and share",
+        body: "Ask Claude to publish your checker page, then share it with your team. Paste a draft, read the flags, and ask Claude for the full edit.",
+      },
+    ],
+    steps: {
+      have: [
+        "Download the skill and add it to Claude",
+        "Say \"Import our style guide\" and paste it in",
+        "Ask Claude to publish your checker page",
+      ],
+      dont: [
+        "Create a free Claude account at claude.ai",
+        "Turn on skills in settings, then add this skill",
+        "Paste your style guide and ask Claude to import it",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/style-guide-checker-claude-screen-1.png",
+        alt: "The style guide checker page with three modes and a sample draft pasted in, Check a draft selected",
+        caption: "Pick a mode and paste a draft",
+      },
+      {
+        src: "/images/style-guide-checker-claude-screen-2.png",
+        alt: "The quick check highlighting a draft inline, with flags listed by rule ID, line and severity",
+        caption: "The quick check, flagged by rule",
+      },
+    ],
+    tip: "Give every rule a real don't example from your own drafts; the checker cites rules more accurately when it has seen them broken.",
+    packet: "/packets/style-guide-checker-claude.pdf",
+  },
 ];
 
 export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];

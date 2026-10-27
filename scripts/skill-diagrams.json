@@ -34,5 +34,23 @@
       ],
       "button": "Build my prompt"
     }
+  },
+  "style-guide-checker-claude": {
+    "skill": "style-guide-checker",
+    "diagram": {
+      "title": "Style guide checker",
+      "modes": [
+        "Check a draft",
+        "Rewrite to style",
+        "Explain a rule"
+      ],
+      "picks": [
+        "V3 passive",
+        "G1 headings",
+        "A1 link text",
+        "Must fix"
+      ],
+      "button": "Check with Claude"
+    }
   }
 }
