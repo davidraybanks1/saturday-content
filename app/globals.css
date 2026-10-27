@@ -215,9 +215,36 @@ button { font: inherit; color: inherit; }
   background: var(--yellow); color: var(--ink); border-radius: 4px; padding: 2px 0; text-align: center; height: fit-content; margin-top: 2px;
 }
 
+/* Gallery + walkthrough (template pages with extra material) */
+.gallery { padding-block: 72px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 40px 48px; }
+.gallery > .mono-label { grid-column: 1 / -1; }
+.gallery figure { margin: 0 6px 0 0; display: grid; gap: 14px; }
+.gallery .window:hover { opacity: 1; transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+.gallery .window { transition: transform .15s, box-shadow .15s; }
+.gallery img { width: 100%; height: auto; }
+.walkthrough { padding-block: 72px; display: grid; gap: 32px; }
+.walk-head { display: grid; gap: 14px; }
+.walk-head h2 { font-size: clamp(30px, 3.6vw, 44px); letter-spacing: -.04em; line-height: 1.05; font-weight: 700; text-wrap: balance; }
+.walkthrough ol {
+  list-style: none; margin: 0; padding: 0; counter-reset: w;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); border-top: var(--outline);
+}
+.walkthrough li { counter-increment: w; display: grid; gap: 10px; align-content: start; padding: 20px 20px 24px 0; }
+.walkthrough li + li { border-left: var(--hairline); padding-left: 20px; }
+.walkthrough li::before {
+  content: counter(w, decimal-leading-zero); font-family: var(--mono); font-size: 11px; font-weight: 500;
+  background: var(--yellow); border-radius: 4px; padding: 2px 7px; justify-self: start;
+}
+.walkthrough h3 { font-size: 20px; letter-spacing: -.02em; font-weight: 600; line-height: 1.2; }
+.walkthrough p { font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+
 /* Footer */
 .site-footer { border-top: var(--hairline); }
 .site-footer .col { padding-block: 28px; }
+
+@media (max-width: 900px) {
+  .walkthrough li + li { border-left: 0; padding-left: 0; border-top: var(--hairline); }
+}
 
 @media (max-width: 520px) {
   :root { --gutter: 20px; }

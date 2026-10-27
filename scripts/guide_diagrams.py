@@ -151,8 +151,54 @@ def airtable_new():
                + tag(x + 266, y + 64, "01", x + 281, y + 43))
 
 
+# ---------- Claude (skill) ----------
+def claude_have():
+    x, y, w, h = 6, 8, 322, 196
+    side = (f'<rect x="{x + 1}" y="{y + 21}" width="70" height="{h - 23.5}" fill="{PANEL}"/>'
+            f'<line x1="{x + 71}" y1="{y + 21}" x2="{x + 71}" y2="{y + h}" stroke="{HAIR}"/>'
+            + lines(x + 10, y + 34, [46, 38, 50, 34], gap=12, h=3)
+            + f'<rect x="{x + 6}" y="{y + 80}" width="58" height="13" rx="3" fill="{BG}" stroke="{INK}" stroke-width="1.2"/>'
+            f'<text x="{x + 12}" y="{y + 89}" {MONO} font-size="6.5" letter-spacing=".4" fill="{INK}">SKILLS</text>'
+            + lines(x + 10, y + 104, [44, 36], gap=12, h=3))
+    mx = x + 86
+    main = (f'<text x="{mx}" y="{y + 40}" font-size="10" font-weight="700" fill="{INK}">Skills</text>'
+            + button(x + 236, y + 29, 74, "Upload skill", hot=True)
+            + f'<rect x="{mx}" y="{y + 52}" width="224" height="24" rx="4" fill="{BG}" stroke="{INK}" stroke-width="1.2"/>'
+            f'<rect x="{mx + 8}" y="{y + 58}" width="10" height="12" rx="1.5" fill="{Y}" stroke="{INK}" stroke-width="1.1"/>'
+            f'<text x="{mx + 24}" y="{y + 67}" {MONO} font-size="6.8" fill="{INK}">content-performance-hub</text>'
+            f'<rect x="{mx + 196}" y="{y + 59}" width="20" height="10" rx="5" fill="{INK}"/><circle cx="{mx + 211}" cy="{y + 64}" r="3.2" fill="{Y}"/>'
+            + lines(mx, y + 88, [200, 160], gap=11, h=3)
+            + f'<rect x="{mx}" y="{y + 132}" width="224" height="50" rx="8" fill="{BG}" stroke="{INK}" stroke-width="1.5"/>'
+            + lines(mx + 10, y + 142, [170, 140, 96], gap=9, h=3, color=INK)
+            + f'<rect x="{mx + 198}" y="{y + 160}" width="18" height="16" rx="4" fill="{Y}" stroke="{INK}" stroke-width="1.2"/>'
+            f'<path d="M{mx + 207} {y + 172} v-8 m-3.5 3.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="{INK}" stroke-width="1.3"/>')
+    return svg(window(x, y, w, h, "CLAUDE.AI/SETTINGS") + side + main
+               + tag(x + 196, y + 2, "01", x + 250, y + 30) + tag(x + 30, y + 150, "03", mx, y + 157))
+
+
+def claude_new():
+    x, y, w, h = 6, 8, 322, 196
+    dash = (f'<text x="{x + 12}" y="{y + 40}" font-size="10" font-weight="700" fill="{INK}">Content performance hub</text>'
+            + f'<rect x="{x + 228}" y="{y + 29}" width="84" height="15" rx="3" fill="{BG}" stroke="{INK}" stroke-width="1.2"/>'
+            f'<text x="{x + 270}" y="{y + 39.5}" text-anchor="middle" {MONO} font-size="6.5" fill="{INK}">Connect your data</text>'
+            + f'<rect x="{x + 1}" y="{y + 52}" width="{w - 2.5}" height="{h - 54.5}" fill="{PANEL}"/>'
+            + lines(x + 14, y + 62, [90, 70, 110, 60, 96, 80, 70], gap=17, h=4))
+    mx, my, mw, mh = x + 70, y + 60, 180, 126
+    modal = (f'<rect x="{mx + 4}" y="{my + 4}" width="{mw}" height="{mh}" rx="6" fill="{INK}"/>'
+             f'<rect x="{mx}" y="{my}" width="{mw}" height="{mh}" rx="6" fill="{BG}" stroke="{INK}" stroke-width="1.5"/>'
+             f'<text x="{mx + 12}" y="{my + 18}" font-size="9" font-weight="700" fill="{INK}">Connect your data</text>'
+             + "".join(f'<rect x="{mx + 12 + (i % 3) * 53}" y="{my + 28 + (i // 3) * 24}" width="48" height="18" rx="3" fill="{Y if i == 0 else BG}" stroke="{INK if i == 0 else LINE}" stroke-width="{1.2 if i == 0 else 1}"/>'
+                       + f'<text x="{mx + 36 + (i % 3) * 53}" y="{my + 40 + (i // 3) * 24}" text-anchor="middle" {MONO} font-size="6" fill="{INK}">{lab}</text>'
+                       for i, lab in enumerate(["CSV", "BigQuery", "Databricks", "Snowflake", "Postgres", "GA4"]))
+             + button(mx + 12, my + 90, 76, "Choose file", hot=True)
+             + lines(mx + 96, my + 96, [66], h=3.5))
+    return svg(window(x, y, w, h, "SATURDAYCONTENT.CO/DEMOS") + dash + modal
+               + tag(x + 286, y + 62, "02", x + 296, y + 44) + tag(x + 22, y + 170, "02", mx + 12, my + 98))
+
+
 DIAGRAMS = {
     "Notion": (notion_have, notion_new),
     "ClickUp": (clickup_have, clickup_new),
     "Airtable": (airtable_have, airtable_new),
+    "Claude": (claude_have, claude_new),
 }

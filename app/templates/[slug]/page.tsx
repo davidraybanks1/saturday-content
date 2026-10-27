@@ -50,8 +50,13 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
           <p className="summary">{t.summary}</p>
           <div className="detail-actions">
             <a href={t.templateUrl} className="pill" target="_blank" rel="noopener">
-              Open in {t.tool}<Arrow dir="out" />
+              {t.templateLabel ?? `Open in ${t.tool}`}<Arrow dir="out" />
             </a>
+            {t.download && (
+              <a href={t.download.href} className="pill ghost" download>
+                {t.download.label}
+              </a>
+            )}
             <a href={t.packet} className="pill ghost" download>
               Setup guide (PDF)
             </a>
@@ -71,6 +76,28 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
         </div>
       </section>
 
+      {t.gallery && (
+        <section className="rule">
+          <div className="col gallery">
+            <span className="mono-label">See it</span>
+            {t.gallery.map((g) => (
+              <figure key={g.src}>
+                <a href={t.templateUrl} target="_blank" rel="noopener" className="window" aria-label={`${g.caption} (opens the live demo)`}>
+                  <div className="window-bar">
+                    <i />
+                    <i />
+                    <span>{fileName(t)}</span>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={g.src} alt={g.alt} loading="lazy" />
+                </a>
+                <figcaption className="mono-label">{g.caption}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
+
       {t.features && (
         <section className="rule">
           <div className="col blocks">
@@ -82,6 +109,28 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
                 <p>{f.body}</p>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {t.walkthrough && (
+        <section className="rule">
+          <div className="col walkthrough">
+            <div className="walk-head">
+              <span className="mono-label">Build it on your data</span>
+              <h2>
+                From demo to your own hub in{" "}
+                <span className="h-hl">{["one step", "two steps", "three steps", "four steps", "five steps", "six steps", "seven steps"][t.walkthrough.length - 1] ?? `${t.walkthrough.length} steps`}</span>.
+              </h2>
+            </div>
+            <ol>
+              {t.walkthrough.map((w) => (
+                <li key={w.title}>
+                  <h3>{w.title}</h3>
+                  <p>{w.body}</p>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
       )}
