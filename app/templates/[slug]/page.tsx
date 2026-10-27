@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function TemplatePage({ params }: { params: Promise<{ slug: string }> }) {
   const t = getTemplate((await params).slug);
   if (!t) notFound();
-  const steps = setupSteps[t.tool];
+  const steps = t.steps ?? setupSteps[t.tool];
   const n = String(templates.indexOf(t) + 1).padStart(2, "0");
 
   return (
@@ -117,9 +117,9 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
         <section className="rule">
           <div className="col walkthrough">
             <div className="walk-head">
-              <span className="mono-label">Build it on your data</span>
+              <span className="mono-label">{t.walkthroughLabel ?? "Build it"}</span>
               <h2>
-                From demo to your own hub in{" "}
+                {t.walkthroughLead ?? "From demo to your own version in"}{" "}
                 <span className="h-hl">{["one step", "two steps", "three steps", "four steps", "five steps", "six steps", "seven steps"][t.walkthrough.length - 1] ?? `${t.walkthrough.length} steps`}</span>.
               </h2>
             </div>

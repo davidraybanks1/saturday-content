@@ -152,7 +152,7 @@ def airtable_new():
 
 
 # ---------- Claude (skill) ----------
-def claude_have():
+def claude_have(skill="content-performance-hub"):
     x, y, w, h = 6, 8, 322, 196
     side = (f'<rect x="{x + 1}" y="{y + 21}" width="70" height="{h - 23.5}" fill="{PANEL}"/>'
             f'<line x1="{x + 71}" y1="{y + 21}" x2="{x + 71}" y2="{y + h}" stroke="{HAIR}"/>'
@@ -165,7 +165,7 @@ def claude_have():
             + button(x + 236, y + 29, 74, "Upload skill", hot=True)
             + f'<rect x="{mx}" y="{y + 52}" width="224" height="24" rx="4" fill="{BG}" stroke="{INK}" stroke-width="1.2"/>'
             f'<rect x="{mx + 8}" y="{y + 58}" width="10" height="12" rx="1.5" fill="{Y}" stroke="{INK}" stroke-width="1.1"/>'
-            f'<text x="{mx + 24}" y="{y + 67}" {MONO} font-size="6.8" fill="{INK}">content-performance-hub</text>'
+            f'<text x="{mx + 24}" y="{y + 67}" {MONO} font-size="6.8" fill="{INK}">{skill}</text>'
             f'<rect x="{mx + 196}" y="{y + 59}" width="20" height="10" rx="5" fill="{INK}"/><circle cx="{mx + 211}" cy="{y + 64}" r="3.2" fill="{Y}"/>'
             + lines(mx, y + 88, [200, 160], gap=11, h=3)
             + f'<rect x="{mx}" y="{y + 132}" width="224" height="50" rx="8" fill="{BG}" stroke="{INK}" stroke-width="1.5"/>'
@@ -196,9 +196,28 @@ def claude_new():
                + tag(x + 286, y + 62, "02", x + 296, y + 44) + tag(x + 22, y + 170, "02", mx + 12, my + 98))
 
 
+def studio_new():
+    x, y, w, h = 6, 8, 322, 196
+    top = f'<text x="{x + 12}" y="{y + 40}" font-size="10" font-weight="700" fill="{INK}">What are we up to?</text>'
+    modes = "".join(
+        f'<rect x="{x + 12 + i * 76}" y="{y + 50}" width="70" height="34" rx="5" fill="{Y if i == 0 else BG}" stroke="{INK if i == 0 else LINE}" stroke-width="{1.4 if i == 0 else 1}"/>'
+        f'<text x="{x + 20 + i * 76}" y="{y + 71}" font-size="8" font-weight="700" fill="{INK}">{lab}</text>'
+        for i, lab in enumerate(["Draft", "Remix", "Critique", "Brainstorm"]))
+    picks = "".join(
+        f'<rect x="{x + 12 + i * 76}" y="{y + 94}" width="70" height="22" rx="4" fill="{BG}" stroke="{INK if i < 2 else LINE}" stroke-width="{1.3 if i < 2 else 1}"/>'
+        f'<text x="{x + 47 + i * 76}" y="{y + 108}" text-anchor="middle" {MONO} font-size="6.2" fill="{INK}">{lab}</text>'
+        for i, lab in enumerate(["LinkedIn", "Marketer", "Software", "TOFU"]))
+    gen = button(x + 12, y + 128, 92, "Build my prompt", hot=True)
+    out = (f'<rect x="{x + 12}" y="{y + 154}" width="298" height="32" rx="4" fill="{PANEL}"/>'
+           + lines(x + 20, y + 162, [200, 160], gap=9, h=3, color=MUTED))
+    return svg(window(x, y, w, h, "SATURDAYCONTENT.CO/DEMOS") + top + modes + picks + gen + out
+               + tag(x + 116, y + 120, "02", x + 104, y + 136))
+
+
 DIAGRAMS = {
     "Notion": (notion_have, notion_new),
     "ClickUp": (clickup_have, clickup_new),
     "Airtable": (airtable_have, airtable_new),
     "Claude": (claude_have, claude_new),
+    "b2b-content-studio-claude": (lambda: claude_have("b2b-content-studio"), studio_new),
 }
