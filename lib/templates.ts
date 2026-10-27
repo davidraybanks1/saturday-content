@@ -31,8 +31,8 @@ export type Template = {
   packet: string;
   credit?: string;
   featured?: boolean;
-  /** show first among featured templates on the homepage */
-  pinned?: boolean;
+  /** homepage order among featured templates: 1 shows first, then 2, …; unpinned ones follow in list order */
+  pinned?: number;
 };
 
 export const templates: Template[] = [
@@ -247,7 +247,7 @@ export const templates: Template[] = [
     tip: "Before you approve the build, check the column mapping Claude proposes. It decides whether every number in the hub is right.",
     packet: "/packets/content-performance-hub-claude.pdf",
     featured: true,
-    pinned: true,
+    pinned: 2,
   },
   {
     slug: "b2b-content-studio-claude",
@@ -337,6 +337,7 @@ export const templates: Template[] = [
     tip: "Put real proof points in your library. The studio never invents numbers or customer names, so the proof field is what makes drafts publishable.",
     packet: "/packets/b2b-content-studio-claude.pdf",
     featured: true,
+    pinned: 1,
   },
 ];
 

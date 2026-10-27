@@ -7,7 +7,7 @@ import Arrow from "./Arrow";
 
 export default function Home() {
   // Pinned templates lead; the rest keep their list order.
-  const featured = templates.filter((t) => t.featured).sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
+  const featured = templates.filter((t) => t.featured).sort((a, b) => (a.pinned ?? Infinity) - (b.pinned ?? Infinity));
   return (
     <>
       <Hero />
