@@ -603,6 +603,94 @@ export const templates: Template[] = [
     tip: "Give every rule a real don't example from your own drafts; the checker cites rules more accurately when it has seen them broken.",
     packet: "/packets/style-guide-checker-claude.pdf",
   },
+  {
+    slug: "repurposing-engine-claude",
+    name: "Repurposing engine",
+    tool: "Claude",
+    image: "/images/repurposing-engine-claude.png",
+    hook: "One webinar, report or long post becomes a full set of assets, built only from what the source actually says.",
+    summary:
+      "Paste one long piece and get LinkedIn posts, a newsletter section, a blog summary, a sales email, a video script, pull quotes, a thread and an FAQ in one generation. Quotes stay word for word and attributed, and no number gets invented.",
+    features: [
+      {
+        title: "Atoms before assets",
+        body: "The page pulls candidate pull quotes, every sentence with a number, and every question straight from your source, before Claude writes a word.",
+      },
+      {
+        title: "Eight outputs, one click",
+        body: "Tick any mix of LinkedIn posts, newsletter section, blog summary, sales email, video script, pull quotes, thread and FAQ. One generation writes them all.",
+      },
+      {
+        title: "Facts stay facts",
+        body: "Every stat comes from the source with its meaning intact, quotes are word for word, and anything missing becomes a placeholder instead of a guess.",
+      },
+      {
+        title: "Quotes go to the right person",
+        body: "Speaker names and roles are read from the transcript and attached to every quote, so nothing gets credited to the wrong voice.",
+      },
+      {
+        title: "Aimed at a reader",
+        body: "Pick a persona and funnel stage to change which atom each asset leads with. The source decides what's true; the picks decide what leads.",
+      },
+      {
+        title: "Know what to ship first",
+        body: "The repurposing ladder ranks each output by effort and reach, with a one-week rollout plan for a webinar.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/repurposing-engine.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/repurposing-engine-skill.zip" },
+    walkthroughLabel: "Build it on your own sources",
+    walkthroughLead: "From demo to your own repurposing engine in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the page with the sample webinar loaded. Look at the atoms it finds, tick a few outputs, and read the example pack.",
+      },
+      {
+        title: "Add the skill",
+        body: "Add the repurposing-engine folder as a skill in Claude, then check it appears in your skills list.",
+      },
+      {
+        title: "Run it on a real source",
+        body: "Paste a transcript or long post into a chat and ask for the full pack. Check the atom map at the top against your source.",
+      },
+      {
+        title: "Set up your page",
+        body: "Ask Claude to set up your engine page. It asks for your company, house voice and personas, shows them back, and publishes a private page.",
+      },
+      {
+        title: "Share it with your team",
+        body: "Share the page. Teammates paste a source, tick outputs and generate the pack on their own Claude account.",
+      },
+    ],
+    steps: {
+      have: [
+        "Add the repurposing-engine skill to Claude",
+        "Paste a long source into a chat and ask for the full pack",
+        "Ask Claude to publish your team's engine page",
+      ],
+      dont: [
+        "Create a free Claude account at claude.ai",
+        "Upgrade to a plan that supports skills and artifacts",
+        "Add the skill and paste your first source",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/repurposing-engine-claude-screen-1.png",
+        alt: "The repurposing engine page with a sample webinar transcript pasted in and the atoms panel showing word count, reading time and speakers",
+        caption: "Paste a source, see its atoms",
+      },
+      {
+        src: "/images/repurposing-engine-claude-screen-2.png",
+        alt: "The example pack for the sample webinar, with an atom map and a LinkedIn post, each with its own Copy button",
+        caption: "The finished pack, one asset per heading",
+      },
+    ],
+    tip: "Keep speaker names at the start of each turn in your transcripts, so every quote in the pack is attributed to the person who said it.",
+    packet: "/packets/repurposing-engine-claude.pdf",
+  },
 ];
 
 export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];

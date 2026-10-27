@@ -52,5 +52,23 @@
       ],
       "button": "Check with Claude"
     }
+  },
+  "repurposing-engine-claude": {
+    "skill": "repurposing-engine",
+    "diagram": {
+      "title": "One source, every asset",
+      "modes": [
+        "Source",
+        "Atoms",
+        "Pack"
+      ],
+      "picks": [
+        "LinkedIn \u00d73",
+        "Sales email",
+        "Pull quotes",
+        "FAQ"
+      ],
+      "button": "Generate the pack"
+    }
   }
 }
