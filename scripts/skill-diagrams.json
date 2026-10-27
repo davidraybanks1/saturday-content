@@ -124,5 +124,23 @@
       ],
       "button": "Build my prompt"
     }
+  },
+  "editorial-calendar-planner-claude": {
+    "skill": "editorial-calendar-planner",
+    "diagram": {
+      "title": "Q1 content calendar",
+      "modes": [
+        "Grid",
+        "List",
+        "Counts"
+      ],
+      "picks": [
+        "Pipeline",
+        "Adoption",
+        "6 / week",
+        "2 launches"
+      ],
+      "button": "Fill with Claude"
+    }
   }
 }

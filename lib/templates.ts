@@ -385,7 +385,7 @@ export const templates: Template[] = [
       },
       {
         title: "Add the skill",
-        body: "Download the free skill and add it to Claude from your skills settings.",
+        body: "Download the free skill and upload the .zip as a custom skill in Claude.",
       },
       {
         title: "Profile your experts",
@@ -402,13 +402,13 @@ export const templates: Template[] = [
     ],
     steps: {
       have: [
-        "Download the skill and add it in Claude's skills settings",
+        "Download the skill and upload the .zip as a custom skill in Claude",
         "Paste notes about one expert and ask for a Narrative ID",
         "Ask Claude to publish the profiler page for your team",
       ],
       dont: [
         "Create a free Claude account at claude.ai",
-        "Choose a plan that supports skills and artifacts",
+        "Check that your plan includes skills and artifacts",
         "Add the skill, then start with one expert you know well",
       ],
     },
@@ -495,7 +495,7 @@ export const templates: Template[] = [
         "Say: publish our brief writer page",
       ],
       dont: [
-        "Sign up for Claude and open Settings",
+        "Sign up at claude.ai and check that your plan includes skills",
         "Upload the skill .zip under Skills",
         "Start a chat and say: write a brief for my next blog post",
       ],
@@ -561,7 +561,7 @@ export const templates: Template[] = [
       },
       {
         title: "Add the skill",
-        body: "Download the style-guide-checker skill and add it to Claude from your skills settings.",
+        body: "Download the style-guide-checker skill and upload the .zip as a custom skill in Claude.",
       },
       {
         title: "Import your guide",
@@ -584,7 +584,7 @@ export const templates: Template[] = [
       ],
       dont: [
         "Create a free Claude account at claude.ai",
-        "Turn on skills in settings, then add this skill",
+        "Check that your plan includes skills, then add this skill",
         "Paste your style guide and ask Claude to import it",
       ],
     },
@@ -672,7 +672,7 @@ export const templates: Template[] = [
       ],
       dont: [
         "Create a free Claude account at claude.ai",
-        "Upgrade to a plan that supports skills and artifacts",
+        "Check that your plan includes skills and artifacts",
         "Add the skill and paste your first source",
       ],
     },
@@ -737,7 +737,7 @@ export const templates: Template[] = [
       },
       {
         title: "Add the skill",
-        body: "Download the content-audit skill and add it in Claude under your skills settings.",
+        body: "Download the content-audit skill and upload the .zip as a custom skill in Claude.",
       },
       {
         title: "Export your inventory",
@@ -760,7 +760,7 @@ export const templates: Template[] = [
       ],
       dont: [
         "Create a free Claude account at claude.ai",
-        "Upgrade to a plan that supports skills",
+        "Check that your plan includes skills",
         "Add the skill, then attach your inventory and ask for an audit",
       ],
     },
@@ -936,7 +936,7 @@ export const templates: Template[] = [
       ],
       dont: [
         "Create a free Claude account at claude.ai",
-        "Upgrade to a plan that supports skills",
+        "Check that your plan includes skills",
         "Add the skill and run your first comparison",
       ],
     },
@@ -954,6 +954,94 @@ export const templates: Template[] = [
     ],
     tip: "Add your category name to the list of words every page shares, or one giant topic will swallow half the map.",
     packet: "/packets/competitive-content-gap-claude.pdf",
+  },
+  {
+    slug: "editorial-calendar-planner-claude",
+    name: "Editorial calendar planner",
+    tool: "Claude",
+    image: "/images/editorial-calendar-planner-claude.png",
+    hook: "Turn goals, launches and team capacity into a 13-week content calendar that fits the team you have.",
+    summary:
+      "Plans a quarter of B2B content around your launches, pillars and cadence, checks every week against capacity, then has Claude write a title and angle for each slot and propose changes to hit your goals.",
+    features: [
+      {
+        title: "A real plan without Claude",
+        body: "The planner runs in your browser. Change a date or a cadence and the 13-week calendar rebuilds instantly, the same way every time.",
+      },
+      {
+        title: "Launch lead time built in",
+        body: "Each launch, webinar or event gets a teaser, launch-day pieces and three weeks of follow-up, and takes over evergreen slots instead of piling on.",
+      },
+      {
+        title: "Capacity you can see",
+        body: "Every piece has an effort cost. Weeks over capacity are moved where possible and flagged in red where they can't be.",
+      },
+      {
+        title: "Pillars rotated evenly",
+        body: "Evergreen slots rotate through three to five pillars, balanced across the quarter and around each launch's own theme.",
+      },
+      {
+        title: "Fill and rebalance with Claude",
+        body: "Claude writes a working title and angle for every slot, straight into the grid, or reviews the plan and proposes specific changes within capacity.",
+      },
+      {
+        title: "Ready for your sheet",
+        body: "Switch between grid, list and per-week counts, then copy the whole calendar as CSV or paste it straight into Google Sheets or Excel.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/editorial-calendar-planner.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/editorial-calendar-planner-skill.zip" },
+    walkthroughLabel: "Build it on your own quarter",
+    walkthroughLead: "From demo to your own calendar in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the planner with the Fieldbook sample: a Q1 with two launches and a webinar. Change a cadence or a date and watch the calendar rebuild.",
+      },
+      {
+        title: "Add the skill",
+        body: "Download the skill and upload the .zip as a custom skill in Claude.",
+      },
+      {
+        title: "Give Claude your quarter",
+        body: "Share your start date, goals, launches, pillars, cadence and capacity. Claude checks the math before it plans.",
+      },
+      {
+        title: "Get the calendar",
+        body: "Claude lays out every slot, flags weeks that don't fit, and builds a spreadsheet if you want one.",
+      },
+      {
+        title: "Publish the planner",
+        body: "Ask Claude to publish your planner page. Your team adjusts it, copies it to Sheets, and fills or rebalances it with Claude.",
+      },
+    ],
+    steps: {
+      have: [
+        "Download the skill and upload the .zip as a custom skill in Claude",
+        "Start a chat and say: plan next quarter's content calendar",
+        "Ask Claude to publish your planner page for the team",
+      ],
+      dont: [
+        "Create a free account at claude.ai",
+        "Check that your plan includes skills, then add this skill",
+        "Start a chat and give Claude your goals, launches and team size",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/editorial-calendar-planner-claude-screen-1.png",
+        alt: "The planner inputs: quarter start date, team capacity, and goal cards with pipeline, product adoption and thought leadership selected.",
+        caption: "Set the quarter and goals",
+      },
+      {
+        src: "/images/editorial-calendar-planner-claude-screen-2.png",
+        alt: "The week-by-week calendar grid showing blog, LinkedIn and newsletter slots, with launch pieces outlined and a week flagged over capacity.",
+        caption: "The 13-week calendar, filled",
+      },
+    ],
+    tip: "Leave about 15% of capacity unplanned. Launch weeks and surprise requests will use it.",
+    packet: "/packets/editorial-calendar-planner-claude.pdf",
   },
 ];
 
