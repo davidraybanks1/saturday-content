@@ -214,6 +214,35 @@ def studio_new():
                + tag(x + 116, y + 120, "02", x + 104, y + 136))
 
 
+def demo_new(title, modes, picks, button, url="SATURDAYCONTENT.CO/DEMOS"):
+    # Generic sketch of a saturday content demo page: a title, mode cards, pick chips, the main button.
+    x, y, w, h = 6, 8, 322, 196
+    top = f'<text x="{x + 12}" y="{y + 40}" font-size="10" font-weight="700" fill="{INK}">{title}</text>'
+    n = max(1, len(modes)); mw = (298 - 6 * (n - 1)) / n
+    mc = "".join(
+        f'<rect x="{x + 12 + i * (mw + 6)}" y="{y + 50}" width="{mw}" height="34" rx="5" fill="{Y if i == 0 else BG}" stroke="{INK if i == 0 else LINE}" stroke-width="{1.4 if i == 0 else 1}"/>'
+        f'<text x="{x + 19 + i * (mw + 6)}" y="{y + 71}" font-size="7.5" font-weight="700" fill="{INK}">{lab}</text>'
+        for i, lab in enumerate(modes[:4]))
+    pc = "".join(
+        f'<rect x="{x + 12 + i * 76}" y="{y + 94}" width="70" height="22" rx="4" fill="{BG}" stroke="{INK if i < 2 else LINE}" stroke-width="{1.3 if i < 2 else 1}"/>'
+        f'<text x="{x + 47 + i * 76}" y="{y + 108}" text-anchor="middle" {MONO} font-size="6" fill="{INK}">{lab[:14]}</text>'
+        for i, lab in enumerate(picks[:4]))
+    bw = max(70, 6 * len(button) + 16)
+    gen = button_(x + 12, y + 128, bw, button)
+    out = (f'<rect x="{x + 12}" y="{y + 154}" width="298" height="32" rx="4" fill="{PANEL}"/>'
+           + lines(x + 20, y + 162, [200, 160], gap=9, h=3, color=MUTED))
+    return svg(window(x, y, w, h, url) + top + mc + pc + gen + out
+               + tag(x + 24 + bw, y + 120, "02", x + 12 + bw, y + 136))
+
+
+def button_(x, y, w, label):
+    return button(x, y, w, label, hot=True)
+
+
+def register_skill(slug, skill, d):
+    DIAGRAMS[slug] = (lambda: claude_have(skill), lambda: demo_new(d["title"], d.get("modes", []), d.get("picks", []), d.get("button", "Build my prompt")))
+
+
 DIAGRAMS = {
     "Notion": (notion_have, notion_new),
     "ClickUp": (clickup_have, clickup_new),
@@ -221,3 +250,11 @@ DIAGRAMS = {
     "Claude": (claude_have, claude_new),
     "b2b-content-studio-claude": (lambda: claude_have("b2b-content-studio"), studio_new),
 }
+
+
+# Claude skills listed in skill-diagrams.json (written when a skill is added) get a generic demo sketch.
+import json as _json, pathlib as _pl
+_f = _pl.Path(__file__).resolve().parent / "skill-diagrams.json"
+if _f.exists():
+    for _slug, _v in _json.loads(_f.read_text()).items():
+        register_skill(_slug, _v["skill"], _v["diagram"])
