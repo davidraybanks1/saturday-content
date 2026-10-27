@@ -89,5 +89,23 @@
       ],
       "button": "Score my inventory"
     }
+  },
+  "audience-profile-builder-claude": {
+    "skill": "audience-profile-builder",
+    "diagram": {
+      "title": "Audience profile builder",
+      "modes": [
+        "Build a profile",
+        "Compare segments",
+        "Find the gaps"
+      ],
+      "picks": [
+        "Sales calls",
+        "Reviews",
+        "Surveys",
+        "Tickets"
+      ],
+      "button": "Build my prompt"
+    }
   }
 }

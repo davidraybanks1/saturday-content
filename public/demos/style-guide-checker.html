@@ -711,7 +711,7 @@ function lint(text) {
   // exclamation points (V4)
   const reEx = /!(?!\[)/g; while ((m = reEx.exec(text))) { if (m.index > 0 && text[m.index - 1] === "]") continue; add("V4", m.index, m.index + 1, "Exclamation point.", "End with a period."); }
   // double spaces (G6)
-  const reDs = /(?<=\S)( {2,})(?=\S)/g; while ((m = reDs.exec(text))) add("G6", m.index, m.index + m[1].length, "Double space.", "Use one space.");
+  const reDs = /(\S)( {2,})(?=\S)/g; while ((m = reDs.exec(text))) add("G6", m.index + 1, m.index + 1 + m[2].length, "Double space.", "Use one space.");
   // em dashes (G7)
   const reEm = /\s?—\s?/g; while ((m = reEm.exec(text))) add("G7", m.index, m.index + m[0].length, "Em dash.", "Use a comma, parentheses or a new sentence.");
   // link text (A1)
@@ -721,15 +721,15 @@ function lint(text) {
   // word list (W1–W4, I1–I4, G8, F5)
   WORD_LIST.forEach(w => {
     const pat = w.forms || w.avoid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`(?<![A-Za-z])(?:${pat})(?![A-Za-z])`, w.cs ? "g" : "gi");
+    let re; try { re = new RegExp(`(?<![A-Za-z])(?:${pat})(?![A-Za-z])`, w.cs ? "g" : "gi"); } catch (err) { re = new RegExp(`\\b(?:${pat})(?![A-Za-z])`, w.cs ? "g" : "gi"); } // older Safari lacks lookbehind
     while ((m = re.exec(text))) add(w.rule, m.index, m.index + m[0].length, `"${m[0]}" is on the avoid list.`, `Use: ${w.use}`);
   });
   // passive voice, likely (V3)
   const rePv = new RegExp(`\\b(am|is|are|was|were|be|been|being)\\s+(?:\\w+ly\\s+)?(\\w+ed|\\w+en|${IRREG})\\b`, "gi");
   while ((m = rePv.exec(text))) { const pp = m[2].toLowerCase(); if (NOT_PP.has(pp) || /^(tired|interested|excited|based|supposed|used to|located)$/.test(pp) && false) continue; if (!prose(m.index)) continue; add("V3", m.index, m.index + m[0].length, `Likely passive: "${m[0]}".`, "Name who does it."); }
   // numbers (G2)
-  const reDig = /(?<![\w.,:$€£%\/#-])([1-9])(?![\w.,:%\/)-])(?!\s?(?:%|percent|am\b|pm\b|a\.m|p\.m|px|ms|kb|mb|gb|x\b|min|minutes?|hours?|hrs?|seconds?|secs?|days?|weeks?|months?|years?|USD|\$))/gi;
-  while ((m = reDig.exec(text))) {
+  let reDig = null; try { reDig = new RegExp(String.raw`(?<![\w.,:$€£%\/#-])([1-9])(?![\w.,:%\/)-])(?!\s?(?:%|percent|am\b|pm\b|a\.m|p\.m|px|ms|kb|mb|gb|x\b|min|minutes?|hours?|hrs?|seconds?|secs?|days?|weeks?|months?|years?|USD|\$))`, "gi"); } catch (err) { /* older Safari: skip this check */ }
+  while (reDig && (m = reDig.exec(text))) {
     const ls = starts[lineOf(starts, m.index) - 1], before = text.slice(Math.max(ls, m.index - 12), m.index);
     if (!prose(m.index) || /^\s*$/.test(text.slice(ls, m.index)) && /^[1-9][.)]/.test(text.slice(m.index, m.index + 2))) continue;
     if (/(step|version|v|page|chapter|figure|table|level|tier|phase|q|h|jan\w*|feb\w*|mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*)\s*$/i.test(before)) continue;

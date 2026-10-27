@@ -779,6 +779,94 @@ export const templates: Template[] = [
     tip: "Use at least 12 months of data and include last period's sessions, so seasonal pages aren't retired and slipping pages get caught.",
     packet: "/packets/content-audit-claude.pdf",
   },
+  {
+    slug: "audience-profile-builder-claude",
+    name: "Audience profile builder",
+    tool: "Claude",
+    image: "/images/audience-profile-builder-claude.png",
+    hook: "Your personas say what you hoped. Your call notes say what customers actually think.",
+    summary:
+      "Claude turns sales call notes, reviews, survey answers and support tickets into audience profiles that drop straight into your content studio, with the customer's own words as evidence for every pain and objection.",
+    features: [
+      {
+        title: "Profiles from real research",
+        body: "Paste call notes, reviews, survey answers, tickets or transcripts. Claude codes every line into pains, objections, goals and metrics, then writes the profile.",
+      },
+      {
+        title: "Evidence for every claim",
+        body: "Each pain and objection comes with short quotes copied from your research. The page checks every quote against what you pasted and flags any that don't match.",
+      },
+      {
+        title: "Compare two segments",
+        body: "Paste research for two groups and see where they really differ, what to say to each, and which differences might only be sample size.",
+      },
+      {
+        title: "Find the gaps",
+        body: "See which profile fields your research covers and which it doesn't, then get interview and survey questions to close the biggest gaps.",
+      },
+      {
+        title: "An evidence board that works offline",
+        body: "Pasted research is split into lines and tagged as pain, objection, goal, tool or metric in your browser, with counts, so you can see what's thin before you start.",
+      },
+      {
+        title: "Ready for your content studio",
+        body: "Copy any profile as a library entry in the B2B content studio's exact format. Placeholders mark what your research doesn't say yet.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/audience-profile-builder.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/audience-profile-builder-skill.zip" },
+    walkthroughLabel: "Build it on your own research",
+    walkthroughLead: "From demo to your own audience profiles in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the page with the sample Fieldbook research loaded. Check the evidence board, then look at the worked example for each mode.",
+      },
+      {
+        title: "Add the skill",
+        body: "Download the skill and add it to Claude as a skill. It appears in your skills list as audience-profile-builder.",
+      },
+      {
+        title: "Gather your research",
+        body: "Export a few call notes, reviews, survey answers and tickets for one audience. Put one point per line and a # line above each source.",
+      },
+      {
+        title: "Build your first profile",
+        body: "Ask Claude to build a profile from it. Check the evidence, fill the placeholders, and run Find the gaps to plan your next interviews.",
+      },
+      {
+        title: "Publish it for your team",
+        body: "Ask Claude to publish the builder page with your company and voice. Teammates paste research and generate profiles on their own Claude accounts.",
+      },
+    ],
+    steps: {
+      have: [
+        "Download the skill and add it to Claude",
+        "Start a chat and paste research for one audience",
+        "Ask Claude to build a profile, then copy the library entry",
+      ],
+      dont: [
+        "Create a free account at claude.ai",
+        "Turn on skills, then add the downloaded skill",
+        "Paste some research and ask Claude to build a profile",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/audience-profile-builder-claude-screen-1.png",
+        alt: "The audience profile builder with Build a profile selected and sample Fieldbook call notes pasted in, showing counts of pains, objections, goals, tools and metrics",
+        caption: "Paste research and pick a mode",
+      },
+      {
+        src: "/images/audience-profile-builder-claude-screen-2.png",
+        alt: "The evidence board showing tag counts for pain, objection, goal, tool and metric, the tools customers named, and each research line with its tags and source",
+        caption: "The evidence board tags every line",
+      },
+    ],
+    tip: "Label each block of research with a # line naming the source and role, so Claude can tell one loud customer from a real pattern.",
+    packet: "/packets/audience-profile-builder-claude.pdf",
+  },
 ];
 
 export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];
