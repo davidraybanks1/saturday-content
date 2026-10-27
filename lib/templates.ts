@@ -1,16 +1,26 @@
-export type Tool = "Notion" | "ClickUp" | "Airtable";
+export type Tool = "Notion" | "ClickUp" | "Airtable" | "Claude";
 
 export type Template = {
   slug: string;
   name: string;
   tool: Tool;
-  /** old Squarespace product slug, for redirects */
-  legacySlug: string;
+  /** old Squarespace product slug, for redirects (templates added after the move have none; keep those last in the list) */
+  legacySlug?: string;
   image: string;
   hook: string;
   summary: string;
   features?: { title: string; body: string }[];
   templateUrl: string;
+  /** button label for templateUrl; defaults to "Open in {tool}" */
+  templateLabel?: string;
+  /** a file to download, e.g. a Claude skill */
+  download?: { label: string; href: string };
+  /** step-by-step build walkthrough, shown on the page and in the PDF */
+  walkthrough?: { title: string; body: string }[];
+  /** setup-guide PDF pro tip; defaults to the desktop-first tip */
+  tip?: string;
+  /** extra screenshots, shown on the page and in the PDF */
+  gallery?: { src: string; alt: string; caption: string }[];
   /** extra setup page (e.g. Notion instructions for the Airtable hub) */
   guideUrl?: string;
   packet: string;
@@ -154,9 +164,84 @@ export const templates: Template[] = [
     credit:
       "Adapted from Mailchimp’s Content Style Guide, which Mailchimp published under a Creative Commons Attribution-NonCommercial 4.0 license.",
   },
+  {
+    slug: "content-performance-hub-claude",
+    name: "Content performance hub",
+    tool: "Claude",
+    image: "/images/content-performance-hub-claude.png",
+    hook: "Most content dashboards tell you what got traffic. This one tells you what to do next.",
+    summary:
+      "A Claude skill that builds a live, filterable dashboard on your own page data. It scores every page, finds the high-traffic pages that leak, credits the content that drives demo requests, and writes the recommendations for you.",
+    features: [
+      {
+        title: "A summary that writes itself",
+        body: "What’s working, what’s not, and what to do next, generated from your live numbers every time you change the date range or filters.",
+      },
+      {
+        title: "A verdict for every page",
+        body: "Fix, Double down, Sales driver, Activation surface, or Too early. Pages under your minimum sample are never ranked, so small numbers don’t fool you.",
+      },
+      {
+        title: "Credit where it’s earned",
+        body: "A page only gets credit for a demo or contact-sales request when the request comes after the reader saw that page, in the same session.",
+      },
+      {
+        title: "Journeys, not just pageviews",
+        body: "See the most common paths, the paths that end in a sign-up, and where readers came from and went next for any page.",
+      },
+      {
+        title: "Works with your stack",
+        body: "Databricks, BigQuery and the GA4 export, Snowflake, Postgres and Redshift, the GA4 API, or a plain CSV. Tabs that need missing data switch themselves off.",
+      },
+      {
+        title: "Math you can defend",
+        body: "Every rate is a ratio of summed counts, never an average of percentages, and the hub flags the recent days where conversions are still coming in.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/content-performance-hub.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/content-performance-hub-skill.zip" },
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the live demo to see every tab on sample data. Upload a CSV from the “Connect your data” panel to see your own numbers with no setup.",
+      },
+      {
+        title: "Add the skill to Claude",
+        body: "Download the skill and upload the .zip as a custom skill in Claude. It brings the dashboard, the instructions, and guides for each data source.",
+      },
+      {
+        title: "Connect your data",
+        body: "Add the Claude connector for your warehouse and sign in. Using a CSV? Skip this step.",
+      },
+      {
+        title: "Write your build prompt",
+        body: "In the demo’s “Connect your data” panel, pick your tools, list your pages, and name your conversion and demo pages. Copy the prompt it writes.",
+      },
+      {
+        title: "Let Claude build it",
+        body: "Paste the prompt into a new chat. Claude maps your columns, checks every page has data, and publishes your private hub. Check the column mapping before you say yes.",
+      },
+    ],
+    gallery: [
+      {
+        src: "/images/content-performance-hub-claude-overview.png",
+        alt: "The Content performance hub overview tab with an executive summary, KPIs and a content scorecard",
+        caption: "Overview: summary, KPIs and a verdict for every page",
+      },
+      {
+        src: "/images/content-performance-hub-claude-connect.png",
+        alt: "The Connect your data panel with data sources to choose from",
+        caption: "Connect your data: pick your tools and get a build prompt",
+      },
+    ],
+    tip: "Before you approve the build, check the column mapping Claude proposes. It decides whether every number in the hub is right.",
+    packet: "/packets/content-performance-hub-claude.pdf",
+    featured: true,
+  },
 ];
 
-export const tools: Tool[] = ["Notion", "ClickUp", "Airtable"];
+export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];
 
 export const setupSteps: Record<Tool, { have: string[]; dont: string[] }> = {
   Notion: {
@@ -179,6 +264,18 @@ export const setupSteps: Record<Tool, { have: string[]; dont: string[] }> = {
     dont: [
       "Open the template and create a free ClickUp account when prompted.",
       "Verify your email, name your workspace, then open the template link again and follow the steps above.",
+    ],
+  },
+  Claude: {
+    have: [
+      "Download the skill and upload the .zip as a custom skill in Claude.",
+      "Add the connector for your data warehouse, or keep a CSV export handy.",
+      "Open the live demo, click “Connect your data,” copy the build prompt, and paste it into a new Claude chat.",
+    ],
+    dont: [
+      "Sign up at claude.ai and check that your plan includes skills and connectors.",
+      "Try the live demo first. Upload a CSV in its “Connect your data” panel to see your own numbers with no setup.",
+      "When you want live data, follow the steps on the left.",
     ],
   },
   Airtable: {

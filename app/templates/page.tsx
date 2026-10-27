@@ -6,7 +6,7 @@ import TemplateGrid from "../TemplateGrid";
 export const metadata: Metadata = {
   title: "Templates",
   description:
-    "Free content marketing templates and frameworks for Notion, ClickUp, and Airtable: content briefs, style guides, audience profiles, thought leadership frameworks, and more.",
+    "Free content marketing templates, frameworks and Claude skills for Notion, ClickUp, Airtable and Claude: content briefs, style guides, audience profiles, thought leadership frameworks, a content performance dashboard, and more.",
 };
 
 export default function TemplatesPage() {

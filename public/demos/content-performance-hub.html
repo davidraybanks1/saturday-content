@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Live demo of the Content Performance Hub, a free Claude skill from saturday content. Invented data for a fictional company.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Content Performance Hub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paper page, hairline-ruled sections, one "window" (outline + hard shadow) for the summary; mono labels everywhere data is named. */
+:root{
+  --bg:#efede8; --surface:#f5f4f0; --surface-2:#e6e3dc; --ink:#141413; --muted:#55534d; --faint:#8d8a82; --line:#d3d0c8; --dot:#b9b5ab;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#fbe6ad;
+  --accent:#141413; --accent-ink:#efede8; --accent-soft:#e6e3dc;
+  --good:#2f7a4d; --bad:#b4442c; --bad-soft:#f3dcd3;
+  --shadow-c:#141413;
+  --c1:#141413; --c2:#ffb800; --c3:#c4643a; --c4:#6f8a6a; --c5:#4f6378; --c6:#cbb98a; --c7:#8d8a82;
+  --f-display:"Host Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Host Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-mono:"Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12;
+  --accent:#efede8; --accent-ink:#141413; --accent-soft:#282723;
+  --good:#7fc79b; --bad:#f08a6e; --bad-soft:#3a201a;
+  --shadow-c:#000000;
+  --c1:#efede8; --c2:#ffb800; --c3:#e38a62; --c4:#9ab894; --c5:#8da3bb; --c6:#d8c798; --c7:#8a867d;
+  color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#161614; --surface:#1d1c1a; --surface-2:#282723; --ink:#efede8; --muted:#aeaaa0; --faint:#8a867d; --line:#35332f; --dot:#3d3b36;
+  --hl:#ffb800; --hl-ink:#141413; --hl-soft:#3a2f12;
+  --accent:#efede8; --accent-ink:#141413; --accent-soft:#282723;
+  --good:#7fc79b; --bad:#f08a6e; --bad-soft:#3a201a;
+  --shadow-c:#000000;
+  --c1:#efede8; --c2:#ffb800; --c3:#e38a62; --c4:#9ab894; --c5:#8da3bb; --c6:#d8c798; --c7:#8a867d;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;font-weight:700}
+h1{font-size:26px;letter-spacing:-.035em;line-height:1.1}
+h2{font-size:19px;letter-spacing:-.03em}
+h3{font-size:15px;letter-spacing:-.02em;font-weight:600}
+.hl{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.num,td.n,th.n{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:12px}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:400}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+/* brand strip + header */
+.brandbar{border-bottom:1px solid var(--line)}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-block:10px}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.03em;text-decoration:none}
+.logo span{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.brandbar .tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.brandbar .tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--hl)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+@media (max-width:700px){header.top{position:static}}
+.top-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-block:18px 10px}
+.brand{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 260px}
+.brand .goal{color:var(--muted);font-size:14px}
+.src-chip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--bg);border-radius:6px;padding:6px 10px;font-family:var(--f-mono);font-size:12px}
+.src-chip:hover{background:var(--hl);color:var(--hl-ink);border-color:var(--hl-ink)}
+.src-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.src-chip.live .dot{background:var(--hl);box-shadow:0 0 0 1.5px var(--ink)}
+.btn{border:1.5px solid var(--ink);background:transparent;border-radius:999px;padding:6px 14px;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;display:inline-block}
+.btn:hover{background:var(--hl);color:var(--hl-ink);border-color:var(--hl-ink)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.primary:hover{background:var(--hl);color:var(--hl-ink);border-color:var(--hl)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding-block:0 10px}
+.controls label{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.controls input[type=date],.controls select{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 8px;font-family:var(--f-mono);font-size:12px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.preset{border:0;background:none;padding:4px 2px;margin:0 4px;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid transparent}
+.preset:hover{color:var(--ink);border-bottom-color:var(--hl)}
+details.multi{position:relative}
+details.multi summary{list-style:none;border:1px solid var(--line);border-radius:6px;padding:5px 10px;background:var(--surface);cursor:pointer;font-family:var(--f-mono);font-size:12px}
+details.multi summary::-webkit-details-marker{display:none}
+details.multi .menu{position:absolute;z-index:6;top:calc(100% + 6px);left:0;background:var(--bg);border:1.5px solid var(--ink);border-radius:6px;padding:8px;min-width:220px;max-height:300px;overflow:auto;box-shadow:4px 4px 0 var(--shadow-c)}
+details.multi .menu label{display:flex;gap:8px;padding:4px 6px;border-radius:4px;color:var(--ink)}
+details.multi .menu label:hover{background:var(--surface-2)}
+.note{font-size:12px;color:var(--muted);padding-block:0 10px}
+nav.tabs{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none;border-top:1px solid var(--line)}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{border:0;background:none;padding:12px 0 9px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-bottom:1.5px solid transparent;white-space:nowrap}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
+
+main{padding-block:28px 56px;display:flex;flex-direction:column;gap:24px}
+section.panel{display:flex;flex-direction:column;gap:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.card > h2,.card > h3{margin-bottom:12px}
+.window{background:var(--bg);border:1.5px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--shadow-c);overflow:hidden;margin-right:6px}
+.window-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1.5px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.window-bar i{flex:none;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}
+.window-bar span{margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.window-body{padding:18px}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}
+.split{grid-template-columns:minmax(0,4fr) minmax(0,8fr)}
+@media (max-width:960px){.split{grid-template-columns:minmax(0,1fr)}}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.kpi{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.kpi .v{font-family:var(--f-display);font-size:34px;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.kpi .d{font-family:var(--f-mono);font-size:11px;font-variant-numeric:tabular-nums}
+.up{color:var(--good)} .down{color:var(--bad)}
+.summary{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.summary .col{min-width:0}
+.summary .col h3{display:inline-block}
+.summary .col.ok h3{background:var(--hl);color:var(--hl-ink);padding:0 4px}
+.summary .col.no h3{color:var(--bad)}
+.summary ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.tbl{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+th{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:400;background:transparent}
+td.n{font-family:var(--f-mono);font-size:12px}
+th.n,td.n{text-align:right}
+tr.grp th{border-bottom:0;padding-bottom:0;text-align:center;color:var(--ink)}
+tbody tr:hover td{background:var(--surface-2)}
+td.page{font-weight:600}
+td.page small{display:block;color:var(--faint);font-family:var(--f-mono);font-size:11px;font-weight:400}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin:0 4px 2px 0;white-space:nowrap;border:1.5px solid transparent}
+.p-fix{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+.p-double{background:var(--hl);color:var(--hl-ink)}
+.p-sales{background:var(--ink);color:var(--bg)}
+.p-act{border-color:var(--ink);color:var(--ink)}
+.p-opt{background:var(--surface-2);color:var(--muted)}
+.p-early{border:1.5px dashed var(--faint);color:var(--muted)}
+.chart-box{position:relative;height:280px}
+.insights{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px}
+.funnel{display:flex;height:36px;border-radius:6px;overflow:hidden;border:1.5px solid var(--ink)}
+.funnel span{display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:11px;white-space:nowrap;overflow:hidden;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.rec{display:flex;flex-direction:column;gap:10px}
+.rec .why{color:var(--muted)}
+.rec .eyebrow{align-self:flex-start;background:var(--hl);color:var(--hl-ink);padding:1px 6px;border-radius:4px}
+.flowlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.flowlist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 8px;align-items:center}
+.bar{height:6px;border-radius:3px;background:var(--hl);grid-column:1 / -1}
+.path{font-family:var(--f-mono);font-size:12px;white-space:normal}
+.path b{font-weight:500;background:var(--hl-soft);padding:0 3px}
+.state{padding:32px;text-align:center;color:var(--muted)}
+.spinner{width:22px;height:22px;border:2px solid var(--line);border-top-color:var(--hl);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:3s}}
+.errbox{background:var(--bad-soft);color:var(--bad);border:1.5px solid var(--bad);border-radius:var(--r);padding:14px 16px}
+.small-note{border-left:3px solid var(--hl);padding:6px 12px;font-size:13px;color:var(--muted);background:var(--surface)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.story{font-size:20px;line-height:1.35;letter-spacing:-.02em;font-weight:500;max-width:60ch;margin:0}
+footer.site{border-top:1px solid var(--line)}
+footer.site .wrap{padding-block:22px;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* data source panel */
+dialog#connect{border:0;padding:0 8px 8px 0;background:transparent;max-width:min(980px,calc(100vw - 24px));width:100%;max-height:calc(100vh - 24px)}
+dialog#connect::backdrop{background:rgb(20 20 19 / .5)}
+.sheet{background:var(--bg);color:var(--ink);border:1.5px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--shadow-c);display:flex;flex-direction:column;max-height:calc(100vh - 32px)}
+.sheet-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px;border-bottom:1.5px solid var(--ink)}
+.sheet-body{overflow:auto;padding:20px;display:flex;flex-direction:column;gap:26px}
+.step{display:flex;flex-direction:column;gap:12px}
+.step-h{display:flex;gap:10px;align-items:center}
+.step-h .k{font-family:var(--f-mono);font-size:11px;font-weight:500;background:var(--hl);color:var(--hl-ink);border-radius:4px;padding:2px 7px}
+.tools{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.tool{position:relative;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:12px 12px 12px 40px;background:var(--surface);cursor:pointer}
+.tool:hover{border-color:var(--ink)}
+.tool input{position:absolute;left:14px;top:15px;width:16px;height:16px;accent-color:var(--ink)}
+.tool:has(input:checked){border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--shadow-c);background:var(--bg)}
+.tool .nm{font-weight:600;letter-spacing:-.01em}
+.tool .hw{font-size:12px;color:var(--muted)}
+.mode{align-self:flex-start;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px}
+.m-here{background:var(--hl);color:var(--hl-ink)}
+.m-skill{background:var(--ink);color:var(--bg)}
+.m-partial{border:1.5px solid var(--ink);color:var(--ink)}
+.m-export{border:1.5px dashed var(--faint);color:var(--muted)}
+.form{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.field input,.field textarea,.field select{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;width:100%}
+.field input:focus,.field textarea:focus{border-color:var(--ink);outline:none}
+.field textarea{min-height:120px;font-family:var(--f-mono);font-size:12px;resize:vertical}
+.field.wide{grid-column:1 / -1}
+.needs{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.needs .card ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.prompt-out{font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;max-height:280px;overflow:auto;margin:0}
+.maptbl select{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:3px 6px}
+.req{color:var(--bad);font-weight:600}
+.cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:16px 18px;background-color:var(--surface-2);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px}
+.cta > div{background:var(--bg);padding:8px 10px;border-radius:6px}
+</style>
+
+<div class="brandbar" id="brandbar"><div class="wrap"><a class="logo" id="brandLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">saturday <span>content</span></a><span class="tag" id="brandTag">Content Performance Hub · demo data</span></div></div>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand">
+        <h1 id="hubTitle">Content <span class="hl">performance hub</span></h1>
+        <span class="goal" id="hubGoal"></span>
+      </div>
+      <button class="src-chip" id="srcChip" type="button" aria-haspopup="dialog"><span class="dot"></span><span id="srcLabel">Demo data</span><span class="muted">· Connect your data</span></button>
+    </div>
+    <div class="controls">
+      <label for="fStart">From <input type="date" id="fStart"></label>
+      <label for="fEnd">to <input type="date" id="fEnd"></label>
+      <button class="btn primary" id="applyBtn" type="button">Apply</button>
+      <button class="btn" id="reloadBtn" type="button">Reload</button>
+      <span class="row" role="group" aria-label="Date presets">
+        <button class="preset" data-preset="30" type="button">Last 30 days</button>
+        <button class="preset" data-preset="90" type="button">Last 90 days</button>
+        <button class="preset" data-preset="launch" type="button">Since launch</button>
+        <button class="preset" data-preset="month" type="button">This month</button>
+      </span>
+      <details class="multi" id="chWrap"><summary id="chSummary">Exclude channels: none</summary><div class="menu" id="chMenu"></div></details>
+      <label for="fDev" id="devWrap">Device <select id="fDev"><option value="all">All</option><option value="desktop">Desktop</option><option value="mobile">Mobile</option><option value="unknown">Unknown</option></select></label>
+    </div>
+    <div class="note" id="lagNote"></div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="main"></main>
+<footer class="site" id="siteFooter"><div class="wrap" id="footerText"></div></footer>
+
+<dialog id="connect" aria-labelledby="connectTitle">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div>
+        <div class="eyebrow">Set up your hub</div>
+        <h2 id="connectTitle">Connect your data</h2>
+        <p class="muted" style="margin:4px 0 0;max-width:62ch">Pick the tools your page data lives in. CSV works right here. Warehouses and analytics tools are wired up by the Content Performance Hub Skill in your own Claude, using your own connectors.</p>
+      </div>
+      <button class="btn" id="closeConnect" type="button">Close</button>
+    </div>
+    <div class="sheet-body">
+      <div class="step">
+        <div class="step-h"><span class="k">1</span><h3>Where does your page data live?</h3></div>
+        <div class="tools" id="toolGrid"></div>
+      </div>
+      <div class="step" id="needsStep" hidden>
+        <div class="step-h"><span class="k">2</span><h3>What each one needs</h3></div>
+        <div class="needs" id="needsGrid"></div>
+      </div>
+      <div class="step" id="csvStep" hidden>
+        <div class="step-h"><span class="k">CSV</span><h3>Load a CSV into this hub</h3></div>
+        <p class="muted" style="margin:0">One row per page view. Required columns: session ID, date, page, and a converted flag. Everything else is optional; tabs that need a missing column switch off.</p>
+        <div class="row">
+          <input type="file" id="csvFile" accept=".csv,text/csv">
+          <button class="btn" id="showSample" type="button">Show the expected format</button>
+        </div>
+        <pre class="prompt-out" id="sampleOut" hidden></pre>
+        <div id="mapArea"></div>
+      </div>
+      <div class="step">
+        <div class="step-h"><span class="k" id="setupK">2</span><h3>Describe your content program</h3></div>
+        <div class="form">
+          <div class="field"><label for="sSite">Site or brand</label><input id="sSite" placeholder="Acme"></div>
+          <div class="field"><label for="sLaunch">Launch date (default start of range)</label><input id="sLaunch" type="date"></div>
+          <div class="field wide"><label for="sPages">Pages to track, one per line: slug = display name</label><textarea id="sPages" placeholder="guides/onboarding = Guide: Onboarding&#10;compare/us-vs-them = Compare: Them"></textarea></div>
+          <div class="field"><label for="sConv">Primary conversion</label><input id="sConv" placeholder="Sign-up"></div>
+          <div class="field"><label for="sAct">Activation event (optional)</label><input id="sAct" placeholder="First project created"></div>
+          <div class="field"><label for="sIntent">High-intent action</label><input id="sIntent" placeholder="Demo request"></div>
+          <div class="field"><label for="sIntentPages">High-intent page(s), comma-separated</label><input id="sIntentPages" placeholder="demo"></div>
+          <div class="field"><label for="sIntentDone">Completion page(s), comma-separated</label><input id="sIntentDone" placeholder="demo/thank-you"></div>
+          <div class="field"><label for="sMin">Minimum sessions before a page is ranked</label><input id="sMin" type="number" min="1" value="100"></div>
+          <div class="field wide"><label for="sGoal">What should the hub tell you?</label><input id="sGoal" placeholder="Which content converts, and which front door leaks"></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-h"><span class="k" id="promptK">3</span><h3>Your build prompt</h3></div>
+        <p class="muted" style="margin:0">Paste this into Claude with the Content Performance Hub Skill installed. It builds this hub on your data and publishes it as a private page.</p>
+        <pre class="prompt-out" id="promptOut"></pre>
+        <div class="row"><button class="btn primary" id="copyPrompt" type="button">Copy prompt</button><span class="muted" id="copyMsg" role="status"></span></div>
+      </div>
+      <div class="cta">
+        <div><strong>Get the Content Performance Hub skill</strong><div class="muted">Includes the build instructions, adapters for each tool, and the customization guide.</div></div>
+        <a class="btn primary" id="ctaLink" href="https://saturdaycontent.co" target="_blank" rel="noopener">Get the free skill →</a>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* =====================================================================
+   CONFIG — the only block most teams edit. See CUSTOMIZE.md.
+   ===================================================================== */
+const CONFIG = {
+  title: "Content performance hub",       // page heading; the last two words get the highlight
+  site: "Fieldbook",                       // your company or site name
+  goal: "Which content earns sign-ups and demo requests, and which front door leaks.",
+  launchDate: "2026-06-01",                // first day the content program was live
+  defaultRange: "30",                      // opening range: "launch" | "30" | "90" | "month"
+  minSample: 100,                          // pages under this are "Too early" and never ranked best
+  pages: [                                 // slug (no leading slash) → display name
+    { slug: "guides/content-calendar",          name: "Guide: Content calendar" },
+    { slug: "templates/editorial-brief",        name: "Template: Editorial brief" },
+    { slug: "compare/fieldbook-vs-spreadsheets", name: "Compare: Spreadsheets" },
+    { slug: "reports/content-ops-2026",         name: "Report: Content ops 2026" },
+    { slug: "solutions/marketing-teams",        name: "Solutions: Marketing teams" },
+    { slug: "webinars/ai-briefs",               name: "Webinar: AI briefs" }
+  ],
+  conversion: { label: "Sign-up", windowDays: 7 },          // primary conversion, counted within N days
+  activation: { label: "Activation" },                      // set label to "" if you don't track one
+  intent: { label: "Demo request", reached: ["demo"], completed: ["demo/thank-you"] },
+  ctaUrl: "https://saturdaycontent.co/templates/content-performance-hub-claude",
+  // Branding strip above the hub. Set brand to null to remove it (buyers: put your own name/link here or remove).
+  brand: { name: "saturday content", url: "https://saturdaycontent.co", tag: "Content Performance Hub · demo data" },
+  footer: "saturday content — tools for content teams"
+};
+
+/* =====================================================================
+   SOURCE — where rows come from. mode: "demo" | "csv" | "warehouse".
+   In warehouse mode the Skill fills in the ADAPTER fields from the
+   buyer's connector schema (see references/adapters/*.md).
+   ===================================================================== */
+const SOURCE = {
+  mode: "demo",
+  label: "Demo data",
+  // ADAPTER: connector display name and tool names, exactly as declared in the artifact's mcp capability.
+  server: "",
+  runTool: "",
+  pollTool: "",                                   // leave "" if the run tool returns rows directly
+  buildRunInput: sql => ({ statement: sql }),     // ADAPTER: match the run tool's input schema
+  readRun: payload => ({ done: true, rows: rowsFrom(payload), id: null }),          // ADAPTER
+  buildPollInput: id => ({ statement_id: id }),   // ADAPTER
+  readPoll: payload => ({ done: true, failed: false, rows: rowsFrom(payload), error: "" }), // ADAPTER
+  sql: ({ start, end, pages }) => "",             // ADAPTER: dialect SQL returning canonical columns
+  maxRows: 250000
+};
+/* ===================================================================== */
+
+const TRACKED = () => CONFIG.pages.map(p => p.slug);
+const NAME = slug => (CONFIG.pages.find(p => p.slug === slug) || {}).name || slug || "(none)";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtN = n => (n == null || isNaN(n)) ? "–" : Math.round(n).toLocaleString();
+const pct = (a, b, d = 1) => b ? (100 * a / b).toFixed(d) + "%" : "–";
+const ratio = (a, b) => b ? a / b : 0;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("cph:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("cph:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* ---------------- dates ---------------- */
+const iso = d => d.toISOString().slice(0, 10);
+const addDays = (s, n) => { const d = new Date(s + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
+const daysBetween = (a, b) => Math.round((new Date(b + "T00:00:00Z") - new Date(a + "T00:00:00Z")) / 864e5);
+
+/* ---------------- canonical fields + CSV aliases ---------------- */
+const FIELDS = [
+  { key: "session_id", req: true, desc: "Session ID", aliases: ["session_id", "session", "sessionid", "ga_session_id", "session_key"] },
+  { key: "event_date", req: true, desc: "Date of the visit", aliases: ["event_date", "date", "event_dt", "day", "visit_date"] },
+  { key: "page", req: true, desc: "Page slug or path", aliases: ["page", "page_slug", "page_path", "slug", "path", "page_location", "url"] },
+  { key: "converted", req: true, desc: "Primary conversion flag (session)", aliases: ["converted", "signup", "signed_up", "is_conversion", "conversion"] },
+  { key: "view_order", desc: "Order of the view in the session (number or timestamp)", aliases: ["view_order", "page_number", "sequence", "hit_number", "event_ts", "timestamp", "event_timestamp"] },
+  { key: "visitor_id", desc: "Visitor / device ID", aliases: ["visitor_id", "user_pseudo_id", "client_id", "anonymous_id", "user_id"] },
+  { key: "channel_type", desc: "Channel group", aliases: ["channel_type", "channel_group", "default_channel_group", "medium_group"] },
+  { key: "channel", desc: "Channel", aliases: ["channel", "source_medium", "utm_source", "source"] },
+  { key: "campaign", desc: "Campaign", aliases: ["campaign", "utm_campaign", "campaign_name"] },
+  { key: "is_paid", desc: "Paid traffic flag", aliases: ["is_paid", "paid"] },
+  { key: "device", desc: "Device", aliases: ["device", "device_type", "device_category"] },
+  { key: "visitor_type", desc: "New or returning", aliases: ["visitor_type", "new_vs_returning", "user_type"] },
+  { key: "seconds_on_page", desc: "Active seconds on the page", aliases: ["seconds_on_page", "engagement_time", "time_on_page", "engagement_time_sec"] },
+  { key: "bounced", desc: "Bounce flag", aliases: ["bounced", "is_bounce", "bounce"] },
+  { key: "activated", desc: "Activation flag (session)", aliases: ["activated", "activation", "is_activated"] }
+];
+const truthy = v => v === true || v === 1 || /^(1|true|t|yes|y)$/i.test(String(v ?? "").trim());
+const normPage = v => {
+  let s = String(v ?? "").trim();
+  s = s.replace(/^https?:\/\/[^/]+/i, "").split(/[?#]/)[0].replace(/^\/+|\/+$/g, "");
+  return s || "home";
+};
+const normDate = v => {
+  const s = String(v ?? "").trim();
+  if (/^\d{8}$/.test(s)) return s.slice(0, 4) + "-" + s.slice(4, 6) + "-" + s.slice(6, 8);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const t = Date.parse(s); return isNaN(t) ? "" : iso(new Date(t));
+};
+const normDev = v => { const s = String(v ?? "").toLowerCase(); return s.includes("desk") ? "desktop" : (s.includes("mob") || s.includes("tab") || s.includes("phone")) ? "mobile" : "unknown"; };
+const normOrder = v => { if (v == null || v === "") return null; const n = Number(v); if (!isNaN(n)) return n; const t = Date.parse(v); return isNaN(t) ? null : t; };
+
+function rowsFrom(payload) {
+  // Accepts [{...}], {rows:[...]}, {columns:[..], data:[[..]]}, {result:{data_array, manifest}} shapes.
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.rows) && payload.rows.length && !Array.isArray(payload.rows[0])) return payload.rows;
+  const cols = payload.columns || payload.schema?.columns || payload.manifest?.schema?.columns || payload.result?.manifest?.schema?.columns;
+  const data = payload.data || payload.data_array || payload.rows || payload.result?.data_array;
+  if (cols && Array.isArray(data)) {
+    const names = cols.map(c => typeof c === "string" ? c : c.name);
+    return data.map(r => Object.fromEntries(names.map((n, i) => [n, r[i]])));
+  }
+  return [];
+}
+
+/* ---------------- state ---------------- */
+let RAW = [];            // canonical rows as loaded
+let HAS = {};            // which optional fields exist
+let SESSIONS = [];       // session objects (all dates)
+let D = {};              // per-filter cache
+const charts = {};
+const S = {
+  start: store.get("start", null), end: store.get("end", null),
+  excl: store.get("excl", []), dev: store.get("dev", "all"),
+  tab: store.get("tab", "overview"), page: store.get("page", null),
+  rendered: {}, dataEnd: null, dataStart: null, error: null
+};
+
+/* ---------------- demo generator (fictional company, invented numbers) ---------------- */
+function genDemo() {
+  let seed = 20261027;
+  const R = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const pick = w => { const e = Object.entries(w); let tot = 0; for (const [, x] of e) tot += x; let r = R() * tot; for (const [k, x] of e) { if ((r -= x) <= 0) return k; } return e[e.length - 1][0]; };
+  const P = {
+    "guides/content-calendar":           { land: 30, sign: .002, demo: .008, act: .15, stay: .30, next: 6 },
+    "templates/editorial-brief":         { land: 13, sign: .085, demo: .015, act: .40, stay: .55, next: 8 },
+    "compare/fieldbook-vs-spreadsheets": { land: 8,  sign: .030, demo: .110, act: .20, stay: .62, next: 12 },
+    "reports/content-ops-2026":          { land: 12, sign: .022, demo: .025, act: .15, stay: .48, next: 6 },
+    "solutions/marketing-teams":         { land: 2,  sign: .038, demo: .050, act: .70, stay: .70, next: 14 },
+    "webinars/ai-briefs":                { land: 5,  sign: .030, demo: .020, act: .20, stay: .50, next: 3, launch: "2026-10-14" },
+    "home": { land: 18, stay: .70, next: 9 }, "pricing": { land: 4, stay: .65, next: 9 }, "blog": { land: 6, stay: .55, next: 5 },
+    "product": { land: 2, stay: .70, next: 8 }, "demo": { land: 0, stay: 0, next: 0 }, "signup": { land: 0, stay: 0, next: 0 }
+  };
+  const CH = [
+    { ch: "Google organic", ct: "Organic search", w: 32 }, { ch: "Bing organic", ct: "Organic search", w: 5 },
+    { ch: "Google Ads", ct: "Paid search", w: 14, camp: ["brand", "content-guides", "competitor-terms"] },
+    { ch: "LinkedIn Ads", ct: "Paid social", w: 9, camp: ["ops-leaders-q3", "webinar-ai-briefs", "report-2026"] },
+    { ch: "LinkedIn", ct: "Organic social", w: 6 }, { ch: "Newsletter", ct: "Email", w: 8, camp: ["weekly-digest", "product-update"] },
+    { ch: "Direct", ct: "Direct", w: 16 }, { ch: "Partner sites", ct: "Referral", w: 6 }, { ch: "Review sites", ct: "Referral", w: 4 }
+  ];
+  const chMult = { "Google organic": 1, "Bing organic": 1, "Google Ads": .75, "LinkedIn Ads": .55, "LinkedIn": .8, "Newsletter": 1.7, "Direct": 1.3, "Partner sites": 1.15, "Review sites": 1.4 };
+  const start = "2026-06-01", end = "2026-10-26", nDays = daysBetween(start, end);
+  const rows = []; let sid = 0; const visitors = [];
+  for (let i = 0; i <= nDays; i++) {
+    const day = addDays(start, i), dow = new Date(day + "T00:00:00Z").getUTCDay();
+    const vol = Math.round((44 + i * .16) * (dow === 0 || dow === 6 ? .58 : 1) * (.85 + R() * .3));
+    for (let k = 0; k < vol; k++) {
+      const c = CH[+pick(Object.fromEntries(CH.map((x, j) => [j, x.w])))];
+      const live = p => !P[p].launch || P[p].launch <= day;
+      const lw = {}; for (const p in P) if (P[p].land && live(p)) {
+        let w = P[p].land;
+        if (c.ch === "LinkedIn Ads" && (p.startsWith("reports") || p.startsWith("webinars"))) w *= 5;
+        if (c.ch === "Google Ads" && (p.startsWith("guides") || p.startsWith("compare"))) w *= 2.2;
+        if (c.ct === "Direct" && p === "home") w *= 3;
+        if (c.ch === "Review sites" && p.startsWith("compare")) w *= 4;
+        lw[p] = w;
+      }
+      const path = [pick(lw)];
+      for (let s = 0; s < 7; s++) {
+        const cur = P[path[path.length - 1]];
+        if (cur.demo && R() < cur.demo * 1.4) { path.push("demo"); if (R() < .42) path.push("demo/thank-you"); break; }
+        if (path[path.length - 1] === "pricing" && R() < .12) { path.push("demo"); if (R() < .4) path.push("demo/thank-you"); break; }
+        if (R() > cur.stay) break;
+        const nw = {}, here = path[path.length - 1]; for (const p in P) if (P[p].next && live(p) && p !== here) nw[p] = P[p].next * (here.startsWith("guides") && P[p].sign ? .15 : 1);
+        if (R() < .06) path.push(path[path.length - 1]); else path.push(pick(nw));
+      }
+      let pc = 0, pa = 0;
+      for (const p of path) if (P[p] && P[p].sign) { pc = Math.max(pc, P[p].sign); pa = Math.max(pa, P[p].act); }
+      if (path.includes("pricing")) pc += .02;
+      pc += .004 * (path.length - 1); pc *= chMult[c.ch] * .85;
+      const age = nDays - i; if (age < 7) pc *= age / 7;
+      const conv = R() < pc, act = conv && R() < pa;
+      let vid; const ret = visitors.length > 50 && R() < .22;
+      if (ret) vid = visitors[Math.floor(R() * visitors.length)]; else { vid = "v" + visitors.length; visitors.push(vid); }
+      const dev = R() < .62 ? "desktop" : R() < .94 ? "mobile" : "unknown";
+      const camp = c.camp ? c.camp[Math.floor(R() * c.camp.length)] : "";
+      const sId = "s" + (++sid);
+      path.forEach((p, j) => {
+        const single = path.length === 1, b = single && R() < .5;
+        const secs = b ? Math.floor(R() * 9) : Math.round(Math.exp(3 + R() * 2.4) * (p.startsWith("guides") || p.startsWith("reports") ? 1.5 : 1));
+        rows.push({ session_id: sId, visitor_id: vid, event_date: day, page: p, view_order: j + 1, channel_type: c.ct, channel: c.ch, campaign: camp,
+          is_paid: c.ct.startsWith("Paid"), device: dev, visitor_type: ret ? "returning" : "new", seconds_on_page: secs, bounced: b, converted: conv, activated: act });
+      });
+    }
+  }
+  return rows;
+}
+
+/* ---------------- normalize + sessionize ---------------- */
+function ingest(rows) {
+  HAS = {};
+  for (const f of FIELDS) HAS[f.key] = rows.some(r => r[f.key] !== undefined && r[f.key] !== null && r[f.key] !== "");
+  const by = new Map();
+  rows.forEach((r, idx) => {
+    const id = String(r.session_id ?? ""); if (!id) return;
+    const d = normDate(r.event_date); if (!d) return;
+    let s = by.get(id);
+    if (!s) { s = { id, d, rows: [], v: String(r.visitor_id ?? id), ct: r.channel_type || "(none)", ch: r.channel || "(none)", cp: r.campaign || "", paid: truthy(r.is_paid), dev: HAS.device ? normDev(r.device) : "unknown", vt: /return/i.test(r.visitor_type || "") ? "returning" : (r.visitor_type ? "new" : ""), cv: false, ac: false }; by.set(id, s); }
+    if (d < s.d) s.d = d;
+    s.rows.push({ p: normPage(r.page), o: HAS.view_order ? normOrder(r.view_order) : idx, sec: Number(r.seconds_on_page) || 0, b: truthy(r.bounced) });
+    if (truthy(r.converted)) s.cv = true;
+    if (truthy(r.activated)) s.ac = true;
+  });
+  SESSIONS = [...by.values()];
+  let mn = null, mx = null;
+  for (const s of SESSIONS) {
+    s.rows.sort((a, b) => (a.o ?? 0) - (b.o ?? 0));
+    s.pages = new Set(s.rows.map(r => r.p));
+    if (!mn || s.d < mn) mn = s.d; if (!mx || s.d > mx) mx = s.d;
+  }
+  S.dataStart = mn; S.dataEnd = mx;
+  HAS.order = HAS.view_order;
+  HAS.channels = HAS.channel || HAS.channel_type;
+  HAS.act = HAS.activated && !!CONFIG.activation.label;
+}
+
+/* ---------------- filters ---------------- */
+const inScope = s => !S.excl.includes(s.ch) && (S.dev === "all" || s.dev === S.dev);
+function windowSessions(start, end) { return SESSIONS.filter(s => s.d >= start && s.d <= end && inScope(s)); }
+
+/* ---------------- core analysis ---------------- */
+function analyze(list) {
+  const T = TRACKED(), tset = new Set(T);
+  const reachSet = new Set(CONFIG.intent.reached), doneSet = new Set(CONFIG.intent.completed);
+  const mk = () => ({ sessions: 0, landing: 0, visits: 0, signups: 0, acts: 0, reached: 0, done: 0, single: 0, exits: 0, returning: 0, mobile: 0, bounces: 0, secs: [], visitors: new Set(), mid: 0 });
+  const mkCut = () => ({ sessions: 0, signups: 0, reached: 0, done: 0, single: 0, exits: 0, mobile: 0, desktop: 0, unknown: 0 });
+  const per = {}; T.forEach(p => per[p] = Object.assign(mk(), { byCh: {}, byCt: {}, byDev: {}, byVt: {}, byCamp: {}, from: {}, to: {} }));
+  const tot = { sessions: 0, visitors: new Set(), signups: 0, acts: 0, done: 0, doneSessions: 0, single: 0, reachedS: 0 };
+  const months = {}, chanTot = {}, paths = {}, pathsDone = {}, pathsSign = {};
+  for (const s of list) {
+    const touched = [...s.pages].filter(p => tset.has(p));
+    if (!touched.length) continue;
+    const rows = s.rows, n = rows.length, distinct = s.pages.size;
+    const single = !s.cv && distinct === 1;
+    const anyReach = rows.some(r => reachSet.has(r.p) || doneSet.has(r.p)), anyDone = rows.some(r => doneSet.has(r.p));
+    tot.sessions++; tot.visitors.add(s.v); if (s.cv) tot.signups++; if (s.ac) tot.acts++; if (anyDone) tot.doneSessions++; if (anyReach) tot.reachedS++; if (single) tot.single++;
+    const m = s.d.slice(0, 7); months[m] = months[m] || { sessions: 0, signups: 0, done: 0, acts: 0 };
+    months[m].sessions++; if (s.cv) months[m].signups++; if (anyDone) months[m].done++; if (s.ac) months[m].acts++;
+    const ck = s.ch; chanTot[ck] = chanTot[ck] || { ct: s.ct, sessions: 0, signups: 0, done: 0 }; chanTot[ck].sessions++; if (s.cv) chanTot[ck].signups++; if (anyDone) chanTot[ck].done++;
+    if (HAS.order) {
+      const coll = []; for (const r of rows) if (coll[coll.length - 1] !== r.p) coll.push(r.p);
+      const key = coll.slice(0, 6).join(" → ");
+      if (coll.length >= 2) { paths[key] = (paths[key] || 0) + 1; if (anyDone) pathsDone[key] = (pathsDone[key] || 0) + 1; if (s.cv) pathsSign[key] = (pathsSign[key] || 0) + 1; }
+    }
+    for (const p of touched) {
+      const st = per[p];
+      const first = rows.findIndex(r => r.p === p);
+      let lastIdx = -1; rows.forEach((r, i) => { if (r.p === p) lastIdx = i; });
+      const after = HAS.order ? rows.slice(first + 1) : rows;
+      const reached = after.some(r => reachSet.has(r.p) || doneSet.has(r.p)), done = after.some(r => doneSet.has(r.p));
+      const exit = HAS.order && rows[n - 1].p === p, landing = HAS.order && first === 0;
+      st.sessions++; st.visitors.add(s.v);
+      if (landing) st.landing++; else st.mid++;
+      if (exit) st.exits++;
+      if (s.cv) st.signups++; if (s.ac) st.acts++; if (single) st.single++;
+      if (reached) st.reached++; if (done) st.done++;
+      if (s.vt === "returning") st.returning++; if (s.dev === "mobile") st.mobile++;
+      for (const r of rows) if (r.p === p) { st.visits++; st.secs.push(r.sec); if (r.b) st.bounces++; }
+      const cut = (o, k) => { o[k] = o[k] || mkCut(); const c = o[k]; c.sessions++; if (s.cv) c.signups++; if (reached) c.reached++; if (done) c.done++; if (single) c.single++; if (exit) c.exits++; c[s.dev]++; };
+      cut(st.byCh, s.ch); cut(st.byCt, s.ct); cut(st.byDev, s.dev); if (s.vt) cut(st.byVt, s.vt); if (s.cp) cut(st.byCamp, s.ch + "||" + s.cp);
+      if (HAS.order) {
+        const from = first === 0 ? "(entered here)" : rows[first - 1].p;
+        const to = lastIdx === n - 1 ? "(left the site)" : rows[lastIdx + 1].p;
+        st.from[from] = (st.from[from] || 0) + 1; st.to[to] = (st.to[to] || 0) + 1;
+      }
+    }
+  }
+  for (const p of T) { const st = per[p]; st.uv = st.visitors.size; st.secs.sort((a, b) => a - b); st.recirc = st.sessions - st.signups - st.single; }
+  tot.uv = tot.visitors.size;
+  return { per, tot, months, chanTot, paths, pathsDone, pathsSign };
+}
+const median = a => a.length ? (a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2) : 0;
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+
+function current() {
+  if (D.cur) return D;
+  const len = daysBetween(S.start, S.end) + 1;
+  const pEnd = addDays(S.start, -1), pStart = addDays(S.start, -len);
+  D.cur = analyze(windowSessions(S.start, S.end));
+  D.prev = analyze(windowSessions(pStart, pEnd));
+  D.prevLabel = pStart + " to " + pEnd;
+  D.verdicts = verdicts(D.cur.per);
+  return D;
+}
+
+/* ---------------- verdicts ---------------- */
+function verdicts(per) {
+  const T = TRACKED(), MINN = CONFIG.minSample;
+  const ok = T.filter(p => per[p].sessions >= MINN);
+  const top2 = (f) => [...ok].sort((a, b) => f(b) - f(a)).slice(0, 2).filter(p => f(p) > 0);
+  const sr = p => ratio(per[p].signups, per[p].sessions), dr = p => ratio(per[p].done, per[p].sessions), ar = p => ratio(per[p].acts, per[p].sessions);
+  const reachTop = top2(p => per[p].sessions), signTop = top2(sr), salesTop = top2(dr);
+  const actTop = HAS.act ? top2(ar).slice(0, 1) : [];
+  const out = {};
+  for (const p of T) {
+    const st = per[p], v = [];
+    if (st.sessions < MINN) { out[p] = ["early"]; continue; }
+    if (reachTop.includes(p) && sr(p) < .02) v.push("fix");
+    if (signTop.includes(p)) v.push("double");
+    if (salesTop.includes(p)) v.push("sales");
+    if (HAS.act && (actTop.includes(p) || (HAS.order && st.mid / st.sessions > .5 && ar(p) > .005))) v.push("act");
+    out[p] = v.length ? v : ["opt"];
+  }
+  return out;
+}
+const PILL = { fix: ["p-fix", "Fix"], double: ["p-double", "Double down"], sales: ["p-sales", "Sales driver"], act: ["p-act", "Activation surface"], opt: ["p-opt", "Optimize"], early: ["p-early", "Too early"] };
+const pills = vs => vs.map(v => `<span class="pill ${PILL[v][0]}">${PILL[v][1]}</span>`).join("");
+
+/* ---------------- shared render helpers ---------------- */
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const PALETTE = () => ["--c1", "--c2", "--c3", "--c4", "--c5", "--c6", "--c7"].map(css);
+function chart(id, cfg) {
+  if (!window.Chart) { const el = document.getElementById(id); if (el) el.parentElement.innerHTML = '<div class="state">Charts could not load. The tables below still show every number.</div>'; return; }
+  if (charts[id]) charts[id].destroy();
+  const el = document.getElementById(id); if (!el) return;
+  Chart.defaults.color = css("--muted"); Chart.defaults.borderColor = css("--line"); Chart.defaults.font.family = css("--f-mono"); Chart.defaults.font.size = 11;
+  charts[id] = new Chart(el, cfg);
+}
+function hbar(id, labels, values, color, suffix = "%") {
+  chart(id, { type: "bar", data: { labels, datasets: [{ data: values, backgroundColor: color, borderColor: css("--ink"), borderWidth: color === css("--c2") ? 1.5 : 0, borderRadius: 3, maxBarThickness: 22 }] },
+    options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x.toFixed(2) + suffix } } },
+      scales: { x: { beginAtZero: true, ticks: { callback: v => v + suffix } , grid: { color: css("--line") } }, y: { grid: { display: false } } } } });
+}
+const delta = (cur, prev, isRate) => {
+  if (!prev) return `<span class="muted">pre-launch</span>`;
+  const ch = isRate ? (cur - prev) * 100 : 100 * (cur - prev) / prev;
+  const up = ch >= 0;
+  return `<span class="${up ? "up" : "down"}">${up ? "▲" : "▼"} ${Math.abs(ch).toFixed(1)}${isRate ? " pts" : "%"}</span> <span class="muted">vs prior ${daysBetween(S.start, S.end) + 1} days</span>`;
+};
+const pageCell = p => `<td class="page">${esc(NAME(p))}<small>/${esc(p)}</small></td>`;
+const small = st => st.sessions < CONFIG.minSample ? `<div class="small-note">Only ${fmtN(st.sessions)} sessions in this range, under the ${CONFIG.minSample}-session minimum. Treat rates as early signals.</div>` : "";
+const empty = msg => `<div class="state">${esc(msg)}</div>`;
+const L = () => ({ c: CONFIG.conversion.label, a: CONFIG.activation.label, i: CONFIG.intent.label });
+
+/* ---------------- tabs ---------------- */
+const TABS = [
+  { id: "overview", name: "Overview", render: rOverview },
+  { id: "performance", name: "Performance", render: rPerformance },
+  { id: "traffic", name: "Traffic sources", render: rTraffic, needs: () => HAS.channels },
+  { id: "journeys", name: "Journeys", render: rJourneys, needs: () => HAS.order },
+  { id: "engagement", name: "Engagement", render: rEngagement },
+  { id: "intent", name: () => L().i + "s", render: rIntent, needs: () => CONFIG.intent.reached.length || CONFIG.intent.completed.length },
+  { id: "page", name: "Single page", render: rPage },
+  { id: "recs", name: "Recommendations", render: rRecs }
+];
+function buildTabs() {
+  const avail = TABS.filter(t => !t.needs || t.needs());
+  if (!avail.find(t => t.id === S.tab)) S.tab = "overview";
+  $("#tabs").innerHTML = avail.map(t => `<button role="tab" type="button" id="tab-${t.id}" aria-selected="${t.id === S.tab}" data-tab="${t.id}">${esc(typeof t.name === "function" ? t.name() : t.name)}</button>`).join("");
+  $("#main").innerHTML = avail.map(t => `<section class="panel" role="tabpanel" id="panel-${t.id}" aria-labelledby="tab-${t.id}" ${t.id === S.tab ? "" : "hidden"}></section>`).join("");
+}
+function showTab(id) {
+  S.tab = id; store.set("tab", id);
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === id));
+  document.querySelectorAll("#main > section").forEach(s => s.hidden = s.id !== "panel-" + id);
+  renderTab(id);
+}
+function renderTab(id) {
+  if (S.rendered[id]) return;
+  const t = TABS.find(x => x.id === id), el = $("#panel-" + id); if (!t || !el) return;
+  try { t.render(el); S.rendered[id] = true; }
+  catch (e) { console.error(e); el.innerHTML = `<div class="errbox"><strong>This tab hit a problem.</strong> ${esc(e.message || e)}</div>`; }
+}
+
+/* ---------------- Overview ---------------- */
+function execSummary(cur) {
+  const per = cur.per, T = TRACKED(), MINN = CONFIG.minSample, v = D.verdicts, l = L();
+  const ok = T.filter(p => per[p].sessions >= MINN);
+  const sr = p => ratio(per[p].signups, per[p].sessions), dr = p => ratio(per[p].done, per[p].sessions);
+  const best = [...ok].sort((a, b) => sr(b) - sr(a))[0];
+  const bestI = [...ok].sort((a, b) => dr(b) - dr(a))[0];
+  const chans = Object.entries(cur.chanTot).sort((a, b) => b[1].signups - a[1].signups);
+  const exitP = HAS.order ? [...ok].sort((a, b) => ratio(per[b].exits, per[b].sessions) - ratio(per[a].exits, per[a].sessions))[0] : null;
+  const early = T.filter(p => per[p].sessions < MINN);
+  const fix = ok.filter(p => v[p].includes("fix"));
+  const actP = ok.find(p => v[p].includes("act"));
+  const working = [
+    best && sr(best) > 0 && `<strong>${esc(NAME(best))}</strong> turns ${pct(per[best].signups, per[best].sessions)} of its sessions into ${esc(l.c.toLowerCase())}s, the best of pages with ${MINN}+ sessions.`,
+    bestI && dr(bestI) > 0 && `<strong>${esc(NAME(bestI))}</strong> sends ${pct(per[bestI].done, per[bestI].sessions)} of its sessions on to a completed ${esc(l.i.toLowerCase())}.`,
+    chans[0] && chans[0][1].signups > 0 && HAS.channels && `${esc(chans[0][0])} brings the most ${esc(l.c.toLowerCase())}s (${fmtN(chans[0][1].signups)}) of any channel.`
+  ].filter(Boolean);
+  const notWorking = [
+    ...fix.map(p => `<strong>${esc(NAME(p))}</strong> is a top-two traffic page (${fmtN(per[p].sessions)} sessions) but converts only ${pct(per[p].signups, per[p].sessions, 2)}.`),
+    exitP && `<strong>${esc(NAME(exitP))}</strong> is the last page for ${pct(per[exitP].exits, per[exitP].sessions)} of its sessions, the highest exit rate.`,
+    early.length && `${early.length} page${early.length > 1 ? "s are" : " is"} still under ${MINN} sessions: ${early.map(p => esc(NAME(p))).join(", ")}.`
+  ].filter(Boolean);
+  const recs = [
+    ...fix.map(p => best ? `Add a clear next step on ${esc(NAME(p))} that points to ${esc(NAME(best))} or straight to ${esc(l.c.toLowerCase())}.` : `Add a clear ${esc(l.c.toLowerCase())} step on ${esc(NAME(p))}.`),
+    best && `Put more distribution behind ${esc(NAME(best))}; it converts at ${pct(per[best].signups, per[best].sessions)}.`,
+    bestI && bestI !== best && `Route sales-ready readers from ${esc(NAME(bestI))} into the ${esc(l.i.toLowerCase())} flow with a stronger offer.`,
+    actP && (HAS.order && per[actP].mid / per[actP].sessions > .5 ? `Give ${esc(NAME(actP))} its own acquisition path; ${pct(per[actP].mid, per[actP].sessions, 0)} of its sessions reach it mid-session, yet it turns ${pct(per[actP].acts, per[actP].sessions, 2)} into ${esc(l.a.toLowerCase())}s.` : `Point more entry traffic at ${esc(NAME(actP))}; it turns ${pct(per[actP].acts, per[actP].sessions, 2)} of sessions into ${esc(l.a.toLowerCase())}s.`)
+  ].filter(Boolean).slice(0, 4);
+  const col = (cls, h, items) => `<div class="col ${cls}"><h3>${h}</h3>${items.length ? `<ul>${items.map(i => `<li>${i}</li>`).join("")}</ul>` : `<p class="muted">Nothing stands out in this range.</p>`}</div>`;
+  return `<div class="window"><div class="window-bar"><i></i><i></i><i></i><span>Executive summary · ${esc(S.start)} → ${esc(S.end)}</span></div><div class="window-body"><div class="summary">${col("ok", "What's working", working)}${col("no", "What's not", notWorking)}${col("do", "Recommendations", recs)}</div></div></div>`;
+}
+function rOverview(el) {
+  const { cur, prev } = current(), l = L(), T = TRACKED();
+  if (!cur.tot.sessions) { el.innerHTML = empty(`No sessions touched the ${T.length} tracked pages in this range. Try a wider range or fewer exclusions.`); return; }
+  const k = (label, v, p, isRate, val, pv) => `<div class="kpi"><span class="eyebrow">${esc(label)}</span><span class="v">${v}</span><span class="d">${delta(val, pv, isRate)}</span></div>`;
+  const kp = [
+    k(HAS.visitor_id ? "Unique reach" : "Sessions", fmtN(cur.tot.uv), 0, false, cur.tot.uv, prev.tot.uv),
+    k(`${l.c}s (${CONFIG.conversion.windowDays}d)`, fmtN(cur.tot.signups), 0, false, cur.tot.signups, prev.tot.signups),
+    k(`${l.c} rate`, pct(cur.tot.signups, cur.tot.sessions, 2), 0, true, ratio(cur.tot.signups, cur.tot.sessions), ratio(prev.tot.signups, prev.tot.sessions)),
+    (CONFIG.intent.completed.length) && k(`${l.i}s completed`, fmtN(cur.tot.doneSessions), 0, false, cur.tot.doneSessions, prev.tot.doneSessions),
+    HAS.act && k(`${l.a}s`, fmtN(cur.tot.acts), 0, false, cur.tot.acts, prev.tot.acts)
+  ].filter(Boolean).join("");
+  const months = Object.entries(cur.months).sort();
+  const mt = `<div class="tbl"><table><thead><tr><th>Month</th><th class="n">Sessions</th><th class="n">${esc(l.c)}s</th><th class="n">${esc(l.c)} rate</th><th class="n">${esc(l.i)}s</th>${HAS.act ? `<th class="n">${esc(l.a)}s</th>` : ""}</tr></thead><tbody>${months.map(([m, x]) => `<tr><td>${m}</td><td class="n">${fmtN(x.sessions)}</td><td class="n">${fmtN(x.signups)}</td><td class="n">${pct(x.signups, x.sessions, 2)}</td><td class="n">${fmtN(x.done)}</td>${HAS.act ? `<td class="n">${fmtN(x.acts)}</td>` : ""}</tr>`).join("")}</tbody></table></div>`;
+  const per = cur.per;
+  const sc = `<div class="tbl"><table><thead><tr><th>Page</th><th>Verdict</th><th class="n">Sessions</th><th class="n">${esc(l.c)} rate</th><th class="n">${esc(l.i)} rate</th>${HAS.act ? `<th class="n">${esc(l.a)} rate</th>` : ""}${HAS.order ? `<th class="n">Lands here</th>` : ""}</tr></thead><tbody>${T.map(p => { const st = per[p]; return `<tr>${pageCell(p)}<td>${pills(D.verdicts[p])}</td><td class="n">${fmtN(st.sessions)}</td><td class="n">${pct(st.signups, st.sessions, 2)}</td><td class="n">${pct(st.done, st.sessions, 2)}</td>${HAS.act ? `<td class="n">${pct(st.acts, st.sessions, 2)}</td>` : ""}${HAS.order ? `<td class="n">${pct(st.landing, st.sessions)}</td>` : ""}</tr>`; }).join("")}</tbody></table></div>`;
+  const oc = `<div class="tbl"><table><thead><tr><th>Page</th><th class="n">Sessions</th><th class="n">${esc(l.c)}s</th><th class="n">${esc(l.i)}s</th><th class="n">Recirculated</th><th class="n">Single-page</th></tr></thead><tbody>${T.map(p => { const st = per[p]; return `<tr>${pageCell(p)}<td class="n">${fmtN(st.sessions)}</td><td class="n">${fmtN(st.signups)}</td><td class="n">${fmtN(st.done)}</td><td class="n">${fmtN(st.recirc)}</td><td class="n">${fmtN(st.single)}</td></tr>`; }).join("")}</tbody></table></div>`;
+  const legend = `<p class="muted" style="margin:10px 0 0;font-size:12px">Fix: top-two reach and under 2% ${esc(l.c.toLowerCase())} rate. Double down: top-two ${esc(l.c.toLowerCase())} rate. Sales driver: top-two ${esc(l.i.toLowerCase())} rate.${HAS.act ? ` Activation surface: best ${esc(l.a.toLowerCase())} rate, or mostly mid-session entry with ${esc(l.a.toLowerCase())} above 0.5%.` : ""} Too early: under ${CONFIG.minSample} sessions.</p>`;
+  el.innerHTML = execSummary(cur) + `<div class="kpis">${kp}</div>
+    <div class="card"><h2>Content scorecard</h2>${sc}${legend}</div>
+    <div class="grid split"><div class="card"><h2>By month</h2>${mt}</div><div class="card"><h2>Session outcomes</h2><p class="muted" style="margin:-4px 0 8px;font-size:12px">Of sessions that touched each page. Recirculated = sessions − ${esc(l.c.toLowerCase())}s − single-page.</p>${oc}</div></div>`;
+}
+
+/* ---------------- Performance ---------------- */
+function rPerformance(el) {
+  const { cur } = current(), per = cur.per, T = TRACKED(), l = L();
+  const rows = T.map(p => { const st = per[p]; return `<tr>${pageCell(p)}<td class="n">${fmtN(st.sessions)}</td>${HAS.order ? `<td class="n">${fmtN(st.landing)}</td>` : ""}${HAS.visitor_id ? `<td class="n">${fmtN(st.uv)}</td>` : ""}<td class="n">${fmtN(st.visits)}</td><td class="n">${fmtN(st.signups)}</td>${HAS.act ? `<td class="n">${fmtN(st.acts)}</td>` : ""}<td class="n">${fmtN(st.done)}</td><td class="n">${pct(st.signups, st.sessions, 2)}</td>${HAS.act ? `<td class="n">${pct(st.acts, st.sessions, 2)}</td>` : ""}<td class="n">${pct(st.done, st.sessions, 2)}</td></tr>`; }).join("");
+  const ok = T.filter(p => per[p].sessions >= CONFIG.minSample);
+  const by = f => [...ok].sort((a, b) => f(per[b]) - f(per[a]));
+  const top = by(s => s.sessions)[0], conv = by(s => ratio(s.signups, s.sessions))[0], worst = by(s => -ratio(s.signups, s.sessions))[0], land = HAS.order ? by(s => ratio(s.landing, s.sessions))[0] : null;
+  const ins = [
+    top && `${esc(NAME(top))} has the most sessions (${fmtN(per[top].sessions)}).`,
+    conv && `${esc(NAME(conv))} has the highest ${esc(l.c.toLowerCase())} rate at ${pct(per[conv].signups, per[conv].sessions, 2)}.`,
+    worst && worst !== conv && `${esc(NAME(worst))} has the lowest at ${pct(per[worst].signups, per[worst].sessions, 2)}.`,
+    land && `${esc(NAME(land))} is a front door: ${pct(per[land].landing, per[land].sessions)} of its sessions start there.`,
+    T.length - ok.length > 0 && `${T.length - ok.length} of ${T.length} pages are under the ${CONFIG.minSample}-session minimum and are left out of these rankings.`
+  ].filter(Boolean);
+  el.innerHTML = `<div class="card"><h2>Page performance</h2><p class="muted" style="margin:-4px 0 8px;font-size:12px">Rates are counts summed over sessions that touched the page, divided by those sessions.</p><div class="tbl"><table><thead><tr><th>Page</th><th class="n">Sessions</th>${HAS.order ? `<th class="n">Landing</th>` : ""}${HAS.visitor_id ? `<th class="n">Unique visitors</th>` : ""}<th class="n">Views</th><th class="n">${esc(l.c)}s</th>${HAS.act ? `<th class="n">${esc(l.a)}s</th>` : ""}<th class="n">${esc(l.i)}s</th><th class="n">→ ${esc(l.c)}</th>${HAS.act ? `<th class="n">→ ${esc(l.a)}</th>` : ""}<th class="n">→ ${esc(l.i)}</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+  <div class="grid g2"><div class="card"><h3>Session → ${esc(l.c)} rate</h3><div class="chart-box"><canvas id="chSign" role="img" aria-label="${esc(l.c)} rate by page"></canvas></div></div>
+  ${HAS.act ? `<div class="card"><h3>Session → ${esc(l.a)} rate</h3><div class="chart-box"><canvas id="chAct" role="img" aria-label="${esc(l.a)} rate by page"></canvas></div></div>` : `<div class="card"><h3>Session → ${esc(l.i)} rate</h3><div class="chart-box"><canvas id="chAct" role="img" aria-label="${esc(l.i)} rate by page"></canvas></div></div>`}</div>
+  <div class="card"><h2>Key insights</h2><ul class="insights">${ins.map(i => `<li>${i}</li>`).join("")}</ul></div>`;
+  const labels = T.map(NAME);
+  hbar("chSign", labels, T.map(p => 100 * ratio(per[p].signups, per[p].sessions)), css("--c1"));
+  hbar("chAct", labels, T.map(p => 100 * ratio(HAS.act ? per[p].acts : per[p].done, per[p].sessions)), css("--c2"));
+}
+
+/* ---------------- Traffic ---------------- */
+function rTraffic(el) {
+  const { cur } = current(), per = cur.per, T = TRACKED(), l = L();
+  const ch = Object.entries(cur.chanTot).sort((a, b) => b[1].sessions - a[1].sessions);
+  const sel = S.page && T.includes(S.page) ? S.page : T[0];
+  el.innerHTML = `<div class="card"><h2>Channels across tracked content</h2><div class="tbl"><table><thead><tr><th>Channel</th><th>Group</th><th class="n">Sessions</th><th class="n">${esc(l.c)}s</th><th class="n">${esc(l.c)} rate</th><th class="n">${esc(l.i)}s</th></tr></thead><tbody>${ch.map(([k, x]) => `<tr><td>${esc(k)}</td><td class="muted">${esc(x.ct)}</td><td class="n">${fmtN(x.sessions)}</td><td class="n">${fmtN(x.signups)}</td><td class="n">${pct(x.signups, x.sessions, 2)}</td><td class="n">${fmtN(x.done)}</td></tr>`).join("")}</tbody></table></div></div>
+  <div class="grid g2"><div class="card"><div class="row" style="justify-content:space-between"><h3>Channel mix for one page</h3><select id="trPage" aria-label="Page">${T.map(p => `<option value="${esc(p)}" ${p === sel ? "selected" : ""}>${esc(NAME(p))}</option>`).join("")}</select></div><div class="chart-box" id="mixBox" style="margin-top:8px"></div></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h3>Campaign drill-down</h3><select id="trCh" aria-label="Channel">${ch.map(([k]) => `<option>${esc(k)}</option>`).join("")}</select></div><div id="campOut" style="margin-top:8px"></div></div></div>`;
+  const drawMix = () => {
+    const p = $("#trPage").value, st = per[p], e = Object.entries(st.byCt).sort((a, b) => b[1].sessions - a[1].sessions);
+    if (charts.chMix) { charts.chMix.destroy(); delete charts.chMix; }
+    $("#mixBox").innerHTML = e.length ? `<canvas id="chMix" role="img" aria-label="Channel group mix"></canvas>` : empty("No sessions for this page in range.");
+    if (!e.length) return;
+    chart("chMix", { type: "doughnut", data: { labels: e.map(x => x[0]), datasets: [{ data: e.map(x => x[1].sessions), backgroundColor: PALETTE(), borderColor: css("--surface"), borderWidth: 2, hoverOffset: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: "58%", plugins: { legend: { position: "right", labels: { boxWidth: 10 } } } } });
+  };
+  const drawCamp = () => {
+    const c = $("#trCh").value, agg = {};
+    for (const p of T) for (const [k, x] of Object.entries(per[p].byCamp)) { const [chn, cp] = k.split("||"); if (chn !== c) continue; agg[cp] = agg[cp] || { sessions: 0, signups: 0, done: 0 }; agg[cp].sessions += x.sessions; agg[cp].signups += x.signups; agg[cp].done += x.done; }
+    const e = Object.entries(agg).sort((a, b) => b[1].sessions - a[1].sessions);
+    $("#campOut").innerHTML = e.length ? `<div class="tbl"><table><thead><tr><th>Campaign</th><th class="n">Page sessions</th><th class="n">${esc(l.c)}s</th><th class="n">Rate</th><th class="n">${esc(l.i)}s</th></tr></thead><tbody>${e.map(([k, x]) => `<tr><td class="mono">${esc(k)}</td><td class="n">${fmtN(x.sessions)}</td><td class="n">${fmtN(x.signups)}</td><td class="n">${pct(x.signups, x.sessions, 2)}</td><td class="n">${fmtN(x.done)}</td></tr>`).join("")}</tbody></table></div><p class="muted" style="font-size:12px;margin:8px 0 0">Page sessions count a session once per tracked page it touched.</p>` : empty("No campaign tags on this channel.");
+  };
+  $("#trPage").onchange = () => { S.page = $("#trPage").value; store.set("page", S.page); drawMix(); };
+  $("#trCh").onchange = drawCamp;
+  drawMix(); drawCamp();
+}
+
+/* ---------------- Journeys ---------------- */
+function rJourneys(el) {
+  const { cur } = current(), per = cur.per, T = TRACKED(), l = L(), tset = new Set(T);
+  const fmtPath = k => k.split(" → ").map(p => tset.has(p) ? `<b>${esc(NAME(p))}</b>` : esc(p)).join(" → ");
+  const list = (obj, n = 12) => { const e = Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n); return e.length ? `<div class="tbl"><table><tbody>${e.map(([k, v]) => `<tr><td class="path">${fmtPath(k)}</td><td class="n">${fmtN(v)}</td></tr>`).join("")}</tbody></table></div>` : empty("No paths in this range."); };
+  const sel = S.page && T.includes(S.page) ? S.page : T[0];
+  el.innerHTML = `<div class="card"><h2>Most common paths</h2><p class="muted" style="margin:-4px 0 8px;font-size:12px">Sessions of 2–6 steps that touched a tracked page. Repeated consecutive views are collapsed. Tracked pages are highlighted.</p>${list(cur.paths)}</div>
+    <div class="grid g2"><div class="card"><h3>Paths that ended in a completed ${esc(l.i.toLowerCase())}</h3>${list(cur.pathsDone, 8)}</div><div class="card"><h3>Paths that led to a ${esc(l.c.toLowerCase())}</h3>${list(cur.pathsSign, 8)}</div></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Came from / went to</h2><select id="jPage" aria-label="Page">${T.map(p => `<option value="${esc(p)}" ${p === sel ? "selected" : ""}>${esc(NAME(p))}</option>`).join("")}</select></div><div id="flowOut" class="grid g2" style="margin-top:10px"></div></div>`;
+  const draw = () => { const p = $("#jPage").value; $("#flowOut").innerHTML = flowLists(per[p]); };
+  $("#jPage").onchange = () => { S.page = $("#jPage").value; store.set("page", S.page); draw(); };
+  draw();
+}
+function flowLists(st) {
+  const one = (obj, h) => { const e = Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 8), tot = e.reduce((a, b) => a + b[1], 0) || 1, max = e[0] ? e[0][1] : 1;
+    return `<div><h3 style="margin-bottom:8px">${h}</h3>${e.length ? `<ul class="flowlist">${e.map(([k, v]) => `<li><span>${esc(NAME(k))}</span><span class="num muted">${fmtN(v)} · ${(100 * v / tot).toFixed(0)}%</span><span class="bar" style="width:${(100 * v / max).toFixed(1)}%"></span></li>`).join("")}</ul>` : empty("No data.")}</div>`; };
+  return one(st.from, "Came from") + one(st.to, "Went to");
+}
+
+/* ---------------- Engagement ---------------- */
+function rEngagement(el) {
+  const { cur } = current(), per = cur.per, T = TRACKED(), l = L();
+  const head = `<th>Page</th><th class="n">Sessions</th>${HAS.seconds_on_page ? `<th class="n">Avg time</th><th class="n">Median time</th>` : ""}${HAS.bounced ? `<th class="n">Bounce</th>` : ""}${HAS.order ? `<th class="n">Exit</th>` : ""}${HAS.visitor_type ? `<th class="n">Returning</th>` : ""}${HAS.device ? `<th class="n">Mobile</th>` : ""}`;
+  const t = s => s >= 60 ? `${Math.floor(s / 60)}m ${Math.round(s % 60)}s` : `${Math.round(s)}s`;
+  const rows = T.map(p => { const st = per[p]; return `<tr>${pageCell(p)}<td class="n">${fmtN(st.sessions)}</td>${HAS.seconds_on_page ? `<td class="n">${t(avg(st.secs))}</td><td class="n">${t(median(st.secs))}</td>` : ""}${HAS.bounced ? `<td class="n">${pct(st.bounces, st.visits)}</td>` : ""}${HAS.order ? `<td class="n">${pct(st.exits, st.sessions)}</td>` : ""}${HAS.visitor_type ? `<td class="n">${pct(st.returning, st.sessions)}</td>` : ""}${HAS.device ? `<td class="n">${pct(st.mobile, st.sessions)}</td>` : ""}</tr>`; }).join("");
+  const vt = HAS.visitor_type ? `<div class="card"><h2>Conversion by visitor type</h2><div class="tbl"><table><thead><tr><th>Page</th><th class="n">New sessions</th><th class="n">New ${esc(l.c.toLowerCase())} rate</th><th class="n">Returning sessions</th><th class="n">Returning ${esc(l.c.toLowerCase())} rate</th></tr></thead><tbody>${T.map(p => { const n = per[p].byVt.new || {}, r = per[p].byVt.returning || {}; return `<tr>${pageCell(p)}<td class="n">${fmtN(n.sessions || 0)}</td><td class="n">${pct(n.signups || 0, n.sessions || 0, 2)}</td><td class="n">${fmtN(r.sessions || 0)}</td><td class="n">${pct(r.signups || 0, r.sessions || 0, 2)}</td></tr>`; }).join("")}</tbody></table></div></div>` : "";
+  el.innerHTML = `<div class="card"><h2>Engagement</h2><p class="muted" style="margin:-4px 0 8px;font-size:12px">Time is active seconds on the page. Bounce is a view under 10 seconds with no activity.</p><div class="tbl"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div></div>${vt}`;
+}
+
+/* ---------------- Intent (contact-sales / demo) ---------------- */
+function rIntent(el) {
+  const { cur } = current(), per = cur.per, T = TRACKED(), l = L();
+  const subByCh = {};
+  for (const p of T) for (const [k, x] of Object.entries(per[p].byCh)) { subByCh[k] = subByCh[k] || { sessions: 0, reached: 0, done: 0 }; subByCh[k].sessions += x.sessions; subByCh[k].reached += x.reached; subByCh[k].done += x.done; }
+  const chRows = Object.entries(subByCh).filter(([, x]) => x.done > 0).sort((a, b) => b[1].done - a[1].done);
+  el.innerHTML = `<div class="card"><h2>${esc(l.i)} attribution</h2><p class="muted" style="margin:-4px 0 8px;font-size:12px">${HAS.order ? `A page gets credit only when ${esc(CONFIG.intent.reached.concat(CONFIG.intent.completed).map(x => "/" + x).join(" or "))} comes after the page's first view in the same session.` : `No view order in this data, so any ${esc(l.i.toLowerCase())} in the session counts.`}</p>
+    <div class="tbl"><table><thead><tr><th>Page</th><th class="n">Sessions</th><th class="n">Reached ${esc(l.i.toLowerCase())} page</th><th class="n">Reached %</th><th class="n">Completed</th><th class="n">Completed %</th></tr></thead><tbody>${T.map(p => { const st = per[p]; return `<tr>${pageCell(p)}<td class="n">${fmtN(st.sessions)}</td><td class="n">${fmtN(st.reached)}</td><td class="n">${pct(st.reached, st.sessions, 2)}</td><td class="n">${fmtN(st.done)}</td><td class="n">${pct(st.done, st.sessions, 2)}</td></tr>`; }).join("")}</tbody></table></div></div>
+    <div class="grid g2"><div class="card"><h3>Reached %</h3><div class="chart-box"><canvas id="chReach" role="img" aria-label="Reached rate by page"></canvas></div></div><div class="card"><h3>Completed %</h3><div class="chart-box"><canvas id="chDone" role="img" aria-label="Completed rate by page"></canvas></div></div></div>
+    ${HAS.channels ? `<div class="card"><h2>Completions by channel</h2><p class="muted" style="margin:-4px 0 8px;font-size:12px">Counted once per tracked page a completing session touched.</p>${chRows.length ? `<div class="tbl"><table><thead><tr><th>Channel</th><th class="n">Page sessions</th><th class="n">Reached</th><th class="n">Completed</th><th class="n">Completed %</th></tr></thead><tbody>${chRows.map(([k, x]) => `<tr><td>${esc(k)}</td><td class="n">${fmtN(x.sessions)}</td><td class="n">${fmtN(x.reached)}</td><td class="n">${fmtN(x.done)}</td><td class="n">${pct(x.done, x.sessions, 2)}</td></tr>`).join("")}</tbody></table></div>` : empty("No completions in this range.")}</div>` : ""}`;
+  hbar("chReach", T.map(NAME), T.map(p => 100 * ratio(per[p].reached, per[p].sessions)), css("--c1"));
+  hbar("chDone", T.map(NAME), T.map(p => 100 * ratio(per[p].done, per[p].sessions)), css("--c2"));
+}
+
+/* ---------------- Single page ---------------- */
+function rPage(el) {
+  const T = TRACKED(), sel = S.page && T.includes(S.page) ? S.page : T[0];
+  el.innerHTML = `<div class="row"><label for="spPage" class="eyebrow">Page</label><select id="spPage" style="border:1.5px solid var(--ink);background:var(--bg);border-radius:6px;padding:6px 10px;font-size:15px;font-weight:600">${T.map(p => `<option value="${esc(p)}" ${p === sel ? "selected" : ""}>${esc(NAME(p))}</option>`).join("")}</select></div><div id="spOut" style="display:flex;flex-direction:column;gap:20px"></div>`;
+  $("#spPage").onchange = () => { S.page = $("#spPage").value; store.set("page", S.page); drawPage(S.page); };
+  drawPage(sel);
+}
+function drawPage(p) {
+  const { cur } = current(), st = cur.per[p], l = L(), out = $("#spOut");
+  if (!st || !st.sessions) { out.innerHTML = empty(`No sessions touched /${p} in this range.`); return; }
+  const v = D.verdicts[p];
+  const sr = ratio(st.signups, st.sessions), rr = ratio(st.recirc, st.sessions), single = ratio(st.single, st.sessions);
+  const topFrom = Object.entries(st.from).filter(([k]) => k !== "(entered here)").sort((a, b) => b[1] - a[1])[0];
+  const topCh = Object.entries(st.byCh).sort((a, b) => b[1].sessions - a[1].sessions)[0];
+  const story = [
+    `${NAME(p)} drew ${fmtN(st.sessions)} sessions`,
+    topCh && HAS.channels ? `, mostly from ${topCh[0]}` : "",
+    `. ${pct(st.signups, st.sessions, 1)} ended in a ${l.c.toLowerCase()}, ${pct(st.recirc, st.sessions, 0)} kept reading, and ${pct(st.single, st.sessions, 0)} left after this one page`,
+    HAS.order && topFrom ? `. Readers who arrive mid-session most often come from ${NAME(topFrom[0])}.` : "."
+  ].filter(Boolean).join("");
+  const kp = (label, val) => `<div class="kpi"><span class="eyebrow">${esc(label)}</span><span class="v">${val}</span></div>`;
+  const tm = s => s >= 60 ? `${Math.floor(s / 60)}m ${Math.round(s % 60)}s` : `${Math.round(s)}s`;
+  const grpTable = (obj, label, keyFmt = k => k) => {
+    const e = Object.entries(obj).sort((a, b) => b[1].sessions - a[1].sessions);
+    if (!e.length) return empty("No data.");
+    return `<div class="tbl"><table><thead><tr class="grp"><th></th><th></th><th colspan="6">Conversions</th><th colspan="2">Recirculation</th>${HAS.order ? `<th colspan="2">Exits</th>` : ""}</tr><tr><th>${label}</th><th class="n">Sessions</th><th class="n">${esc(l.c)}s</th><th class="n">${esc(l.c)} %</th><th class="n">${esc(l.i)} page</th><th class="n">Page %</th><th class="n">${esc(l.i)}s</th><th class="n">%</th><th class="n">Sessions</th><th class="n">%</th>${HAS.order ? `<th class="n">Exits</th><th class="n">%</th>` : ""}</tr></thead><tbody>${e.map(([k, x]) => { const rc = x.sessions - x.signups - x.single; return `<tr><td>${esc(keyFmt(k))}</td><td class="n">${fmtN(x.sessions)}</td><td class="n">${fmtN(x.signups)}</td><td class="n">${pct(x.signups, x.sessions)}</td><td class="n">${fmtN(x.reached)}</td><td class="n">${pct(x.reached, x.sessions)}</td><td class="n">${fmtN(x.done)}</td><td class="n">${pct(x.done, x.sessions)}</td><td class="n">${fmtN(rc)}</td><td class="n">${pct(rc, x.sessions)}</td>${HAS.order ? `<td class="n">${fmtN(x.exits)}</td><td class="n">${pct(x.exits, x.sessions)}</td>` : ""}</tr>`; }).join("")}</tbody></table></div>`;
+  };
+  const mix = HAS.channels && HAS.device ? `<div class="card"><h3>Device mix by channel</h3><div class="tbl"><table><thead><tr><th>Channel</th><th class="n">Sessions</th><th class="n">Desktop</th><th class="n">Mobile</th><th class="n">Unknown</th></tr></thead><tbody>${Object.entries(st.byCh).sort((a, b) => b[1].sessions - a[1].sessions).map(([k, x]) => `<tr><td>${esc(k)}</td><td class="n">${fmtN(x.sessions)}</td><td class="n">${pct(x.desktop, x.sessions)}</td><td class="n">${pct(x.mobile, x.sessions)}</td><td class="n">${pct(x.unknown, x.sessions)}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+  out.innerHTML = `${small(st)}
+    <div class="row">${pills(v)}</div>
+    <div class="kpis">${kp("Sessions", fmtN(st.sessions))}${kp(l.c + " rate", pct(st.signups, st.sessions, 2))}${kp(l.i + " rate", pct(st.done, st.sessions, 2))}${kp("Recirculation", pct(st.recirc, st.sessions))}${HAS.order ? kp("Exit rate", pct(st.exits, st.sessions)) : ""}</div>
+    <p class="story">${esc(story)}</p>
+    <div class="card"><h3>Where the sessions go</h3><div class="funnel" style="margin-top:10px" role="img" aria-label="${pct(st.signups, st.sessions)} ${esc(l.c)}, ${pct(st.recirc, st.sessions)} recirculated, ${pct(st.single, st.sessions)} single-page exit">
+      <span style="flex:${Math.max(sr, .001)};background:var(--hl);color:var(--hl-ink)">${sr > .06 ? pct(st.signups, st.sessions) : ""}</span>
+      <span style="flex:${Math.max(rr, .001)};background:var(--ink);color:var(--bg)">${rr > .06 ? pct(st.recirc, st.sessions) : ""}</span>
+      <span style="flex:${Math.max(single, .001)};background:var(--surface-2);color:var(--muted)">${single > .06 ? pct(st.single, st.sessions) : ""}</span></div>
+      <div class="legend"><span><i style="background:var(--hl)"></i>${esc(l.c)} ${pct(st.signups, st.sessions)}</span><span><i style="background:var(--ink)"></i>Recirculated ${pct(st.recirc, st.sessions)}</span><span><i style="background:var(--surface-2);border:1px solid var(--line)"></i>Single-page exit ${pct(st.single, st.sessions)}</span></div></div>
+    <div class="kpis">${HAS.seconds_on_page ? kp("Avg time", tm(avg(st.secs))) + kp("Median time", tm(median(st.secs))) : ""}${HAS.bounced ? kp("Bounce", pct(st.bounces, st.visits)) : ""}${HAS.visitor_type ? kp("Returning", pct(st.returning, st.sessions)) : ""}${HAS.device ? kp("Mobile", pct(st.mobile, st.sessions)) : ""}${HAS.order ? kp("Lands here", pct(st.landing, st.sessions)) : ""}</div>
+    ${HAS.channels ? `<div class="card"><h3>By channel</h3>${grpTable(st.byCh, "Channel")}</div>` : ""}
+    ${HAS.device ? `<div class="card"><h3>By device</h3>${grpTable(st.byDev, "Device", k => k[0].toUpperCase() + k.slice(1))}</div>` : ""}
+    ${mix}
+    ${HAS.order ? `<div class="card"><h3>Journeys through this page</h3><div class="grid g2" style="margin-top:6px">${flowLists(st)}</div></div>` : ""}`;
+}
+
+/* ---------------- Recommendations ---------------- */
+function rRecs(el) {
+  const { cur } = current(), per = cur.per, T = TRACKED(), l = L(), MINN = CONFIG.minSample;
+  const ok = T.filter(p => per[p].sessions >= MINN);
+  if (!ok.length) { el.innerHTML = empty(`No page has reached ${MINN} sessions in this range yet, so there is nothing to rank. Widen the date range.`); return; }
+  const sr = p => ratio(per[p].signups, per[p].sessions);
+  const byReach = [...ok].sort((a, b) => per[b].sessions - per[a].sessions);
+  const reach = byReach[0], best = [...ok].sort((a, b) => sr(b) - sr(a))[0];
+  const act = HAS.act ? [...ok].sort((a, b) => ratio(per[b].acts, per[b].sessions) - ratio(per[a].acts, per[a].sessions))[0] : null;
+  const sales = [...ok].sort((a, b) => ratio(per[b].done, per[b].sessions) - ratio(per[a].done, per[a].sessions))[0];
+  const door = HAS.order ? byReach.slice(0, 3).sort((a, b) => sr(a) - sr(b))[0] : byReach[0];
+  const paidSplit = p => { let ps = 0, pc = 0, os = 0, oc = 0; for (const [k, x] of Object.entries(per[p].byCt)) { if (/paid/i.test(k)) { ps += x.sessions; pc += x.signups; } else { os += x.sessions; oc += x.signups; } } return { ps, pc, os, oc }; };
+  const ps = HAS.channels ? paidSplit(reach) : null;
+  const cards = [
+    ps && ps.ps > 0 && { h: `Rebalance paid spend on ${NAME(reach)}`, why: `${pct(ps.ps, per[reach].sessions)} of its ${fmtN(per[reach].sessions)} sessions are paid. Paid sessions convert at ${pct(ps.pc, ps.ps, 2)} against ${pct(ps.oc, ps.os, 2)} for everything else.`, act: ratio(ps.pc, ps.ps) < ratio(ps.oc, ps.os) ? `Shift part of that budget toward ${NAME(best)}, which converts at ${pct(per[best].signups, per[best].sessions, 2)}.` : `Paid is pulling its weight here. Hold spend and test a stronger offer.` },
+    best && { h: `Scale ${NAME(best)}`, why: `It converts ${pct(per[best].signups, per[best].sessions, 2)} of sessions to ${l.c.toLowerCase()}s, the best rate among pages with ${MINN}+ sessions.`, act: `Link to it from ${NAME(reach)} and put it in front of more of your best channel.` },
+    act && per[act].acts > 0 && { h: `Give ${NAME(act)} an acquisition path`, why: `It leads on ${l.a.toLowerCase()} (${pct(per[act].acts, per[act].sessions, 2)})${HAS.order ? `, but only ${pct(per[act].landing, per[act].sessions)} of its sessions land there` : ""}.`, act: `Build a search or paid entry point that lands people directly on it.` },
+    sales && per[sales].done > 0 && { h: `Turn ${NAME(sales)} into pipeline`, why: `${pct(per[sales].done, per[sales].sessions, 2)} of its sessions go on to complete a ${l.i.toLowerCase()}.`, act: `Add an in-page ${l.i.toLowerCase()} prompt and send these sessions to sales with page context.` },
+    door && { h: `Fix the front door: ${NAME(door)}`, why: `It is one of the three highest-traffic pages (${fmtN(per[door].sessions)} sessions) and converts at ${pct(per[door].signups, per[door].sessions, 2)}${HAS.order ? `; ${pct(per[door].single, per[door].sessions)} of sessions leave after this one page` : ""}.`, act: `Rework the first screen and add a next step that matches why people arrive.` }
+  ].filter(Boolean);
+  el.innerHTML = `<div class="grid g3">${cards.map((c, i) => `<div class="card rec"><span class="eyebrow">Recommendation ${i + 1}</span><h3>${esc(c.h)}</h3><p class="why" style="margin:0">${esc(c.why)}</p><p style="margin:0"><strong>Next:</strong> ${esc(c.act)}</p></div>`).join("")}</div>`;
+}
+
+/* ---------------- controls ---------------- */
+function presetRange(k) {
+  const end = S.dataEnd || iso(new Date());
+  if (k === "30") return [addDays(end, -29), end];
+  if (k === "90") return [addDays(end, -89), end];
+  if (k === "launch") return [S.dataStart && S.dataStart > CONFIG.launchDate ? S.dataStart : CONFIG.launchDate, end];
+  if (k === "month") return [end.slice(0, 8) + "01", end];
+}
+function buildChannelMenu() {
+  // Built from all sessions regardless of the exclusion, so the filter never hides its own options.
+  const chs = [...new Set(SESSIONS.map(s => s.ch))].sort();
+  $("#chWrap").hidden = !HAS.channels;
+  $("#chMenu").innerHTML = chs.map((c, i) => `<label for="ex${i}"><input type="checkbox" id="ex${i}" value="${esc(c)}" ${S.excl.includes(c) ? "checked" : ""}> ${esc(c)}</label>`).join("") || `<span class="muted">No channels in data</span>`;
+  $("#chMenu").onchange = () => { S.excl = [...$("#chMenu").querySelectorAll("input:checked")].map(i => i.value); store.set("excl", S.excl); chSummary(); refresh(); };
+  chSummary();
+}
+const chSummary = () => { $("#chSummary").textContent = "Exclude channels: " + (S.excl.length ? S.excl.length + " selected" : "none"); };
+function refresh() { D = {}; S.rendered = {}; Object.values(charts).forEach(c => c.destroy()); for (const k in charts) delete charts[k]; buildTabs(); renderTab(S.tab); }
+
+function setHeader() {
+  const tw = String(CONFIG.title || "Content performance hub").split(" "); $("#hubTitle").innerHTML = tw.length > 2 ? `${esc(tw.slice(0, -2).join(" "))} <span class="hl">${esc(tw.slice(-2).join(" "))}</span>` : `<span class="hl">${esc(tw.join(" "))}</span>`;
+  const br = CONFIG.brand; $("#brandbar").hidden = !br;
+  if (br) { const [w1, ...rest] = String(br.name || "").split(" "); $("#brandLink").innerHTML = rest.length ? `${esc(w1)} <span>${esc(rest.join(" "))}</span>` : `<span>${esc(w1)}</span>`; $("#brandLink").href = br.url || "#"; $("#brandTag").textContent = SOURCE.mode === "demo" ? br.tag : "Content Performance Hub"; }
+  $("#siteFooter").hidden = !CONFIG.footer; $("#footerText").textContent = CONFIG.footer || "";
+  $("#hubGoal").textContent = `${CONFIG.site ? CONFIG.site + " · " : ""}${CONFIG.goal} Tracking ${TRACKED().length} pages.`;
+  $("#lagNote").textContent = `${CONFIG.conversion.label}s${HAS.act ? " and " + CONFIG.activation.label.toLowerCase() + "s" : ""} are counted within ${CONFIG.conversion.windowDays} days of the visit, so the last ${CONFIG.conversion.windowDays} days under-report. Data runs ${S.dataStart || "–"} to ${S.dataEnd || "–"}.`;
+  $("#srcLabel").textContent = SOURCE.label;
+  $("#srcChip").classList.toggle("live", SOURCE.mode !== "demo");
+  $("#devWrap").hidden = !HAS.device;
+  document.title = CONFIG.title || "Content performance hub";
+}
+
+async function load(force) {
+  $("#main").innerHTML = `<div class="state"><div class="spinner"></div>Loading page data…</div>`;
+  try {
+    let rows;
+    if (SOURCE.mode === "demo") rows = genDemo();
+    else if (SOURCE.mode === "csv") rows = CSV_ROWS;
+    else rows = await fetchWarehouse(force);
+    ingest(rows);
+    if (!SESSIONS.length) throw { code: "empty", message: "The source returned no usable rows. Check that session ID, date and page are mapped." };
+    if (!S.start || !S.end || S.end > S.dataEnd || S.start > S.dataEnd) { [S.start, S.end] = presetRange(CONFIG.defaultRange || "launch"); }
+    $("#fStart").value = S.start; $("#fEnd").value = S.end; $("#fDev").value = S.dev;
+    buildChannelMenu(); setHeader(); refresh();
+  } catch (e) {
+    console.error(e);
+    $("#main").innerHTML = `<div class="errbox"><strong>${esc(errTitle(e))}</strong><br>${esc(e.message || String(e))}</div>`;
+  }
+}
+const errTitle = e => ({ needs_reauth: `Reconnect ${SOURCE.server} in claude.ai Settings → Connectors.`, server_not_connected: `Add the ${SOURCE.server} connector in claude.ai Settings → Connectors.`, not_in_manifest: `This page isn't allowed to use ${SOURCE.server} for you yet. Allow it from the page's Permissions menu.`, no_mcp: "Live data isn't available in this view. Open the page in claude.ai while signed in.", sql_failed: "The query failed.", empty: "No data to show." }[e && e.code] || "Couldn't load the data.");
+
+/* ---------------- warehouse adapter runtime ---------------- */
+async function fetchWarehouse(force) {
+  const mcp = window.claude && await window.claude.use("mcp");
+  if (!mcp) throw { code: "no_mcp", message: "This hub reads your warehouse through a Claude connector, which only runs inside claude.ai." };
+  const end = S.end || iso(new Date()), start = S.start || CONFIG.launchDate;
+  const len = daysBetween(start, end) + 1;
+  const sql = SOURCE.sql({ start: addDays(start, -len), end, pages: TRACKED() }); // fetch the prior window too, for comparisons
+  const opts = force ? { cache: { refresh: true, staleTime: 0, gcTime: 300000 } } : { cache: { staleTime: 600000, gcTime: 3600000 } };
+  const first = await mcp.callTool(SOURCE.server, SOURCE.runTool, SOURCE.buildRunInput(sql), opts);
+  let r = SOURCE.readRun(first.payload);
+  for (let i = 0; !r.done && SOURCE.pollTool && i < 80; i++) {
+    await new Promise(res => setTimeout(res, 1500));
+    const pr = await mcp.callTool(SOURCE.server, SOURCE.pollTool, SOURCE.buildPollInput(r.id), { cache: false });
+    r = SOURCE.readPoll(pr.payload);
+    if (r.failed) throw { code: "sql_failed", message: r.error || "The warehouse reported a failed statement." };
+  }
+  if (!r.done) throw { code: "sql_failed", message: "The query is still running after two minutes. Try a shorter date range." };
+  if (r.rows.length >= SOURCE.maxRows) console.warn("Row cap reached; results may be partial.");
+  return r.rows;
+}
+
+/* ---------------- Connect your data panel ---------------- */
+const TOOLS = [
+  { id: "csv", name: "CSV or spreadsheet export", mode: "here", how: "Upload a file here and the hub runs on it right away.",
+    needs: ["Export one row per page view from any analytics tool or spreadsheet.", "Required: session ID, date, page, converted flag.", "Add view order to unlock journeys and sequential attribution."] },
+  { id: "databricks", name: "Databricks", mode: "skill", how: "Claude queries your SQL warehouse live through a Databricks connector.",
+    needs: ["A Databricks connector (or MCP server) added in Claude.", "A table or view with one row per page view per session.", "Read access to a SQL warehouse."] },
+  { id: "bigquery", name: "BigQuery (incl. GA4 export)", mode: "skill", how: "Reads the GA4 events_* export or your own modeled table.",
+    needs: ["A BigQuery connector (or MCP server) added in Claude.", "GA4 BigQuery export turned on, or a modeled page-view table.", "Conversion and activation event names from GA4."] },
+  { id: "snowflake", name: "Snowflake", mode: "skill", how: "Live SQL through a Snowflake connector.",
+    needs: ["A Snowflake connector (or MCP server) added in Claude.", "A page-view table with session IDs.", "A role with read access."] },
+  { id: "postgres", name: "Postgres or Redshift", mode: "skill", how: "Live SQL through a Postgres-compatible connector.",
+    needs: ["A Postgres or Redshift connector (or MCP server) in Claude.", "A page-view table with session IDs.", "A read-only user."] },
+  { id: "ga4", name: "Google Analytics 4 (no warehouse)", mode: "partial", how: "Uses the GA4 Data API. Journeys and order-based attribution are approximate.",
+    needs: ["A GA4 connector (or MCP server) in Claude.", "Key events set up for sign-up and demo request.", "Expect page × channel aggregates, not session paths."] },
+  { id: "product", name: "Amplitude, Mixpanel or Segment", mode: "export", how: "Send page-view events to your warehouse or a CSV, then use that.",
+    needs: ["Turn on the tool's warehouse sync or export.", "Map its page-view event to the canonical columns.", "Then pick the warehouse above, or upload the CSV."] }
+];
+const MODE = { here: ["m-here", "Works here now"], skill: ["m-skill", "Built by the Skill"], partial: ["m-partial", "Partial"], export: ["m-export", "Needs an export"] };
+let CSV_ROWS = [], CSV_RAW = null;
+function initConnect() {
+  const saved = store.get("tools", []);
+  $("#toolGrid").innerHTML = TOOLS.map(t => `<label class="tool" for="tl-${t.id}"><input type="checkbox" id="tl-${t.id}" value="${t.id}" ${saved.includes(t.id) ? "checked" : ""}><span class="nm">${esc(t.name)}</span><span class="hw">${esc(t.how)}</span><span class="mode ${MODE[t.mode][0]}">${MODE[t.mode][1]}</span></label>`).join("");
+  const setup = store.get("setup", null) || {
+    site: "", launch: CONFIG.launchDate, pages: "", conv: CONFIG.conversion.label, act: CONFIG.activation.label, intent: CONFIG.intent.label,
+    ip: CONFIG.intent.reached.join(", "), id: CONFIG.intent.completed.join(", "), min: CONFIG.minSample, goal: ""
+  };
+  const F = { site: "#sSite", launch: "#sLaunch", pages: "#sPages", conv: "#sConv", act: "#sAct", intent: "#sIntent", ip: "#sIntentPages", id: "#sIntentDone", min: "#sMin", goal: "#sGoal" };
+  for (const [k, sel] of Object.entries(F)) { $(sel).value = setup[k] ?? ""; $(sel).addEventListener("input", () => { setup[k] = $(sel).value; store.set("setup", setup); drawPrompt(); }); }
+  $("#toolGrid").onchange = () => { store.set("tools", picked()); drawNeeds(); drawPrompt(); };
+  const picked = () => [...$("#toolGrid").querySelectorAll("input:checked")].map(i => i.value);
+  function drawNeeds() {
+    const p = picked();
+    $("#needsStep").hidden = !p.length;
+    $("#csvStep").hidden = !p.includes("csv");
+    $("#setupK").textContent = p.length ? "3" : "2"; $("#promptK").textContent = p.length ? "4" : "3";
+    $("#needsGrid").innerHTML = p.map(id => { const t = TOOLS.find(x => x.id === id); return `<div class="card"><div class="row" style="justify-content:space-between"><h3>${esc(t.name)}</h3><span class="mode ${MODE[t.mode][0]}">${MODE[t.mode][1]}</span></div><ul>${t.needs.map(n => `<li>${esc(n)}</li>`).join("")}</ul></div>`; }).join("");
+  }
+  function drawPrompt() {
+    const p = picked().map(id => TOOLS.find(x => x.id === id).name);
+    const pages = (setup.pages || "").split("\n").map(x => x.trim()).filter(Boolean);
+    const lines = [
+      "Use the content-performance-hub skill to build my Content Performance Hub.",
+      "",
+      `Data source: ${p.length ? p.join(" + ") : "(pick at least one above)"}`,
+      `Site: ${setup.site || "(your site)"}`,
+      `Goal: ${setup.goal || CONFIG.goal}`,
+      `Launch date: ${setup.launch || CONFIG.launchDate}`,
+      `Minimum sample: ${setup.min || 100} sessions`,
+      `Primary conversion: ${setup.conv || "Sign-up"}`,
+      `Activation event: ${setup.act || "(none)"}`,
+      `High-intent action: ${setup.intent || "Demo request"} — reached on ${setup.ip || "(page)"}, completed on ${setup.id || "(page)"}`,
+      "",
+      "Pages to track:",
+      ...(pages.length ? pages.map(x => "- " + x) : ["- (add your pages: slug = display name)"]),
+      "",
+      "Before building: inspect my table, propose the column mapping to the canonical schema, run the coverage check on every slug, and tell me which tabs will switch off for missing fields."
+    ];
+    $("#promptOut").textContent = lines.join("\n");
+  }
+  $("#copyPrompt").onclick = () => {
+    const t = $("#promptOut").textContent;
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($("#promptOut")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("#copyMsg").textContent = "Selected. Press Ctrl+C or ⌘C to copy."; };
+    try { navigator.clipboard.writeText(t).then(() => $("#copyMsg").textContent = "Copied.", fallback); } catch (e) { fallback(); }
+  };
+  $("#showSample").onclick = () => {
+    const o = $("#sampleOut"); o.hidden = !o.hidden; if (o.hidden) return;
+    const demo = genDemo().slice(0, 12), cols = FIELDS.map(f => f.key);
+    o.textContent = cols.join(",") + "\n" + demo.map(r => cols.map(c => r[c]).join(",")).join("\n");
+    $("#showSample").textContent = o.hidden ? "Show the expected format" : "Hide the expected format";
+  };
+  $("#csvFile").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { CSV_RAW = parseCSV(await f.text()); drawMapping(); }
+    catch (err) { $("#mapArea").innerHTML = `<div class="errbox">Couldn't read that file. ${esc(err.message)}</div>`; }
+  };
+  function drawMapping() {
+    const { header, rows } = CSV_RAW;
+    if (!rows.length) { $("#mapArea").innerHTML = `<div class="errbox">The file has a header but no rows.</div>`; return; }
+    const lower = header.map(h => h.toLowerCase().trim());
+    const guess = f => { const i = lower.findIndex(h => f.aliases.includes(h)); return i >= 0 ? header[i] : ""; };
+    $("#mapArea").innerHTML = `<p style="margin:0 0 8px"><strong>${fmtN(rows.length)} rows.</strong> Check the column mapping, then load.</p><div class="tbl maptbl"><table><thead><tr><th>Hub field</th><th>Your column</th><th>Used for</th></tr></thead><tbody>${FIELDS.map(f => `<tr><td>${f.key}${f.req ? ' <span class="req">*</span>' : ""}</td><td><select data-k="${f.key}" aria-label="${f.key}"><option value="">(not in file)</option>${header.map(h => `<option ${h === guess(f) ? "selected" : ""}>${esc(h)}</option>`).join("")}</select></td><td class="muted">${esc(f.desc)}</td></tr>`).join("")}</tbody></table></div><div class="row" style="margin-top:10px"><button class="btn primary" id="loadCsv" type="button">Load into the hub</button><span id="mapMsg" class="muted" role="status"></span></div>`;
+    $("#loadCsv").onclick = () => {
+      const map = {}; $("#mapArea").querySelectorAll("select").forEach(s => { if (s.value) map[s.dataset.k] = header.indexOf(s.value); });
+      const miss = FIELDS.filter(f => f.req && map[f.key] == null);
+      if (miss.length) { $("#mapMsg").textContent = "Map the required fields first: " + miss.map(f => f.key).join(", ") + "."; return; }
+      CSV_ROWS = rows.map(r => Object.fromEntries(Object.entries(map).map(([k, i]) => [k, r[i]])));
+      const pages = (setup.pages || "").split("\n").map(x => x.trim()).filter(Boolean).map(x => { const [s, ...n] = x.split("="); return { slug: normPage(s), name: (n.join("=") || s).trim() }; });
+      if (pages.length) CONFIG.pages = pages;
+      else { // no pages listed: track the 8 busiest non-intent pages
+        const c = {}; const intent = new Set([...CONFIG.intent.reached, ...CONFIG.intent.completed]);
+        for (const r of CSV_ROWS) { const p = normPage(r.page); if (!intent.has(p)) c[p] = (c[p] || 0) + 1; }
+        CONFIG.pages = Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([s]) => ({ slug: s, name: s }));
+      }
+      if (setup.site) CONFIG.site = setup.site; if (setup.goal) CONFIG.goal = setup.goal;
+      if (setup.conv) CONFIG.conversion.label = setup.conv; CONFIG.activation.label = setup.act || "";
+      if (setup.intent) CONFIG.intent.label = setup.intent;
+      const split = s => (s || "").split(",").map(x => normPage(x)).filter(x => x && x !== "home");
+      CONFIG.intent.reached = split(setup.ip); CONFIG.intent.completed = split(setup.id);
+      CONFIG.minSample = Math.max(1, Number(setup.min) || 100); if (setup.launch) CONFIG.launchDate = setup.launch;
+      SOURCE.mode = "csv"; SOURCE.label = f.name || "Your CSV";
+      S.start = S.end = null; S.excl = []; S.page = null;
+      $("#connect").close(); load();
+    };
+  }
+  drawNeeds(); drawPrompt();
+  $("#srcChip").onclick = () => $("#connect").showModal();
+  $("#closeConnect").onclick = () => $("#connect").close();
+  $("#connect").addEventListener("click", e => { if (e.target === $("#connect")) $("#connect").close(); });
+  if (CONFIG.ctaUrl) $("#ctaLink").href = CONFIG.ctaUrl;
+}
+let f = { name: "" };
+$("#csvFile").addEventListener("change", e => { f = e.target.files[0] || f; });
+function parseCSV(text) {
+  const out = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); cell = ""; if (row.some(x => x !== "")) out.push(row); row = []; }
+    else cell += c;
+  }
+  row.push(cell); if (row.some(x => x !== "")) out.push(row);
+  if (!out.length) throw new Error("The file is empty.");
+  return { header: out[0].map(h => h.replace(/^﻿/, "").trim()), rows: out.slice(1) };
+}
+
+/* ---------------- wiring ---------------- */
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (b) showTab(b.dataset.tab); });
+$("#applyBtn").onclick = () => {
+  const a = $("#fStart").value, b = $("#fEnd").value;
+  if (!a || !b || a > b) { $("#lagNote").textContent = "Pick a start date on or before the end date."; return; }
+  S.start = a; S.end = b; store.set("start", a); store.set("end", b);
+  if (SOURCE.mode === "warehouse") load(); else refresh();
+};
+$("#reloadBtn").onclick = () => load(true);
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { [S.start, S.end] = presetRange(b.dataset.preset); $("#fStart").value = S.start; $("#fEnd").value = S.end; store.set("start", S.start); store.set("end", S.end); if (SOURCE.mode === "warehouse") load(); else refresh(); });
+$("#fDev").onchange = () => { S.dev = $("#fDev").value; store.set("dev", S.dev); refresh(); };
+document.addEventListener("click", e => { const d = $("#chWrap"); if (d.open && !d.contains(e.target)) d.open = false; });
+const mq = matchMedia("(prefers-color-scheme: dark)");
+const rethemeCharts = () => { const t = S.tab; S.rendered[t] = false; Object.values(charts).forEach(c => c.destroy()); for (const k in charts) delete charts[k]; S.rendered = {}; renderTab(t); };
+mq.addEventListener?.("change", rethemeCharts);
+new MutationObserver(rethemeCharts).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+initConnect();
+load();
+</script>
+
+</body>
+</html>

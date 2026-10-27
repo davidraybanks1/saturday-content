@@ -11,7 +11,7 @@ function thumbProps(src: string) {
 }
 
 export const fileName = (t: Template) =>
-  `${t.slug.replace(/-(notion|clickup|airtable)$/, "")}.${t.tool.toLowerCase()}`;
+  `${t.slug.replace(/-(notion|clickup|airtable|claude)$/, "")}.${t.tool.toLowerCase()}`;
 
 export default function TemplateCard({ t, n }: { t: Template; n: string }) {
   return (

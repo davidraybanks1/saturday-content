@@ -92,13 +92,47 @@ li::before { content: counter(s, decimal-leading-zero); font-family: 'Geist Mono
 .tip a { border-bottom: 1px solid #141413; }
 .credit { border-left: 3px solid #ffb800; padding-left: 10px; font-size: 9.5pt; line-height: 1.45; color: #55534d; margin-top: 16px; }
 .foot { margin-top: auto; padding-top: 14px; border-top: 1px solid #d3d0c8; display: flex; justify-content: space-between; }
+.walk { margin-top: 22px; gap: 14px; }
+.walk li b { font-weight: 600; color: #141413; }
+.g { margin: 4px 6px 0 0; }
+.g .window { max-height: 3.7in; }
+.g img { width: 100%; display: block; }
 .dots { background-color: #ffb800; background-image: radial-gradient(rgba(20,20,19,.28) 1px, transparent 1px); background-size: 12px 12px; }
 """
+
+
+def walk_page(t, top2, foot):
+    # Extra page for templates with a build walkthrough and screenshots (e.g. Claude skills).
+    if not t.get("walkthrough"):
+        return ""
+    steps = "".join(f'<li><div><b>{e(w["title"])}</b><br>{e(w["body"])}</div></li>' for w in t["walkthrough"])
+    shots = "".join(
+        f'<figure class="g"><div class="window"><div class="bar"><i></i><i></i><span>{e(g["caption"])}</span></div>'
+        f'<img src="{(ROOT / "public" / g["src"].lstrip("/")).as_uri()}"></div></figure>'
+        for g in (t.get("gallery") or [])[:1])
+    dl = ""
+    if t.get("download"):
+        url = "https://saturdaycontent.co" + t["download"]["href"]
+        dl = (f'<div class="tip" style="margin-top:18px"><span class="chip">Download</span>'
+              f'<p>{e(t["download"]["label"])}: <a href="{e(url)}">{e(url)}</a></p></div>')
+    return f"""
+<section class="page">
+  {top2}
+  <div class="section" style="border-bottom:0">
+    <h2>Build it on <span class="hl">your data</span>.</h2>
+    <ol class="walk">{steps}</ol>
+    {dl}
+  </div>
+  {shots}
+  {foot}
+</section>"""
 
 
 def guide_html(t, n):
     tool, s = t["tool"], steps[t["tool"]]
     verb = "Open the base" if tool == "Airtable" else "Open the template"
+    cta_label = t.get("templateLabel") or f"{verb} in {tool}"
+    cta_note = "Free · Download the skill at saturdaycontent.co" if t.get("download") else "Free · Duplicate it into your workspace"
     fname = t["slug"].rsplit("-", 1)[0] + "." + tool.lower()
     img = (ROOT / "public" / t["image"].lstrip("/")).as_uri()
     feats = ""
@@ -120,7 +154,7 @@ def guide_html(t, n):
     know = f'''<div class="section">
     <span class="mono">Good to know</span>
     <div class="tips">
-      <div class="tip"><span class="chip">Pro tip</span><p>Get familiar with the template on desktop before you use it in the {e(tool)} mobile app.</p></div>
+      <div class="tip"><span class="chip">Pro tip</span><p>{e(t.get("tip") or f"Get familiar with the template on desktop before you use it in the {tool} mobile app.")}</p></div>
       {guide}
     </div>
     {credit}
@@ -133,8 +167,8 @@ def guide_html(t, n):
   <p class="summary">{e(t["summary"])}</p>
   <div class="shot-wrap window"><div class="bar"><i></i><i></i><span>{e(fname)}</span></div><img src="{img}"></div>
   <div class="cta">
-    <a class="pill" href="{e(t["templateUrl"])}">{verb} in {e(tool)}{NE}</a>
-    <span class="mono" style="color:#141413">Free · Duplicate it into your workspace</span>
+    <a class="pill" href="{e(t["templateUrl"])}">{e(cta_label)}{NE}</a>
+    <span class="mono" style="color:#141413">{e(cta_note)}</span>
     <a class="url" href="{e(t["templateUrl"])}">{e(t["templateUrl"])}</a>
   </div>
 </section>
@@ -150,7 +184,7 @@ def guide_html(t, n):
   {know}
   {foot}
 </section>
-{f'''<section class="page">{top2}{feats}{foot}</section>''' if feats else ""}"""
+{f'''<section class="page">{top2}{feats}{foot}</section>''' if feats else ""}{walk_page(t, top2, foot)}"""
 
 
 from playwright.sync_api import sync_playwright
