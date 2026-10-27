@@ -808,7 +808,7 @@ function renderOutput() {
   }
   w.innerHTML = `<div class="window"><div class="window-bar"><i></i><i></i><span class="wt">${esc(summaryLine().replace(/<[^>]+>/g, ""))}</span><span class="otabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === OUT.tab}" data-otab="${k}">${l}</button>`).join("")}</span></div><div class="out-body" id="outBody">${body}</div>${actions ? `<div class="out-actions">${actions}</div>` : ""}</div>`;
 }
-function save() { store.set("state", { mode: S.mode, sources: S.sources, use: S.use, context: S.context, view: S.view, boardSeg: S.boardSeg, nameA: S.nameA, textA: S.textA, nameB: S.nameB, textB: S.textB }); }
+function save() { store.set("state", { mode: S.mode, sources: S.sources, use: S.use, context: S.context, view: S.view, boardSeg: S.boardSeg }); }
 
 /* ---------------- generation ---------------- */
 async function generate(fresh) {
