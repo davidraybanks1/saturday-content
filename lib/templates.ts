@@ -339,6 +339,94 @@ export const templates: Template[] = [
     featured: true,
     pinned: 1,
   },
+  {
+    slug: "thought-leader-profiler-claude",
+    name: "Thought leader profiler",
+    tool: "Claude",
+    image: "/images/thought-leader-profiler-claude.png",
+    hook: "Your experts have strong opinions and good stories. Most of their bylines sound like the company wrote them.",
+    summary:
+      "Builds a Narrative ID for each subject-matter expert (podium, posture and pillars), then pitches topics, drafts bylines in their voice and preps interviews that pull out a story and a strong opinion.",
+    features: [
+      {
+        title: "A Narrative ID for every expert",
+        body: "Podium, posture and pillars, plus audience, signature stories, strong opinions, phrases, off-limits topics and proof. One page per person.",
+      },
+      {
+        title: "Profiles from your notes",
+        body: "Paste interview answers or a transcript. Claude keeps the expert's own wording and marks anything it had to infer.",
+      },
+      {
+        title: "Eight pitches that fit",
+        body: "Each pitch comes with an angle, a hook, a format and the pillar it serves, plus a strongest three and one topic to skip.",
+      },
+      {
+        title: "Bylines in their voice",
+        body: "LinkedIn posts, op-eds and blog posts that follow the expert's posture and phrases, with notes on what they need to check.",
+      },
+      {
+        title: "Interviews that get the good stuff",
+        body: "Twelve questions grouped by podium, posture and pillars, built to pull out one story and one opinion you can publish. Copy or print them.",
+      },
+      {
+        title: "Honest by default",
+        body: "No invented numbers, quotes or credentials. Missing facts become placeholders, and off-limits topics stay off the page.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/thought-leader-profiler.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/thought-leader-profiler-skill.zip" },
+    walkthroughLabel: "Build it on your experts",
+    walkthroughLead: "From demo to your own expert bench in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the profiler, browse the three Fieldbook expert profiles, and build an interview question set or a prompt for any mode.",
+      },
+      {
+        title: "Add the skill",
+        body: "Download the free skill and add it to Claude from your skills settings.",
+      },
+      {
+        title: "Profile your experts",
+        body: "Paste interview notes or a transcript, or run the profiling interview. Claude drafts a Narrative ID for each person.",
+      },
+      {
+        title: "Check it with them",
+        body: "Send each expert their podium, posture and pillars and ask if it sounds like them. Fold their edits in.",
+      },
+      {
+        title: "Publish and share",
+        body: "Ask Claude to publish your profiler page. Your team pitches, drafts and preps interviews from the same profiles.",
+      },
+    ],
+    steps: {
+      have: [
+        "Download the skill and add it in Claude's skills settings",
+        "Paste notes about one expert and ask for a Narrative ID",
+        "Ask Claude to publish the profiler page for your team",
+      ],
+      dont: [
+        "Create a free Claude account at claude.ai",
+        "Choose a plan that supports skills and artifacts",
+        "Add the skill, then start with one expert you know well",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/thought-leader-profiler-claude-screen-1.png",
+        alt: "The thought leader profiler page with four modes and an expert picker, Pitch topics selected for Maren Okafor",
+        caption: "Pick a mode and an expert",
+      },
+      {
+        src: "/images/thought-leader-profiler-claude-screen-2.png",
+        alt: "An expert profile showing podium, posture with trait tags and scales, and four numbered pillars",
+        caption: "Podium, posture and pillars at a glance",
+      },
+    ],
+    tip: "Ask each expert to edit their own podium sentence; the words they change tell you more about their voice than an hour of interview.",
+    packet: "/packets/thought-leader-profiler-claude.pdf",
+  },
 ];
 
 export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];

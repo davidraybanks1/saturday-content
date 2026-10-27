@@ -1,1 +1,21 @@
-{}
+{
+  "thought-leader-profiler-claude": {
+    "skill": "thought-leader-profiler",
+    "diagram": {
+      "title": "Thought leader profiler",
+      "modes": [
+        "Profile",
+        "Pitch",
+        "Byline",
+        "Interview"
+      ],
+      "picks": [
+        "Expert",
+        "Pillar",
+        "Format",
+        "Hook"
+      ],
+      "button": "Build my prompt"
+    }
+  }
+}
