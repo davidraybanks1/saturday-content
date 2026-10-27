@@ -26,6 +26,8 @@ export type Template = {
   packet: string;
   credit?: string;
   featured?: boolean;
+  /** show first among featured templates on the homepage */
+  pinned?: boolean;
 };
 
 export const templates: Template[] = [
@@ -238,6 +240,7 @@ export const templates: Template[] = [
     tip: "Before you approve the build, check the column mapping Claude proposes. It decides whether every number in the hub is right.",
     packet: "/packets/content-performance-hub-claude.pdf",
     featured: true,
+    pinned: true,
   },
 ];
 

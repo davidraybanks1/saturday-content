@@ -6,7 +6,8 @@ import TemplateGrid from "./TemplateGrid";
 import Arrow from "./Arrow";
 
 export default function Home() {
-  const featured = templates.filter((t) => t.featured);
+  // Pinned templates lead; the rest keep their list order.
+  const featured = templates.filter((t) => t.featured).sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
   return (
     <>
       <Hero />
