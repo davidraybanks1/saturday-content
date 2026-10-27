@@ -107,5 +107,22 @@
       ],
       "button": "Build my prompt"
     }
+  },
+  "competitive-content-gap-claude": {
+    "skill": "competitive-content-gap",
+    "diagram": {
+      "title": "Competitive content gap",
+      "modes": [
+        "Cluster and prioritize",
+        "Brief the top gaps"
+      ],
+      "picks": [
+        "Gaps",
+        "Strengths",
+        "Shared",
+        "Whitespace"
+      ],
+      "button": "Build my prompt"
+    }
   }
 }

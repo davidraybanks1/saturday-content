@@ -867,6 +867,94 @@ export const templates: Template[] = [
     tip: "Label each block of research with a # line naming the source and role, so Claude can tell one loud customer from a real pattern.",
     packet: "/packets/audience-profile-builder-claude.pdf",
   },
+  {
+    slug: "competitive-content-gap-claude",
+    name: "Competitive content gap",
+    tool: "Claude",
+    image: "/images/competitive-content-gap-claude.png",
+    hook: "See the topics your competitors own that you don't, and the questions nobody answers yet.",
+    summary:
+      "Maps your content against up to four competitors' content topic by topic, then finds the gaps, your strengths and the whitespace. Claude ranks the gaps by audience fit and effort, and briefs the top five.",
+    features: [
+      {
+        title: "Paste lists in any shape",
+        body: "URLs, paths, titles or a raw sitemap.xml. The page splits slugs, strips filler words and stems what's left into topic terms.",
+      },
+      {
+        title: "A coverage map in your browser",
+        body: "Topics × companies with page counts, built as you paste. No Claude needed, and you can copy it as a table.",
+      },
+      {
+        title: "Gaps, strengths and whitespace",
+        body: "Topics competitors cover and you don't, topics only you cover, and audience questions no page answers.",
+      },
+      {
+        title: "Clustered by meaning",
+        body: "Claude regroups topics by the reader's question, so \"content decay\" and \"refresh old posts\" land together.",
+      },
+      {
+        title: "Ranked with a rubric you can argue with",
+        body: "Each gap gets scores for audience fit, competitive pressure, question match and effort, and every score is shown.",
+      },
+      {
+        title: "Briefs for the top five",
+        body: "Working title, angle, outline, internal links and what to gather first, with placeholders where evidence is missing.",
+      },
+    ],
+    templateUrl: "https://saturdaycontent.co/demos/competitive-content-gap.html",
+    templateLabel: "Try the live demo",
+    download: { label: "Download the skill (.zip)", href: "/downloads/competitive-content-gap-skill.zip" },
+    walkthroughLabel: "Build it on your competitors",
+    walkthroughLead: "From demo to your own gap map in",
+    walkthrough: [
+      {
+        title: "Try the demo",
+        body: "Open the page with Fieldbook and three invented competitors loaded. Click a tile to filter the map, then look at the example output.",
+      },
+      {
+        title: "Add the skill",
+        body: "Add the competitive-content-gap folder as a skill in Claude and check that it shows in your skills list.",
+      },
+      {
+        title: "Name your competitors",
+        body: "Ask Claude to compare your site with up to four others. It reads their sitemaps, blog indexes and resource libraries, and says if any list is partial.",
+      },
+      {
+        title: "Add your audience's questions",
+        body: "Paste questions from sales calls, support tickets and search. Any question no page answers becomes whitespace.",
+      },
+      {
+        title: "Prioritize, brief and share",
+        body: "Get the ranked gaps and five briefs, then publish the gap map so your team can rerun it with Claude.",
+      },
+    ],
+    steps: {
+      have: [
+        "Download the skill folder or .zip",
+        "Add it as a skill in Claude",
+        "Ask Claude to compare your site with up to four competitors",
+      ],
+      dont: [
+        "Create a free Claude account at claude.ai",
+        "Upgrade to a plan that supports skills",
+        "Add the skill and run your first comparison",
+      ],
+    },
+    gallery: [
+      {
+        src: "/images/competitive-content-gap-claude-screen-1.png",
+        alt: "The gap map page with Fieldbook's page list and three competitor lists pasted in",
+        caption: "Paste your list and up to four competitors'",
+      },
+      {
+        src: "/images/competitive-content-gap-claude-screen-2.png",
+        alt: "Coverage matrix of topics against four companies, with gap, strength, shared and whitespace counts",
+        caption: "The coverage map, built in the browser",
+      },
+    ],
+    tip: "Add your category name to the list of words every page shares, or one giant topic will swallow half the map.",
+    packet: "/packets/competitive-content-gap-claude.pdf",
+  },
 ];
 
 export const tools: Tool[] = ["Notion", "ClickUp", "Airtable", "Claude"];
